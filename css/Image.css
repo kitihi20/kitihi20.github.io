@@ -1,0 +1,47 @@
+
+
+/* 上 | 右 | 下 | 左 */
+
+:root {
+  --tpos: 0px;
+  --rot: -5deg;
+}
+
+.fposImageBox{
+    position: relative;
+}
+
+.fposImage{
+    position: absolute;
+    transform: rotate(var(--rot));
+    top: var(--tpos);
+}
+.imageShadow{
+    box-shadow: 5px 5px 3px #000000aa;
+}
+.imageReverse{
+    transform: scale(-1, 1);
+}
+
+.autoHideImage{
+    
+}
+
+@media screen and (max-width:750px){
+    .fposImageBox{
+        position: relative;
+        text-align: center;
+    }
+    .fposImage{
+        position: relative;
+        transform: rotate(0deg);
+        top: 0px;
+    }
+    .autoHideImage{
+        display:none
+    }
+}
+
+@media screen and (min-width:2000px){
+
+}

@@ -1,0 +1,58 @@
+
+/*Zen Kaku Gothic New*/
+@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New&display=swap');
+/*M PLUS Rounded 1c*/
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+Rounded+1c:wght@300&family=Zen+Kaku+Gothic+Antique&display=swap');
+/*M PLUS 2 Only Light 300*/
+@import url('https://fonts.googleapis.com/css2?family=M+PLUS+2:wght@300&display=swap');
+
+
+:root {
+    --HeaderHeight: 60px;
+    --HamburgerContentButtonHeight: 56px;
+    --HamburgerContentFontSize: 16px;
+    --MainFont: "Zen Kaku Gothic New";
+    --HeadFont: "M PLUS 2";
+
+    --ShadowColor: #00000060;
+
+}
+
+/*ダークテーマ*/
+@media (prefers-color-scheme: dark) {
+    :root {
+        --Background_Color: rgb(12, 18, 24);
+        --Font_Color: #eeeeeeff;
+        --Scrollbar_TrackColor: #333333;
+        --Scrollbar_ThumbColor: #555555;
+        --Scrollbar_ThumbHoverColor: #888888;
+
+        --Border_Color: #eeeeeeff;
+
+        --Header_BackgroundColor: #111111ee;
+
+        --BackgroundColorGradient: #090912aa;
+    }
+    a:link { color: #1c9dd8; }
+    a:visited { color: #9649ce; }
+    a:hover { color: #4641df; }
+    a:active { color: #ff8000; }
+}
+
+/*ライトテーマ*/
+@media (prefers-color-scheme: light) {
+    :root {
+        --Background_Color: #eeeeeeee;
+        --Font_Color: #232323ff;
+        --Scrollbar_TrackColor: #ffffff;
+        --Scrollbar_ThumbColor: #bbbbbb;
+        --Scrollbar_ThumbHoverColor: #888888;
+
+        --BackgroundColorGradient: #ffffffcc;
+    }
+    a:link { color: #0066d3; }
+    a:visited { color: #6b00b8; }
+    a:hover { color: #0700db; }
+    a:active { color: #ff8000; }
+}
+

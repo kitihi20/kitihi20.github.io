@@ -1,0 +1,184 @@
+/*上 右 下 左?*/
+
+body{
+    color: var(--Font_Color);
+    font-family: var(--MainFont),Yu Gothic, Arial;
+}
+
+/*ヘッダー*/
+header {
+    position: fixed;
+    background-color: var(--Header_BackgroundColor);
+    top: 0%;
+    width: 100%;
+    height: 50px;
+    margin: 0px;
+    padding: 0px 0px 0px 8px;
+    border-bottom: solid 2px var(--Border_Color);
+    z-index:100;
+}
+h1
+{
+    margin: 0px;
+    padding: 0px 0px 0px 16px;
+}
+button{
+    position: relative;
+    margin: 0px;
+    padding: 4px 16px 4px 0px;
+    width: 100%;
+    height: 50px;
+    right: 0%;
+    text-align: right;
+    vertical-align: bottom;
+    font-size: 28px;
+    white-space: nowrap;
+    background-color: #00000000;
+    border: #00000000;
+    color: var(--Font_Color);
+    font-family: var(--HeadFont),Yu Gothic, Arial;
+    transition: all 0.3s 0s ease;
+}
+button:hover{
+    background-color: #00000060;
+    transition: all 0.3s 0s ease;
+}
+
+header > h1
+{
+    margin: 0px;
+}
+#headertxt{
+    display:inline-block;
+    vertical-align: super;
+    font-size: 30px;
+}
+/*ヘッダーのボタン(ハンバーガーボタン)*/
+#hbbutton{
+    position: fixed;
+    width: 35px;
+    height: 35px;
+    right: 8px;
+    top: 7px;
+    background-color: #00000000;
+    border: #00000000;
+    transition: all 0.3s 0s ease;
+}
+#hbbutton:hover{
+    transform: scale(1.2);
+    transition: all 0.3s 0s ease;
+}
+
+.hoverChangeScale{
+    transition: all 0.3s 0s ease;
+}
+.hoverChangeScale:hover{
+    transform: scale(1.2);
+    transition: all 0.3s 0s ease;
+}
+
+.hbline{
+    position: absolute;
+    right: 0%;
+    width: 30px;
+    height: 2px;
+    background-color: var(--Border_Color);
+}
+#headermain.op #hbline1{
+    transform: translate(0px,-7px);
+    background-color: #00000000;
+    transition: all 0.3s 0s ease;
+}
+#headermain.op #hbline3{
+    transform: translate(0px,7px);
+    background-color: #00000000;
+    transition: all 0.3s 0s ease;
+}
+#headermain.op #hbline2_1{
+    transform: rotate(135deg);
+    transition: all 0.3s 0s ease;
+}
+#headermain.op #hbline2_2{
+    transform: rotate(225deg);
+    transition: all 0.3s 0s ease;
+}
+#headermain.cl #hbline1{
+    transform: translate(0px,0px);
+    transition: all 0.3s 0s ease;
+}
+#headermain.cl #hbline3{
+    transform: translate(0px,0px);
+    transition: all 0.3s 0s ease;
+}
+#headermain.cl #hbline2_1{
+    transform: rotate(0deg);
+    transition: all 0.3s 0s ease;
+}
+#headermain.cl #hbline2_2{
+    transform: rotate(0deg);
+    transition: all 0.3s 0s ease;
+}
+#hbline1{
+    top: 20%;
+    transition: all 0.3s 0s ease;
+}
+#hbline2_1{
+    top: 50%;
+    transition: all 0.3s 0s ease;
+}
+#hbline2_2{
+    top: 50%;
+    transition: all 0.3s 0s ease;
+}
+#hbline3{
+    top: 80%;
+    transition: all 0.3s 0s ease;
+}
+
+
+:root{
+    --hmenu_Width: 470px;
+    --hmenu_Border: 1px;
+}
+@media screen and (max-width:750px){
+    :root{
+        --hmenu_Width: 100vw;
+    }
+}
+
+
+/*ハンバーガーメニュー*/
+#hmenu{
+    position: fixed;
+    right: calc(var(--hmenu_Width) * -1);
+    top: 50px;
+    bottom: 0%;
+    width: calc(var(--hmenu_Width) - var(--hmenu_Border));
+    /*height: 90%;*/
+    background-color: #222222ee;
+    overflow-y: auto;
+    overflow-x: hidden;
+    border-left: solid var(--hmenu_Border) var(--Border_Color);
+    /*-ms-overflow-style:none;/* IE,Edge*/
+    /*scrollbar-width: none;/* Firefox*/
+}
+#hmenu::-webkit-scrollbar {
+    width: 8px;
+}
+#hmenu::-webkit-scrollbar-track {
+    background-color: #333333;
+}
+#hmenu::-webkit-scrollbar-thumb {
+    /*background-image: linear-gradient(180deg, #222222 0%, #999999 99%);
+    box-shadow: inset 2px 2px 5px 0 rgba(#fff, 0.5);*/
+    background-color: #555555;
+    border-radius: 100px;
+}
+#headermain.op #hmenu{
+    transform: translate(calc(var(--hmenu_Width) * -1),0px);
+    transition: transform .3s; 
+}
+#headermain.cl #hmenu{
+    transform: translate(0px,0px);
+    transition: transform .3s; 
+}

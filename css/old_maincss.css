@@ -1,0 +1,397 @@
+/*@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+Antique:wght@300&display=swap');*/
+/*@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+Antique&display=swap');*/
+@import url('https://fonts.googleapis.com/css2?family=Zen+Kaku+Gothic+New&display=swap');
+@import url('https://fonts.googleapis.com/css2?family=Noto+Serif+JP:wght@500&display=swap');
+
+/*ほぼ知識0から作り始めたせいでめちゃくちゃだよ...*/
+
+html{
+    max-width: 100%;
+    overflow-x: hidden;
+    /*box-sizing : border-box;*/
+    /*overscroll-behavior: none;*/
+}
+body{
+    font-family: "Century Gothic",Yu Gothic, Arial;
+    margin: 0px;
+    color: #dddddd;
+    background-color: #10101a;
+}
+
+p{
+    padding: 2px 0px 2px 0px;
+}
+a{
+    color: #77adff;
+}
+ul{
+    padding: 0px 0px 0px 30px;
+}
+ol{
+    padding: 0px 0px 0px 30px;
+}
+li{
+    padding: 2px 0px 4px 0px;
+}
+h1{
+    margin: 8px 16px 8px 16px;
+    font-weight: 100;
+}
+h3{
+    margin: 8px 5px 8px 5px;
+}
+p{
+    margin: 0px;
+}
+hr{
+    border: none;
+    border-top: 2px solid #ffffff;
+    margin: 9px 8px 11px 8px;
+}
+hr.clear{
+    border: none;
+    border-top: 4px solid #00000000;
+    margin: 9px 12px 11px 12px;
+}
+.none{
+    margin: 0px;
+    padding: 0px;
+    background-color: #00000000;
+    /*border: none;*/
+}
+.otimg{
+    margin-top: 2px;
+    width:100%;
+}
+.hiddenOV{
+    overflow: hidden;
+    width:100%;
+}
+.blborder{
+    border: solid 3px #000000ff;
+    transition: all 0.2s 0s ease;
+}
+.blborder:hover{
+    border: solid 3px #ffffff44;
+    transition: all 0.3s 0s ease;
+}
+.bottomborder{
+    border: none;
+    border-bottom: 1px solid #ffffff;
+}
+.Nf{
+    font-family: "Zen Kaku Gothic New",Yu Gothic, Arial;
+    /*font-family: "Zen Kaku Gothic Antique",Yu Gothic, Arial;*/
+}
+.CGf{
+    font-family: "Century Gothic",Yu Gothic, Arial;
+}
+.NS{
+    font-family: 'Noto Serif JP', serif;
+}
+.txtbox{
+    padding: 0px 0px 0px 12px;
+}
+.shadow{
+    filter: drop-shadow(2px 2px 0px #000000ff);
+}
+.bigfont{
+    font-size: 40px;
+}
+.midiumfont{
+    font-size: 20px;
+}
+.smallfont{
+    font-size: 10px;
+}
+.video{
+    width: 500px;
+}
+.youtube{
+    width: 500px;
+    height: 280px;
+}
+
+/*ヘッダー*/
+header {
+    position: fixed;
+    background-color: #111111ee;
+    top: 0%;
+    width: 100%;
+    height: 50px;
+    margin: 0px;
+    padding: 0px 0px 0px 8px;
+    border-bottom: solid 2px white ;
+    z-index:100;
+}
+header > h1
+{
+    margin: 0px;
+}
+#headertxt{
+    display:inline-block;
+    vertical-align: super;
+    color: #dddddd;
+    font-size: 30px;
+}
+
+
+.hbline{
+    position: absolute;
+    right: 0%;
+    width: 30px;
+    height: 2px;
+    background-color: white;
+}
+#headermain.op #hbline1{
+    transform: translate(0px,-7px);
+    background-color: #00000000;
+    transition: all 0.3s 0s ease;
+}
+#headermain.op #hbline3{
+    transform: translate(0px,7px);
+    background-color: #00000000;
+    transition: all 0.3s 0s ease;
+}
+#headermain.op #hbline2_1{
+    transform: rotate(135deg);
+    transition: all 0.3s 0s ease;
+}
+#headermain.op #hbline2_2{
+    transform: rotate(225deg);
+    transition: all 0.3s 0s ease;
+}
+#headermain.cl #hbline1{
+    transform: translate(0px,0px);
+    transition: all 0.3s 0s ease;
+}
+#headermain.cl #hbline3{
+    transform: translate(0px,0px);
+    transition: all 0.3s 0s ease;
+}
+#headermain.cl #hbline2_1{
+    transform: rotate(0deg);
+    transition: all 0.3s 0s ease;
+}
+#headermain.cl #hbline2_2{
+    transform: rotate(0deg);
+    transition: all 0.3s 0s ease;
+}
+#hbline1{
+    top: 20%
+}
+#hbline2_1{
+    top: 50%;
+}
+#hbline2_2{
+    top: 50%;
+}
+#hbline3{
+    top: 80%;
+}
+
+/*main*/
+main{
+    margin: 0px;
+    padding: 48px 8px 8px 8px;
+    background-color: #10101a;
+}
+main.clear{
+    margin: 0px;
+    padding: 48px 8px 8px 8px;
+    background-color: #00000000;
+}
+.contentot{
+    border: none;
+    /*border: dashed 3px white;*/
+    margin: 13px 0px 8px 0px;
+    left: 8px;
+    right: 8px;
+    height: 350px;
+    background-color: #000000ff;
+    overflow: hidden;
+}
+
+.contentimg{
+    object-fit:cover;
+    position: relative;
+    /*width: 100%;*/
+    height: 100%;
+}
+.L{
+    text-align: left;
+}
+.R{
+    text-align: right;
+}
+.C{
+    text-align: center;
+}
+.T{
+    vertical-align: top;
+}
+.F{
+    display: flex;
+}
+.contenttxt{
+    position: relative;
+    top: -100%;
+    margin: 4px;
+    font-size: 30px;
+    color: #ffffff;
+}
+.contenttxt span{
+    background-color: #00000066;
+    padding: 0px 8px 0px 8px;
+}
+.inline{
+    display:inline-block
+}
+
+
+
+
+@media screen and (max-width:375px){
+    .bigfont{
+        font-size: 20px;
+    }
+    .midiumfont{
+        font-size: 13px;
+    }
+    .smallfont{
+        font-size: 7px;
+    }
+    
+}
+/*スマートフォン(小さめ)ぐらい*/
+@media screen and (max-width:480px){
+
+    .contentot{
+        border: none;
+        /*border: dashed 3px white;*/
+        margin: 13px 0px 8px 0px;
+        left: 8px;
+        right: 8px;
+        height: 200px;
+        background-color: #000000ff;
+        overflow: hidden;
+    }
+    .bigfont{
+        font-size: 20px;
+    }
+    .midiumfont{
+        font-size: 17px;
+    }
+    .smallfont{
+        font-size: 8px;
+    }
+    .video{
+        width: 80%;
+    }
+    .youtube{
+        width: 80%;
+        height: 280px;
+    }
+
+}
+/*タブレット端末ぐらい*/
+@media screen and (min-width:700px){
+    .otimg{
+        width:560px;
+        margin: 4px;
+    }
+    .contentot{
+        border: none;
+        /*border: dashed 3px white;*/
+        margin: 13px 0px 8px 0px;
+        left: 16px;
+        right: 16px;
+        height: 400px;
+        background-color: #000000ff;
+        overflow: hidden;
+    }
+    .bigfont{
+        font-size: 50px;
+    }
+    .midiumfont{
+        font-size: 30px;
+    }
+    .smallfont{
+        font-size: 15px;
+    }
+}
+
+/*ノートパソコンぐらい*/
+@media screen and (min-width:1000px){
+    .contentot{
+        border: none;
+        /*border: dashed 3px white;*/
+        margin: 13px 0px 8px 0px;
+        left: 16px;
+        right: 16px;
+        height: 600px;
+        background-color: #000000ff;
+        overflow: hidden;
+    }
+    .contenttxt{
+        position: relative;
+        top: -100%;
+        margin: 4px;
+        font-size: 45px;
+        color: #ffffff;
+    }
+    .bigfont{
+        font-size: 65px;
+    }
+    .midiumfont{
+        font-size: 35px;
+    }
+    .smallfont{
+        font-size: 18px;
+    }
+    .video{
+        width: 600px;
+    }
+    .youtube{
+        width: 600px;
+        height: 340px;
+    }
+}
+/*デスクトップパソコンぐらい*/
+@media screen and (min-width:1440px){
+    .bigfont{
+        font-size: 90px;
+    }
+    .midiumfont{
+        font-size: 60px;
+    }
+    .smallfont{
+        font-size: 30px;
+    }
+    .video{
+        width: 800px;
+    }
+    .youtube{
+        width: 800px;
+        height: 450px;
+    }
+}
+/*4Kぐらい*/
+@media screen and (min-width:2000px){
+    .bigfont{
+        font-size: 130px;
+    }
+    .midiumfont{
+        font-size: 100px;
+    }
+    .smallfont{
+        font-size: 50px;
+    }
+    .video{
+        width: 900px;
+    }
+    .youtube{
+        width: 900px;
+        height: 500px;
+    }
+}

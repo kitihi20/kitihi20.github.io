@@ -1,0 +1,20 @@
+/*上 右 下 左?*/
+
+.otherimg{
+    background-color: black;
+    object-fit: contain;
+    aspect-ratio: 5 / 3;
+}
+.otherbutton{
+    text-align: center;
+    border: solid 1px #f0f0f0ff; 
+    margin: 12px 10% 12px 10%;
+    width: 80%;
+    font-size: 24px;
+    height: 48px;
+}
+
+.box{
+    background-color: #202020ff;
+    box-shadow: 0px 0px 16px 4px var(--ShadowColor);
+}

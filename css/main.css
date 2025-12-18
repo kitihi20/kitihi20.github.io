@@ -1,0 +1,95 @@
+body{
+    color: var(--Font_Color);
+    font-family: var(--MainFont),Yu Gothic, Arial;
+}
+
+h1{
+    font-weight: 200;
+    font-family: var(--HeadFont), sans-serif;
+}
+h2{
+    font-weight: 200;
+    font-family: var(--HeadFont), sans-serif;
+}
+h3{
+    font-weight: 200;
+    font-family: var(--HeadFont), sans-serif;
+}
+
+body::-webkit-scrollbar {
+    width: 8px;
+}
+body::-webkit-scrollbar-track {
+    background-color: var(--Scrollbar_TrackColor);
+}
+body::-webkit-scrollbar-thumb {
+    background-color: var(--Scrollbar_ThumbColor);
+    /*border-radius: 100px;*/
+}
+body::-webkit-scrollbar-thumb:hover {
+    background-color: var(--Scrollbar_ThumbHoverColor);
+}
+
+
+
+
+
+.tripleGrid{
+    display: grid;
+    position:relative;
+    grid-template-columns: 1fr 1fr;/*グリッドのサイズと分割*/
+
+    gap: 16px;
+    margin: 16px;
+}
+.doubleGrid{
+    display: grid;
+    position:relative;
+    grid-template-columns: 1fr 1fr;/*グリッドのサイズと分割*/
+
+    gap: 16px;
+    margin: 16px;
+}
+.singleGrid{
+    display: grid;
+    position:relative;
+    grid-template-columns: 1fr;/*グリッドのサイズと分割*/
+
+    gap: 16px;
+    margin: 16px;
+}
+.centerGrid
+{
+    display: grid;
+    position:relative;
+    grid-template-columns: 1fr;/*グリッドのサイズと分割*/
+    width: 90%;
+    max-width: var(--CenterBlockMaxWidth);
+    margin: auto;
+
+    gap: 16px;
+}
+.gridBox1{
+    grid-column: 1;/*何frからか*/
+}
+.gridBox2{
+    grid-column: 2;
+}
+.gridBox3{
+    grid-column: 3;
+}
+@media screen and (max-width:750px){
+    .tripleGrid{
+        grid-template-columns: 1fr;
+    }
+    .doubleGrid{
+        grid-template-columns: 1fr;
+    }
+}
+
+
+@media screen and (min-width:1280px){
+    .tripleGrid{
+        grid-template-columns: 1fr 1fr 1fr;
+    }
+}

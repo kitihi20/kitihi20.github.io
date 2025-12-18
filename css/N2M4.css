@@ -1,0 +1,27 @@
+
+:root {
+    --ShadowBlock_ShadowSize: 32px;
+    --ShadowBlock_Margin: 42px;
+    --ShadowBlock_MarginTop: 82px;
+
+    --ShadowBlock_T_ShadowSize: 8px;
+    --ShadowBlock_T_Margin: 18px;
+  }
+
+.shadow{
+    box-shadow: 0px 0px var(--ShadowBlock_ShadowSize) var(--ShadowBlock_ShadowSize) var(--ShadowColor);
+}
+
+.shadowBlock{
+background-color: var(--ShadowColor); 
+box-shadow: 0px 0px var(--ShadowBlock_ShadowSize) var(--ShadowBlock_ShadowSize) var(--ShadowColor);
+margin: var(--ShadowBlock_Margin); margin-top: var(--ShadowBlock_MarginTop);
+}
+
+.shadowBlock_Text{
+background-color: var(--ShadowColor); 
+box-shadow: 0px 0px var(--ShadowBlock_T_ShadowSize) var(--ShadowBlock_T_ShadowSize) var(--ShadowColor);
+margin: var(--ShadowBlock_T_Margin);
+}
+
+
