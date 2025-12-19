@@ -18,7 +18,27 @@
 
 }
 
+
+:root {
+        --Background_Color: rgb(12, 18, 24);
+        --Font_Color: #eeeeeeff;
+        --Scrollbar_TrackColor: #333333;
+        --Scrollbar_ThumbColor: #555555;
+        --Scrollbar_ThumbHoverColor: #888888;
+
+        --Border_Color: #eeeeeeff;
+
+        --Header_BackgroundColor: #111111ee;
+
+        --BackgroundColorGradient: #090912aa;
+    }
+    a:link { color: #1c9dd8; }
+    a:visited { color: #9649ce; }
+    a:hover { color: #4641df; }
+    a:active { color: #ff8000; }
+
 /*ダークテーマ*/
+/*
 @media (prefers-color-scheme: dark) {
     :root {
         --Background_Color: rgb(12, 18, 24);
@@ -38,8 +58,10 @@
     a:hover { color: #4641df; }
     a:active { color: #ff8000; }
 }
+*/
 
 /*ライトテーマ*/
+/*
 @media (prefers-color-scheme: light) {
     :root {
         --Background_Color: #eeeeeeee;
@@ -55,4 +77,5 @@
     a:hover { color: #0700db; }
     a:active { color: #ff8000; }
 }
+    */
 

@@ -45,7 +45,7 @@ body::-webkit-scrollbar-thumb:hover {
 .doubleGrid{
     display: grid;
     position:relative;
-    grid-template-columns: 1fr 1fr;/*グリッドのサイズと分割*/
+    grid-template-columns: 1fr;
 
     gap: 16px;
     margin: 16px;
@@ -53,7 +53,7 @@ body::-webkit-scrollbar-thumb:hover {
 .singleGrid{
     display: grid;
     position:relative;
-    grid-template-columns: 1fr;/*グリッドのサイズと分割*/
+    grid-template-columns: 1fr;
 
     gap: 16px;
     margin: 16px;
@@ -62,7 +62,7 @@ body::-webkit-scrollbar-thumb:hover {
 {
     display: grid;
     position:relative;
-    grid-template-columns: 1fr;/*グリッドのサイズと分割*/
+    grid-template-columns: 1fr;
     width: 90%;
     max-width: var(--CenterBlockMaxWidth);
     margin: auto;
@@ -87,6 +87,11 @@ body::-webkit-scrollbar-thumb:hover {
     }
 }
 
+@media screen and (min-width:1024px){
+    .doubleGrid{
+        grid-template-columns: 1fr 1fr;
+    }
+}
 
 @media screen and (min-width:1280px){
     .tripleGrid{
