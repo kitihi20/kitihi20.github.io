@@ -1,0 +1,336 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video to GIF Converter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- gif.js library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.js"></script>
+    <style>
+        .custom-shadow {
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1), 0 8px 10px -6px rgba(0, 0, 0, 0.1);
+        }
+        #video-canvas {
+            display: none;
+        }
+    </style>
+</head>
+<body class="bg-gray-50 min-h-screen text-gray-800 font-sans">
+    <div class="max-w-4xl mx-auto py-10 px-4">
+        <header class="text-center mb-10">
+            <h1 class="text-4xl font-extrabold text-indigo-600 mb-2">Video to GIF Converter</h1>
+            <p class="text-gray-500">MP4動画を自由にカスタマイズしてGIFに変換します</p>
+        </header>
+
+        <main class="bg-white rounded-2xl p-6 md:p-8 custom-shadow">
+            <!-- File Upload Section -->
+            <div id="upload-section" class="border-2 border-dashed border-gray-300 rounded-xl p-10 text-center transition-colors hover:border-indigo-400">
+                <input type="file" id="video-input" accept="video/mp4,video/quicktime" class="hidden">
+                <label for="video-input" class="cursor-pointer">
+                    <div class="flex flex-col items-center">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                        </svg>
+                        <span class="text-lg font-medium">動画ファイルを選択、またはドラッグ＆ドロップ</span>
+                        <span class="text-sm text-gray-400 mt-2">MP4形式に対応</span>
+                    </div>
+                </label>
+            </div>
+
+            <!-- Editor Section (Hidden initially) -->
+            <div id="editor-section" class="hidden space-y-8">
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-8">
+                    <!-- Preview -->
+                    <div class="space-y-4">
+                        <h3 class="text-lg font-bold">プレビュー</h3>
+                        <div class="relative rounded-lg overflow-hidden bg-black aspect-video flex items-center justify-center">
+                            <video id="video-preview" class="w-full h-full" controls></video>
+                        </div>
+                        <div id="video-info" class="text-sm text-gray-500 flex justify-between">
+                            <span>長さ: <span id="info-duration">0</span>s</span>
+                            <span>サイズ: <span id="info-res">0x0</span></span>
+                        </div>
+                    </div>
+
+                    <!-- Settings -->
+                    <div class="space-y-6">
+                        <h3 class="text-lg font-bold">設定</h3>
+                        
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">開始時間 (秒)</label>
+                                <input type="number" id="start-time" value="0" step="0.1" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-gray-700 mb-1">終了時間 (秒)</label>
+                                <input type="number" id="end-time" value="5" step="0.1" min="0" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            </div>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">フレームレート (FPS)</label>
+                            <select id="fps" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                                <option value="5">5 FPS (軽量)</option>
+                                <option value="10" selected>10 FPS (標準)</option>
+                                <option value="15">15 FPS (滑らか)</option>
+                                <option value="24">24 FPS (高品質)</option>
+                            </select>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">解像度 (横幅 px)</label>
+                            <input type="number" id="output-width" value="480" class="w-full border border-gray-300 rounded-md px-3 py-2 focus:ring-indigo-500 focus:border-indigo-500">
+                            <p class="text-xs text-gray-400 mt-1">※アスペクト比は自動で維持されます</p>
+                        </div>
+
+                        <div>
+                            <label class="block text-sm font-medium text-gray-700 mb-1">画質 (1:最高 - 20:最低)</label>
+                            <input type="range" id="quality" min="1" max="20" value="10" class="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-indigo-600">
+                            <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                <span>高品質</span>
+                                <span id="quality-val">10</span>
+                                <span>低品質</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="pt-6 border-t border-gray-100 flex flex-col items-center">
+                    <button id="convert-btn" class="bg-indigo-600 hover:bg-indigo-700 text-white font-bold py-3 px-10 rounded-full transition-all transform hover:scale-105 shadow-lg flex items-center space-x-2">
+                        <span>GIFに変換する</span>
+                    </button>
+                    
+                    <!-- Progress Bar -->
+                    <div id="progress-container" class="hidden w-full max-w-md mt-8">
+                        <div class="flex justify-between mb-1">
+                            <span id="progress-status" class="text-sm font-medium text-indigo-700">処理中...</span>
+                            <span id="progress-percent" class="text-sm font-medium text-indigo-700">0%</span>
+                        </div>
+                        <div class="w-full bg-gray-200 rounded-full h-2.5">
+                            <div id="progress-bar" class="bg-indigo-600 h-2.5 rounded-full" style="width: 0%"></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Result Section -->
+            <div id="result-section" class="hidden pt-10 border-t border-gray-100 flex flex-col items-center space-y-4">
+                <h3 class="text-xl font-bold text-green-600">変換完了！</h3>
+                <div class="rounded-lg overflow-hidden border border-gray-200 max-w-full">
+                    <img id="result-gif" class="max-w-full h-auto" alt="Generated GIF">
+                </div>
+                <a id="download-link" download="converted.gif" class="bg-green-500 hover:bg-green-600 text-white font-bold py-2 px-6 rounded-lg transition-colors inline-block">
+                    GIFを保存する
+                </a>
+                <button id="reset-btn" class="text-gray-500 hover:text-indigo-600 text-sm underline">
+                    別の動画を変換する
+                </button>
+            </div>
+        </main>
+        
+        <!-- Hidden Canvas for frame processing -->
+        <canvas id="video-canvas"></canvas>
+
+        <footer class="mt-10 text-center text-gray-400 text-sm">
+            <p>&copy; 2024 Video to GIF Studio. 全ての処理はブラウザ上で行われます。</p>
+        </footer>
+    </div>
+
+    <script>
+        const videoInput = document.getElementById('video-input');
+        const uploadSection = document.getElementById('upload-section');
+        const editorSection = document.getElementById('editor-section');
+        const resultSection = document.getElementById('result-section');
+        
+        const videoPreview = document.getElementById('video-preview');
+        const canvas = document.getElementById('video-canvas');
+        const ctx = canvas.getContext('2d', { willReadFrequently: true });
+        
+        const convertBtn = document.getElementById('convert-btn');
+        const progressContainer = document.getElementById('progress-container');
+        const progressBar = document.getElementById('progress-bar');
+        const progressPercent = document.getElementById('progress-percent');
+        const progressStatus = document.getElementById('progress-status');
+        
+        const startTimeInput = document.getElementById('start-time');
+        const endTimeInput = document.getElementById('end-time');
+        const fpsInput = document.getElementById('fps');
+        const widthInput = document.getElementById('output-width');
+        const qualityInput = document.getElementById('quality');
+        const qualityVal = document.getElementById('quality-val');
+        
+        const resultGif = document.getElementById('result-gif');
+        const downloadLink = document.getElementById('download-link');
+        const resetBtn = document.getElementById('reset-btn');
+
+        let videoFile = null;
+
+        // --- File Selection ---
+        videoInput.addEventListener('change', handleFile);
+        uploadSection.addEventListener('dragover', (e) => { e.preventDefault(); uploadSection.classList.add('border-indigo-500'); });
+        uploadSection.addEventListener('dragleave', () => uploadSection.classList.remove('border-indigo-500'));
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('border-indigo-500');
+            if (e.dataTransfer.files.length) handleFile({ target: { files: e.dataTransfer.files } });
+        });
+
+        function handleFile(e) {
+            const file = e.target.files[0];
+            if (!file || !file.type.startsWith('video/')) {
+                showToast("有効な動画ファイルを選択してください。");
+                return;
+            }
+            videoFile = file;
+            const url = URL.createObjectURL(file);
+            videoPreview.src = url;
+            
+            videoPreview.onloadedmetadata = () => {
+                document.getElementById('info-duration').textContent = videoPreview.duration.toFixed(1);
+                document.getElementById('info-res').textContent = `${videoPreview.videoWidth}x${videoPreview.videoHeight}`;
+                
+                startTimeInput.value = 0;
+                endTimeInput.value = Math.min(5, videoPreview.duration).toFixed(1);
+                endTimeInput.max = videoPreview.duration;
+                startTimeInput.max = videoPreview.duration;
+                
+                uploadSection.classList.add('hidden');
+                editorSection.classList.remove('hidden');
+                resultSection.classList.add('hidden');
+            };
+        }
+
+        qualityInput.addEventListener('input', () => {
+            qualityVal.textContent = qualityInput.value;
+        });
+
+        // --- Conversion Logic ---
+        convertBtn.addEventListener('click', async () => {
+            const start = parseFloat(startTimeInput.value);
+            const end = parseFloat(endTimeInput.value);
+            const fps = parseInt(fpsInput.value);
+            const targetWidth = parseInt(widthInput.value);
+            const quality = parseInt(qualityInput.value);
+
+            if (start >= end) {
+                showToast("終了時間は開始時間より後に設定してください。");
+                return;
+            }
+
+            // UI Feedback
+            convertBtn.disabled = true;
+            convertBtn.classList.add('opacity-50', 'cursor-not-allowed');
+            progressContainer.classList.remove('hidden');
+            resultSection.classList.add('hidden');
+            
+            const aspect = videoPreview.videoHeight / videoPreview.videoWidth;
+            const targetHeight = Math.round(targetWidth * aspect);
+            canvas.width = targetWidth;
+            canvas.height = targetHeight;
+
+            const duration = end - start;
+            const totalFrames = Math.floor(duration * fps);
+            const frameInterval = 1 / fps;
+
+            const gif = new GIF({
+                workers: 2,
+                quality: quality,
+                width: targetWidth,
+                height: targetHeight,
+                workerScript: 'https://cdnjs.cloudflare.com/ajax/libs/gif.js/0.2.0/gif.worker.js'
+            });
+
+            progressStatus.textContent = "フレームを抽出中...";
+
+            try {
+                for (let i = 0; i < totalFrames; i++) {
+                    const currentTime = start + (i * frameInterval);
+                    
+                    // Seek video to frame
+                    await seekToTime(videoPreview, currentTime);
+                    
+                    // Draw to canvas
+                    ctx.drawImage(videoPreview, 0, 0, targetWidth, targetHeight);
+                    
+                    // Add to GIF
+                    gif.addFrame(ctx, {copy: true, delay: 1000 / fps});
+                    
+                    // Update progress
+                    const percent = Math.round((i / totalFrames) * 50);
+                    updateProgress(percent);
+                }
+
+                progressStatus.textContent = "GIFをレンダリング中...";
+                
+                gif.on('progress', (p) => {
+                    const percent = 50 + Math.round(p * 50);
+                    updateProgress(percent);
+                });
+
+                gif.on('finished', (blob) => {
+                    const url = URL.createObjectURL(blob);
+                    resultGif.src = url;
+                    downloadLink.href = url;
+                    
+                    progressContainer.classList.add('hidden');
+                    resultSection.classList.remove('hidden');
+                    convertBtn.disabled = false;
+                    convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    
+                    window.scrollTo({ top: resultSection.offsetTop, behavior: 'smooth' });
+                });
+
+                gif.render();
+            } catch (err) {
+                console.error(err);
+                showToast("変換中にエラーが発生しました。");
+                resetUI();
+            }
+        });
+
+        // Helper: Seek video
+        function seekToTime(video, time) {
+            return new Promise((resolve) => {
+                const onSeeked = () => {
+                    video.removeEventListener('seeked', onSeeked);
+                    resolve();
+                };
+                video.addEventListener('seeked', onSeeked);
+                video.currentTime = time;
+            });
+        }
+
+        function updateProgress(percent) {
+            progressBar.style.width = `${percent}%`;
+            progressPercent.textContent = `${percent}%`;
+        }
+
+        function showToast(msg) {
+            // Simple replacement for alert in this environment
+            const toast = document.createElement('div');
+            toast.className = 'fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-red-600 text-white px-6 py-3 rounded-lg shadow-xl z-50 transition-opacity duration-300';
+            toast.textContent = msg;
+            document.body.appendChild(toast);
+            setTimeout(() => {
+                toast.style.opacity = '0';
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        function resetUI() {
+            convertBtn.disabled = false;
+            convertBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            progressContainer.classList.add('hidden');
+        }
+
+        resetBtn.addEventListener('click', () => {
+            editorSection.classList.add('hidden');
+            resultSection.classList.add('hidden');
+            uploadSection.classList.remove('hidden');
+            videoInput.value = '';
+        });
+
+    </script>
+</body>
+</html>

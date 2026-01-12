@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字列の組み合わせジェネレーター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Inter', 'Noto Sans JP', sans-serif;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800">
+    <div class="container mx-auto p-4 md:p-8 max-w-4xl">
+        <header class="text-center mb-8">
+            <h1 class="text-3xl md:text-4xl font-bold text-gray-900">文字列の組み合わせジェネレーター</h1>
+            <p class="mt-2 text-gray-600">2つのリストに入力された文字列の全ての組み合わせを作成します。</p>
+        </header>
+
+        <main class="bg-white p-6 rounded-xl shadow-md">
+            <!-- 入力セクション -->
+            <div class="grid md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label for="list1" class="block text-sm font-medium text-gray-700 mb-2">リスト 1 (1行に1つ入力)</label>
+                    <textarea id="list1" rows="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="例:&#10;東京&#10;大阪&#10;名古屋"></textarea>
+                </div>
+                <div>
+                    <label for="list2" class="block text-sm font-medium text-gray-700 mb-2">リスト 2 (1行に1つ入力)</label>
+                    <textarea id="list2" rows="8" class="w-full p-3 border border-gray-300 rounded-lg focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 transition" placeholder="例:&#10;ラーメン&#10;うどん&#10;寿司"></textarea>
+                </div>
+            </div>
+
+            <!-- オプション -->
+            <div class="flex items-center justify-center mb-4">
+                <input id="randomizeCheckbox" type="checkbox" class="h-4 w-4 text-indigo-600 focus:ring-indigo-500 border-gray-300 rounded">
+                <label for="randomizeCheckbox" class="ml-2 block text-sm font-medium text-gray-900">
+                    ランダムな順番にする
+                </label>
+            </div>
+
+            <!-- 操作ボタン -->
+            <div class="text-center mb-8">
+                <button id="generateBtn" class="bg-indigo-600 text-white font-bold py-3 px-8 rounded-lg hover:bg-indigo-700 focus:outline-none focus:ring-4 focus:ring-indigo-300 transition-transform transform hover:scale-105">
+                    組み合わせを生成
+                </button>
+            </div>
+
+            <!-- 結果表示セクション -->
+            <div>
+                <h2 class="text-2xl font-semibold text-gray-800 border-b pb-2 mb-4">生成結果</h2>
+                <div id="result" class="bg-gray-50 p-4 rounded-lg min-h-[100px] text-gray-700 whitespace-pre-wrap">
+                    <p class="text-gray-500">ここに組み合わせが表示されます...</p>
+                </div>
+                 <div class="text-right mt-4">
+                    <button id="copyBtn" class="bg-gray-500 text-white font-semibold py-2 px-4 rounded-lg hover:bg-gray-600 focus:outline-none focus:ring-4 focus:ring-gray-300 transition hidden">
+                        結果をコピー
+                    </button>
+                    <span id="copyMessage" class="text-sm text-green-600 ml-2"></span>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <script>
+        const generateBtn = document.getElementById('generateBtn');
+        const resultDiv = document.getElementById('result');
+        const list1Textarea = document.getElementById('list1');
+        const list2Textarea = document.getElementById('list2');
+        const randomizeCheckbox = document.getElementById('randomizeCheckbox');
+        const copyBtn = document.getElementById('copyBtn');
+        const copyMessage = document.getElementById('copyMessage');
+
+        generateBtn.addEventListener('click', () => {
+            // 1. テキストエリアから値を取得し、配列に変換する
+            const list1 = list1Textarea.value.split('\n').map(item => item.trim()).filter(item => item !== '');
+            const list2 = list2Textarea.value.split('\n').map(item => item.trim()).filter(item => item !== '');
+
+            // 入力チェック
+            if (list1.length === 0 || list2.length === 0) {
+                resultDiv.innerHTML = '<p class="text-red-500">両方のリストに少なくとも1つずつ項目を入力してください。</p>';
+                copyBtn.classList.add('hidden');
+                return;
+            }
+
+            // 2. 組み合わせを生成する
+            const combinations = [];
+            for (const item1 of list1) {
+                for (const item2 of list2) {
+                    combinations.push(`${item1} ${item2}`);
+                }
+            }
+
+            // 2.5. チェックボックスがオンなら、配列をシャッフルする (Fisher-Yates algorithm)
+            if (randomizeCheckbox.checked) {
+                for (let i = combinations.length - 1; i > 0; i--) {
+                    const j = Math.floor(Math.random() * (i + 1));
+                    [combinations[i], combinations[j]] = [combinations[j], combinations[i]];
+                }
+            }
+
+            // 3. 結果を表示する
+            resultDiv.textContent = combinations.join('\n');
+            
+            // コピーボタンを表示
+            if(combinations.length > 0) {
+                copyBtn.classList.remove('hidden');
+                copyMessage.textContent = '';
+            } else {
+                copyBtn.classList.add('hidden');
+            }
+        });
+
+        copyBtn.addEventListener('click', () => {
+            const textToCopy = resultDiv.textContent;
+            
+            const textAreaForCopy = document.createElement('textarea');
+            textAreaForCopy.value = textToCopy;
+            // スタイルを付けて画面外に配置する
+            textAreaForCopy.style.position = 'fixed';
+            textAreaForCopy.style.top = '-9999px';
+            textAreaForCopy.style.left = '-9999px';
+
+            document.body.appendChild(textAreaForCopy);
+            textAreaForCopy.select();
+            
+            try {
+                document.execCommand('copy');
+                copyMessage.textContent = 'コピーしました！';
+                setTimeout(() => { copyMessage.textContent = ''; }, 2000);
+            } catch (err) {
+                copyMessage.textContent = 'コピーに失敗しました。';
+                console.error('コピーに失敗:', err);
+            }
+            
+            document.body.removeChild(textAreaForCopy);
+        });
+    </script>
+</body>
+</html>

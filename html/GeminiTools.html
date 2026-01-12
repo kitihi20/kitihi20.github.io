@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html lang="ja" standardized-themed-scrollbar style="height: 100%;">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>kitihi20_works</title>
+    <link rel="stylesheet" type="text/css" href="/css/variables.css">
+    <link rel="stylesheet" type="text/css" href="/css/header.css">
+    <link rel="stylesheet" type="text/css" href="/css/main.css">
+    <link rel="stylesheet" type="text/css" href="/css/other.css">
+    <link rel="shortcut icon" href="/images/Favicon/AS-MadeIconProt.ico">
+  </head>
+
+  <body id="body" style="margin: 0px; height: 100%;">
+
+
+    <!--ヘッダー配置用-->
+    <header id="headermain"></header>
+
+    <!--背景-->
+    <img src="/images/Other/AnomalyCorrector_background.jpg" 
+        height="100%" style="object-fit: cover; position: fixed; width: 100%; z-index: -10;">
+    
+    <!--ヘッダーのスペース分あける用-->
+    <div style="width: 100%; height: 50px;"></div>
+
+    <!--タイトル-->
+    <div style="height: 300px; width: 100%; overflow: hidden; position: relative;">
+        <img style="object-fit: cover; position: absolute; 
+            height: 100%; width: 110%;" 
+            src="/images/Other/LD_Photo.jpg">
+
+        <div style="object-fit: cover; position: absolute; padding: 0px;
+            top: 50%; right: 32px; transform: translate(0%,-50%);
+            font-size: 24px; text-align: right;">
+            <h1 style="padding: 0px; margin: 0px;">Gemini Tools</h1>
+            <h3 style="padding: 0px; margin: 0px;">痒い所に手が届くGemini製ツール</h3>
+            <div class ="titleShadow"></div>
+        </div>
+    </div>
+
+    <!--タイトル下の影-->
+    <div style="width: 100%; height: 400px; 
+        position: absolute;
+        border-top: solid 1px #f0f0f0ff;
+        background-image: linear-gradient(0deg, 
+        transparent, 
+        transparent 80%, 
+        var(--BackgroundColorGradient));
+        pointer-events: none;">
+    </div>
+
+
+    <div class="tripleGrid" style="text-align: center;">
+
+        <div class="box">
+            <h2>Video to GIF Converter</h2>
+            <p>MP4からGIFに変換する<br>
+                切り取り時間、フレームレート、画質等も設定できる
+            </p>
+            <a href="/html/GeminiTools/Video2GifConverter.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Video Frame Extractor</h2>
+            <p>MP4の指定タイミングをPNGで出力する<br>
+                Windows純正ソフトで切り取れない時に
+            </p>
+            <a href="/html/GeminiTools/VideoFrameExtractor.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Color to Alpha</h2>
+            <p>背景透過ツール1<br>
+                指定色から閾値までを良い感じに透過する
+            </p>
+            <a href="/html/GeminiTools/ColorToAlpha.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Cut the Color</h2>
+            <p>背景透過ツール2<br>
+                指定色周辺を透過する、所謂バケツツール
+            </p>
+            <a href="/html/GeminiTools/CutColor.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>String Combination Generator</h2>
+            <p>2つの文字列リストの組み合わせ一覧を作成<br>
+                ルーレットにもどうぞ
+            </p>
+            <a href="/html/GeminiTools/StringCombinationGenerator.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+
+    </div>
+
+    <br>
+
+  </body>
+
+  <script src="/js/hamburger.js"></script>
+
+</html>

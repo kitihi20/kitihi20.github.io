@@ -14,27 +14,33 @@
 
   <body id="body" style="margin: 0px; height: 100%;">
 
-    <!--
-    <iframe src="/hamburger.html" scrolling="no" frameborder="0" style="position: fixed; z-index: 100; width: calc(100vw - 8px); height: 100vh;"></iframe>
-    -->
-<!--
-    <span id="hamburger" style="position: fixed; z-index: 100; width: calc(100vw - 8px); height: 100vh;"></span>
--->
+
+    <!--ヘッダー配置用-->
     <header id="headermain"></header>
 
-
-
+    <!--背景-->
     <img src="/images/Other/AnomalyCorrector_background.jpg" 
       height="100%" style="object-fit: cover; position: fixed; width: 100%; z-index: -10;">
     
+    <!--ヘッダーのスペース分あける用-->
+    <div style="width: 100%; height: 50px;"></div>
 
-    <div style="height: 300px; width: 100%; overflow: hidden;">
-      
-      <img src="/images/Other/ShaderTest.jpg" 
-      height="100%" style="object-fit: cover; width: 100%;">
-    
+    <!--タイトル-->
+    <div style="height: 300px; width: 100%; overflow: hidden; position: relative;">
+      <img style="object-fit: cover; position: absolute; 
+      height: 100%; width: 110%;" 
+      src="/images/Other/ShaderTest.jpg">
+
+      <div style="object-fit: cover; position: absolute; padding: 0px;
+      top: 50%; right: 32px; transform: translate(0%,-50%);
+      font-size: 24px; text-align: right;">
+      <h1 style="padding: 0px; margin: 0px;">その他</h1>
+      <h3 style="padding: 0px; margin: 0px;">細かい作品<a href="/html/GeminiTools.html" class="hiddenlink">等</a></h3>
+      <div class ="titleShadow"></div>
+      </div>
     </div>
 
+    <!--タイトル下の影-->
     <div style="width: 100%; height: 400px; 
       position: absolute;
       border-top: solid 1px #f0f0f0ff;
@@ -42,18 +48,9 @@
       transparent, 
       transparent 80%, 
       var(--BackgroundColorGradient));
-      pointer-events: none;"></div>
-
-    <div style="position:absolute; top: 140px; left: 0px; right: 24px;
-    height: 100%; text-align: right; font-size: 24px;">
-      <h1>その他&nbsp;&nbsp;&nbsp;</h1>
-    </div>
-    <div style="position:absolute; top: 180px; left: 0px; right: 24px;
-    height: 100px; text-align: right; font-size: 24px;">
-      <h3>細かい作品&nbsp;&nbsp;&nbsp;&nbsp;<br></h3>
+      pointer-events: none;">
     </div>
 
-    <!--<p id="debug" style="position: fixed; top: 0px; z-index: 101; color: gray;">debug: 12345</p>-->
 
       <div class="tripleGrid" style="text-align: center;">
 
