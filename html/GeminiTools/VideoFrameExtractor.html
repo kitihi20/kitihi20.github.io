@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Video Frame Extractor</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        .drop-zone {
+            border: 2px dashed #cbd5e1;
+            transition: all 0.3s ease;
+        }
+        .drop-zone.dragover {
+            border-color: #3b82f6;
+            background-color: #eff6ff;
+        }
+    </style>
+</head>
+<body class="bg-slate-50 min-h-screen text-slate-800 font-sans">
+
+    <div class="max-w-4xl mx-auto py-10 px-4">
+        <header class="mb-10 text-center">
+            <h1 class="text-3xl font-bold text-slate-900 mb-2">Video Frame Extractor</h1>
+            <p class="text-slate-600">動画の指定した瞬間を、最高画質のPNG画像として書き出します。</p>
+        </header>
+
+        <!-- Upload Section -->
+        <div id="upload-container" class="mb-8">
+            <div id="drop-zone" class="drop-zone rounded-xl p-12 text-center cursor-pointer bg-white shadow-sm">
+                <input type="file" id="file-input" accept="video/mp4,video/x-m4v,video/*" class="hidden">
+                <div class="flex flex-col items-center">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-slate-400 mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p class="text-lg font-medium">MP4動画を選択、またはドラッグ＆ドロップ</p>
+                    <p class="text-sm text-slate-500 mt-1">動画データは外部に送信されません</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Editor Section (Hidden by default) -->
+        <div id="editor-container" class="hidden space-y-6">
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <div class="relative bg-black rounded-lg overflow-hidden flex justify-center items-center mb-4 min-h-[300px]">
+                    <video id="video-preview" class="max-w-full max-h-[600px]"></video>
+                </div>
+
+                <div class="space-y-4">
+                    <!-- Progress Slider -->
+                    <div>
+                        <input type="range" id="time-slider" class="w-full h-2 bg-slate-200 rounded-lg appearance-none cursor-pointer accent-blue-600" step="0.001" value="0">
+                        <div class="flex justify-between text-xs text-slate-500 mt-1 font-mono">
+                            <span id="current-time-display">00:00.000</span>
+                            <span id="duration-display">00:00.000</span>
+                        </div>
+                    </div>
+
+                    <!-- Fine Tuning Controls -->
+                    <div class="flex flex-wrap items-center gap-4 justify-between bg-slate-50 p-4 rounded-lg">
+                        <div class="flex items-center gap-2">
+                            <button id="prev-frame" class="p-2 hover:bg-slate-200 rounded transition" title="1フレーム戻る">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7" /></svg>
+                            </button>
+                            <span class="text-sm font-medium">コマ送り</span>
+                            <button id="next-frame" class="p-2 hover:bg-slate-200 rounded transition" title="1フレーム進む">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" /></svg>
+                            </button>
+                        </div>
+
+                        <div class="flex gap-2">
+                            <button id="capture-btn" class="bg-blue-600 hover:bg-blue-700 text-white px-6 py-2 rounded-lg font-semibold transition flex items-center gap-2">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z" /><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z" /></svg>
+                                現在のフレームをキャプチャ
+                            </button>
+                            <button id="reset-btn" class="text-slate-500 hover:text-slate-700 px-4 py-2 transition text-sm">別の動画を選択</button>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Result Section (Hidden by default) -->
+        <div id="result-container" class="hidden mt-10 space-y-4">
+            <h3 class="text-xl font-bold text-slate-900">プレビュー・保存</h3>
+            <div class="bg-white p-6 rounded-xl shadow-md">
+                <div id="image-result-wrapper" class="border-2 border-slate-100 rounded-lg overflow-hidden mb-4">
+                    <!-- Captured image will be injected here -->
+                </div>
+                <div class="flex justify-between items-center">
+                    <div>
+                        <p id="image-info" class="text-sm text-slate-600"></p>
+                    </div>
+                    <button id="download-btn" class="bg-emerald-600 hover:bg-emerald-700 text-white px-8 py-3 rounded-lg font-bold shadow-lg transition flex items-center gap-2">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" /></svg>
+                        PNGとして保存
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <canvas id="hidden-canvas" class="hidden"></canvas>
+    </div>
+
+    <script>
+        const fileInput = document.getElementById('file-input');
+        const dropZone = document.getElementById('drop-zone');
+        const uploadContainer = document.getElementById('upload-container');
+        const editorContainer = document.getElementById('editor-container');
+        const resultContainer = document.getElementById('result-container');
+        const video = document.getElementById('video-preview');
+        const canvas = document.getElementById('hidden-canvas');
+        const timeSlider = document.getElementById('time-slider');
+        const currentTimeDisplay = document.getElementById('current-time-display');
+        const durationDisplay = document.getElementById('duration-display');
+        const captureBtn = document.getElementById('capture-btn');
+        const downloadBtn = document.getElementById('download-btn');
+        const imageResultWrapper = document.getElementById('image-result-wrapper');
+        const imageInfo = document.getElementById('image-info');
+        const nextFrameBtn = document.getElementById('next-frame');
+        const prevFrameBtn = document.getElementById('prev-frame');
+        const resetBtn = document.getElementById('reset-btn');
+
+        let videoUrl = null;
+        let capturedDataUrl = null;
+        const FRAME_TIME = 1 / 30; // およその1フレームの時間 (秒)
+
+        // --- File Handling ---
+
+        function handleFile(file) {
+            if (!file || !file.type.startsWith('video/')) {
+                alert('有効な動画ファイルを選択してください。');
+                return;
+            }
+
+            if (videoUrl) URL.revokeObjectURL(videoUrl);
+            videoUrl = URL.createObjectURL(file);
+            video.src = videoUrl;
+
+            uploadContainer.classList.add('hidden');
+            editorContainer.classList.remove('hidden');
+            resultContainer.classList.add('hidden');
+        }
+
+        dropZone.addEventListener('click', () => fileInput.click());
+        
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('dragover');
+        });
+
+        dropZone.addEventListener('dragleave', () => {
+            dropZone.classList.remove('dragover');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFile(e.dataTransfer.files[0]);
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            handleFile(e.target.files[0]);
+        });
+
+        resetBtn.addEventListener('click', () => {
+            editorContainer.classList.add('hidden');
+            resultContainer.classList.add('hidden');
+            uploadContainer.classList.remove('hidden');
+            video.pause();
+            video.src = "";
+            fileInput.value = "";
+        });
+
+        // --- Video Controls ---
+
+        function formatTime(seconds) {
+            const h = Math.floor(seconds / 3600);
+            const m = Math.floor((seconds % 3600) / 60);
+            const s = Math.floor(seconds % 60);
+            const ms = Math.floor((seconds % 1) * 1000);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(3, '0')}`;
+        }
+
+        video.addEventListener('loadedmetadata', () => {
+            timeSlider.max = video.duration;
+            durationDisplay.textContent = formatTime(video.duration);
+            timeSlider.value = 0;
+            updateTimeDisplay();
+        });
+
+        function updateTimeDisplay() {
+            currentTimeDisplay.textContent = formatTime(video.currentTime);
+        }
+
+        timeSlider.addEventListener('input', () => {
+            video.currentTime = timeSlider.value;
+            updateTimeDisplay();
+        });
+
+        video.addEventListener('seeked', () => {
+            updateTimeDisplay();
+        });
+
+        nextFrameBtn.addEventListener('click', () => {
+            video.currentTime = Math.min(video.duration, video.currentTime + FRAME_TIME);
+            timeSlider.value = video.currentTime;
+        });
+
+        prevFrameBtn.addEventListener('click', () => {
+            video.currentTime = Math.max(0, video.currentTime - FRAME_TIME);
+            timeSlider.value = video.currentTime;
+        });
+
+        // --- Capture & Processing ---
+
+        captureBtn.addEventListener('click', () => {
+            // キャプチャ用に動画と同じサイズのキャンバスを作成
+            canvas.width = video.videoWidth;
+            canvas.height = video.videoHeight;
+
+            const ctx = canvas.getContext('2d');
+            ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+            // PNGとしてデータ取得
+            capturedDataUrl = canvas.toDataURL('image/png');
+
+            // プレビューの表示
+            imageResultWrapper.innerHTML = '';
+            const img = new Image();
+            img.src = capturedDataUrl;
+            img.className = "w-full h-auto";
+            imageResultWrapper.appendChild(img);
+
+            imageInfo.textContent = `サイズ: ${canvas.width} x ${canvas.height} px`;
+            
+            resultContainer.classList.remove('hidden');
+            resultContainer.scrollIntoView({ behavior: 'smooth' });
+        });
+
+        downloadBtn.addEventListener('click', () => {
+            if (!capturedDataUrl) return;
+
+            const timestamp = video.currentTime.toFixed(3).replace('.', '-');
+            const fileName = `frame_${timestamp}.png`;
+
+            const link = document.createElement('a');
+            link.href = capturedDataUrl;
+            link.download = fileName;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        });
+
+    </script>
+</body>
+</html>

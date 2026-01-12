@@ -14,27 +14,32 @@
 
   <body id="body" style="margin: 0px; height: 100%;">
 
-    <!--
-    <iframe src="/hamburger.html" scrolling="no" frameborder="0" style="position: fixed; z-index: 100; width: calc(100vw - 8px); height: 100vh;"></iframe>
-    -->
-<!--
-    <span id="hamburger" style="position: fixed; z-index: 100; width: calc(100vw - 8px); height: 100vh;"></span>
--->
+    <!--ヘッダー配置用-->
     <header id="headermain"></header>
 
-
-
+    <!--背景-->
     <img src="/images/Other/AnomalyCorrector_background.jpg" 
       height="100%" style="object-fit: cover; position: fixed; width: 100%; z-index: -10;">
     
+    <!--ヘッダーのスペース分あける用-->
+    <div style="width: 100%; height: 50px;"></div>
 
-    <div style="height: 300px; width: 100%; overflow: hidden;">
-      
-      <img src="/images/Other/CW_t.jpg" 
-      height="100%" style="object-fit: cover; width: 100%;">
-    
+    <!--タイトル-->
+    <div style="height: 300px; width: 100%; overflow: hidden; position: relative;">
+      <img style="object-fit: cover; position: absolute; 
+      height: 100%; width: 110%;" 
+      src="/images/Other/worksImage4.webp">
+
+      <div style="object-fit: cover; position: absolute; padding: 0px;
+      top: 50%; left: 24px; transform: translate(0%,-50%);
+      font-size: 24px; text-align: left;">
+      <h1 style="padding: 0px; margin: 0px;">作品一覧</h1>
+      <h3 style="padding: 0px; margin: 0px;">どこかで公開した作品の一覧</h3>
+      <div class ="titleShadow"></div>
+      </div>
     </div>
 
+    <!--タイトル下の影-->
     <div style="width: 100%; height: 400px; 
       position: absolute;
       border-top: solid 1px #f0f0f0ff;
@@ -42,384 +47,512 @@
       transparent, 
       transparent 80%, 
       var(--BackgroundColorGradient));
-      pointer-events: none;"></div>
-
-    <div style="position:absolute; top: 140px; left: 24px; right: 0px;
-    height: 100px; text-align: left; font-size: 24px;">
-      <h1>作品一覧</h1>
-    </div>
-    <div style="position:absolute; top: 180px; left: 24px; right: 0px;
-    height: 100px; text-align: left; font-size: 24px;">
-      <h3>どこかで公開した作品の一覧<br></h3>
+      pointer-events: none;">
     </div>
 
-    <!--<p id="debug" style="position: fixed; top: 0px; z-index: 101; color: gray;">debug: 12345</p>-->
+    <!--メイン-->
+    <div class="tripleGrid" style="text-align: center;">
 
-      <div class="tripleGrid" style="text-align: center;">
-
-
-        <div class="box">
-            <h2>雲</h2>
-          <img src="/images/Other/ASVolumetricCloud.webp" width="98%" class="otherimg">
-          <p>Shader等<br>
-            2025年12月 個人製作
-          </p>
-          <p>UnityのURPで利用できるVolumetric Cloud<br>
-            RenderGraphを利用し、容易に組み込める</p>
-          <a href="https://unityroom.com/games/as_clouds" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>No Name Mech</h2>
-          <img src="/images/N2M4/NoNameMech_5.jpg" width="98%" class="otherimg">
-          <p>3Dロボットアクションゲーム<br>
-            2025年 個人製作
-          </p>
-          <p>これは名もなき機体の戦闘テスト<br>
-            シミュレーターを跳び回り、仮想空間の脅威を突破する</p>
-          <a href="/html/N2M4.html">
-            <button class="otherbutton">
-            専用ページ
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>SVGF_StereoRendering</h2>
-          <img src="/images/Other/SVGF_StereoRendering.png" width="98%" class="otherimg">
-          <p>Shader<br>
-            2025年5月 個人製作
-          </p>
-          <p>SVGF作品を改造、ステレオレンダリングに (青が左画像を使いまわしている場所)<br>
-            High Performance Graphics 2025、Student Competition 2位</p>
-          <a href="https://www.shadertoy.com/view/WcGGW1" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Link
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>Lack_of_Reality_Type-b</h2>
-          <img src="/images/Other/LoRTb/LoRTb_3.jpg" width="98%" class="otherimg">
-          <p>3DFPSゲーム<br>
-            2025年4月 個人製作
-          </p>
-          <p>サークル向けFPSゲームのサンプルとその発展版<br>
-            ゲームっぽく見せるサンプルとして</p>
-          <a href="https://unityroom.com/games/as_lor_tb" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>川流神社からの脱出</h2>
-          <img src="/images/Other/Escape/EscapeFromKawaru/EscapeFromKawaru_1.jpg" width="98%" class="otherimg">
-          <p>3D脱出ゲーム<br>
-            2024年3月 チーム製作 シナリオと絵以外を担当
-          </p>
-          <p>「ここどこーーーっ！」少女の叫び声が響き渡った。<br>
-            神社に閉じ込められた少女の脱出劇</p>
-          <a href="https://unityroom.com/games/as_roomofkawarushrine" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>GatheringPlace</h2>
-          <img src="/images/Other/GatheringPlace.jpg" width="98%" class="otherimg">
-          <p>Cluster用3D環境<br>
-            2024年1月 個人製作
-          </p>
-          <p>サークル向けに集まれる場所を作ろうとした<br>
-            ファイルサイズの減少とShaderのInstance化を重視</p>
-          <a href="https://cluster.mu/w/d00e2d0d-6288-47f1-83ee-ca6edd8ad24d" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Link
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>IGC²15秒あほげ集基盤システム</h2>
-          <img src="/images/Other/AHG_System.jpg" width="98%" class="otherimg">
-          <p>2Dミニゲーム集基盤システム<br>
-            2023年 個人製作?
-          </p>
-          <p>IGC²のサークル員によって作られたミニゲーム集...の基盤システム<br>
-            ゲームを作ったことが無い人でも作れる仕組みを作成</p>
-          <a href="https://unityroom.com/games/igc2_15secfungames" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>Subthreshold object: Diviner's Gauntlet</h2>
-          <img src="/images/Other/Subthreshold_object/HWGame_ChargeAttack.jpg" width="98%" class="otherimg">
-          <p>VRハンドトラッキングアクションゲーム<br>
-            2023年11月 個人製作
-          </p>
-          <p>未知の世界、未知の操作<br>
-            実験のオマケ用に作ったゲーム</p>
-          
-        </div>
-
-        <div class="box">
-            <h2>VOIDLASE</h2>
-          <img src="/images/Voidlase/VOIDLASE_Play1.jpg" width="98%" class="otherimg">
-          <p>2Dレーザーアクションゲーム<br>
-            2023年 チーム製作 実装を担当
-          </p>
-          <p>闇にのまれた地下世界を駆け巡る!<br>
-            レーザーを駆使する2Dアクション!</p>
-          <a href="/html/Voidlase.html">
-            <button class="otherbutton">
-            専用ページ
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>文字の間からの脱出</h2>
-          <img src="/images/Other/Escape/RoomOfINIMUEL/RoomOfINIMUEL_Play1.jpg" width="98%" class="otherimg">
-          <p>3D脱出ゲーム<br>
-            2023年3月 チーム製作 シナリオ以外を担当
-          </p>
-          <p>遺物のパズルを解いて脱出を目指すパズル×脱出ゲーム！!</p>
-          <a href="https://unityroom.com/games/as_roomofiemel" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>RE:鯵の素〜Aji Fry Factory〜</h2>
-          <img src="/images/Other/AjiNoMoto.jpg" width="98%" class="otherimg">
-          <p>2.5Dカジュアルゲーム<br>
-            2022年12月 個人製作 (前作はチーム制作)
-          </p>
-          <p>アジを開きまくって、アジフライを大量生産!<br>
-            過去に複数人で制作した作品のリメイク</p>
-          <a href="https://unityroom.com/games/ass_re_ajifryfactory" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>Anomaly Corrector</h2>
-          <img src="/images/Other/AnomalyCorrector_2.jpg" width="98%" class="otherimg">
-          <p>3D間違い探しゲーム<br>
-            2022年9月 チーム製作 シナリオ以外を担当
-          </p>
-          <p>『部屋の監視と報告』と題された高額なバイトにあなたが応募すると、それは異変を見つけて報告する仕事だった</p>
-          <a href="https://unityroom.com/games/as_anomalycorrector_tameru" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>欠けた世界、駆ける</h2>
-          <img src="/images/Other/CW_s.jpg" width="98%" class="otherimg">
-          <p>Cluster用3D環境<br>
-            2022年3月 個人製作
-          </p>
-          <p>無機質な奇妙な世界を駆け抜けるワールド<br>
-            ClusterGAMEJAM 2022 in SPRING アスレチック部門入賞</p>
-          <a href="https://cluster.mu/w/ce504fcf-46f5-4567-bdcb-4d56ac6f6617" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Link
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>正月の間からの脱出</h2>
-          <img src="/images/Other/Escape/Escape_Shou.jpg" width="98%" class="otherimg">
-          <p>3D脱出ゲーム<br>
-            2021年12月 チーム製作 シナリオ以外を担当
-          </p>
-          <p>実家に帰省したら、ファンキーな幽霊に絡まれてしまった！<br>
-            この盆と正月が一緒に来たような状況から脱出しよう！
-            </p>
-          <a href="https://unityroom.com/games/as_roomofshogatu" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>NoNameMech v2</h2>
-          <img src="/images/Other/N2M2_background.jpg" width="98%" class="otherimg">
-          <p>3Dロボットアクションゲーム<br>
-            2021年12月 個人製作
-          </p>
-          <p>大量のパーツを繋げてアセンブル<br>大量の多色パーツを軽量に描画できるようにしている</p>
-          <a href="https://unityroom.com/games/as_archive_nonamemech2" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>INIAD GAME SHOW 2021 展示会場</h2>
-          <img src="/images/Other/INIADGameShow2021.jpg" width="98%" class="otherimg">
-          <p>Cluster用3D環境<br>
-            2021年10月 個人製作?
-          </p>
-          <p>所属サークルの作品を展示した、どこか不思議な美術館<br>
-            Stencil maskを用いた表現に挑戦</p>
-          <a href="https://cluster.mu/w/9de29f39-4b90-4317-b3eb-4311946bd8c1" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Link
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>大体INIAD</h2>
-          <img src="/images/Other/SomethingINIAD.jpg" width="98%" class="otherimg">
-          <p>Cluster用3D環境<br>
-            2021年10月 個人製作
-          </p>
-          <p>大学をそれとなく再現したもの</p>
-          <a href="https://cluster.mu/w/7407bf42-499d-45ad-96c7-9b9ebc329818" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Link
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>雨の振る箱庭</h2>
-          <img src="/images/Other/RainMiniatureGarden/RainyGarden.jpg" width="98%" class="otherimg">
-          <p>Cluster用3D環境<br>
-            2021年10月 個人製作
-          </p>
-          <p>雨が降っている環境<br>バーチャルホーム的なものを作ろうとした名残</p>
-          <a href="https://cluster.mu/w/d3b21e71-a071-468a-904c-f975dc0001ca" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Link
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>ちゅうの間からの脱出</h2>
-          <img src="/images/Other/Escape/Escape_chuu.jpg" width="98%" class="otherimg">
-          <p>3D脱出ゲーム<br>
-            2021年9月 チーム製作 シナリオ以外を担当
-          </p>
-          <p>大富豪にしてミステリーマニアの遠縁の親類から相続した"ちゅうの間"。<br>
-            入ってみたはいいものの出れなくなってしまった!
-            </p>
-          <a href="https://unityroom.com/games/as_roomofchu" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>NoNameMech v1</h2>
-          <img src="/images/Other/N2M1_background.jpg" width="98%" class="otherimg">
-          <p>3Dロボットアクションゲーム<br>
-            2021年3月 個人製作
-          </p>
-          <p>シンプルなロボットアクションゲーム<br>大量の敵の管理の最適化を行った</p>
-          <a href="https://unityroom.com/games/as_archive_nonamemech1" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>GridLab</h2>
-          <img src="/images/Other/GridLab_2.jpg" width="98%" class="otherimg">
-          <p>3DFPSゲーム<br>
-            2020年9月 チーム製作 実装等を担当
-          </p>
-          <p>U22プログラミング・コンテスト向けに作成したゲーム<br>ゲーム内で某〇リオメーカーのようにステージを作れる</p>
-        </div>
-
-        <div class="box">
-            <h2>セイビングパル</h2>
-          <img src="/images/Other/SavingPal_2.jpg" width="98%" class="otherimg">
-          <p>3DRPGアクションゲーム<br>
-            2019年8月 チーム製作 実装等を担当
-          </p>
-          <p>Unityインターハイ2019向けに作成したゲーム<br>入賞した</p>
-        </div>
-
-        <div class="box">
-            <h2>LunarDefender</h2>
-          <img src="/images/Other/LunarDefender2/LunarDefender2_7.jpg" width="98%" class="otherimg">
-          <p>3Dロボットアクションゲーム<br>
-            2019年4月 個人製作
-          </p>
-          <p>はじめて作ったロボットアクションゲーム<br>
-            この頃から3Dモデルを自作し、アセンブルもできようにしていた。
-          </p>
-        </div>
-
-        <div class="box">
-            <h2>Shine Dive</h2>
-          <img src="/images/Other/ShineDive.jpg" width="98%" class="otherimg">
-          <p>3Dフライトゲーム<br>
-            2018年10月 個人製作
-          </p>
-          <p>宙に浮かんだ輪を潜る(触れる)ゲーム<br>
-        不思議なことにカメラ等の演出の例として今でも役に立っている</p>
-          <a href="https://unityroom.com/games/flighttest_shinedive" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
-        <div class="box">
-            <h2>LunarDefender</h2>
-          <img src="/images/Other/LunarDefender1/LunarDefender1_10.jpg" width="98%" class="otherimg">
-          <p>3DFPSゲーム<br>
-            2018年4月 個人製作
-          </p>
-          <p>月面で機械の敵から基地を守るFPSゲーム<br>ミッションをクリアして素材を集め、新たな銃を作ることができる</p>
-        </div>
-
-        <div class="box">
-            <h2>MyCraft</h2>
-          <img src="/images/Other/MyCraft.jpg" width="98%" class="otherimg">
-          <p>3D建築ゲーム<br>
-            2017年8月 個人製作
-          </p>
-          <p>某M○neCraft風のゲーム</p>
-          <a href="https://unityroom.com/games/asra_dreamer_mycraft1" target="_blank" rel="noopener noreferrer">
-            <button class="otherbutton">
-            Play
-            </button>
-          </a>
-        </div>
-
+      <div class="box">
+          <h2>雲</h2>
+        <img src="/images/Other/ASVolumetricCloud.webp" width="98%" class="otherimg">
+        <!--
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
+          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
+        </p>
+      -->
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>
+          Shader等<br>
+          2025年12月
+        </p>
+        <p>UnityのURPで利用できるVolumetric Cloud<br>
+          RenderGraphを利用し、容易に組み込める</p>
+        <a href="https://unityroom.com/games/as_clouds" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
       </div>
 
-      <br>
+      <div class="box">
+          <h2>No Name Mech</h2>
+        <img src="/images/N2M4/NoNameMech_5.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>3Dロボットアクションゲーム<br>
+          2025年
+        </p>
+        <p>これは名もなき機体の戦闘テスト<br>
+          制作中</p>
+        <a href="/html/N2M4.html">
+          <button class="otherbutton">
+          専用ページ
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>高低差対応VRテレポート手法</h2>
+        <img src="/images/Other/PenetrationTeleport.webp" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
+        </p>
+        <p>研究<br>
+          2025年
+        </p>
+        <p>高低差のあるVR環境向けのテレポーテーション手法の提案<br>
+          SIGGRAPH 2025でポスター、VRST 2025でフルペーパーで発表</p>
+        <a href="https://www.doi.org/10.1145/3756884.3766038" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Link
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>SVGF_StereoRendering</h2>
+        <img src="/images/Other/SVGF_StereoRendering.png" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
+        </p>
+        <p>Shader<br>
+          2025年5月
+        </p>
+        <p>SVGF作品を改造、ステレオレンダリングに (青が左画像を使いまわしている場所)<br>
+          High Performance Graphics 2025、Student Competition 2位</p>
+        <a href="https://www.shadertoy.com/view/WcGGW1" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Link
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>Lack_of_Reality_Type-b</h2>
+        <img src="/images/Other/LoRTb/LoRTb_3.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>3DFPSゲーム<br>
+          2025年4月
+        </p>
+        <p>サークル向けFPSゲームのサンプルとその発展版<br>
+          サンプルはシンプルさ、発展版はゲームらしく見せることを重視</p>
+        <a href="https://unityroom.com/games/as_lor_tb" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>川流神社からの脱出</h2>
+        <img src="/images/Other/Escape/EscapeFromKawaru/EscapeFromKawaru_1.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
+        </p>
+        <p>3D脱出ゲーム<br>
+          2024年3月 シナリオ・絵以外担当
+        </p>
+        <p>神社に閉じ込められた少女の脱出劇<br>
+          脱出・ノベルの仕組み、3Dモデルと1週間の限界に挑戦</p>
+        <a href="https://unityroom.com/games/as_roomofkawarushrine" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>IGC²サイト</h2>
+        <img src="/images/Other/IGC2OldSite.webp" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+        </p>
+        <p>Webサイト<br>
+          2024年2月～2025年12月 実装・デザイン担当
+        </p>
+        <p>サークルのサイトの制作と管理<br>
+          html・css・jsのみの静的サイト、画像はサークル員作成
+      </div>
+
+      <div class="box">
+          <h2>GatheringPlace</h2>
+        <img src="/images/Other/GatheringPlace.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>Cluster用ワールド<br>
+          2024年1月
+        </p>
+        <p>サークル向けに集まれる場所を作ろうとした<br>
+          データサイズの減少とShaderのInstance化を重視</p>
+        <a href="https://cluster.mu/w/d00e2d0d-6288-47f1-83ee-ca6edd8ad24d" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Link
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>IGC²15秒あほげ集基盤</h2>
+        <img src="/images/Other/AHG_System.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>2Dミニゲーム集ゲーム基盤<br>
+          2023年
+        </p>
+        <p>サークル員製ミニゲーム集の基盤システム<br>
+          ゲーム制作経験が無い人でも作れる仕組みを提供</p>
+        <a href="https://unityroom.com/games/igc2_15secfungames" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>Subthreshold object: Diviner's Gauntlet</h2>
+        <img src="/images/Other/Subthreshold_object/HWGame_ChargeAttack.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>VRハンドトラッキングアクションゲーム<br>
+          2023年11月
+        </p>
+        <p>手のみで移動から攻撃までできるVRゲーム<br>
+          自身の研究内容をゲームにしたもの</p>
+        
+      </div>
+
+      <div class="box">
+          <h2>VOIDLASE</h2>
+        <img src="/images/Voidlase/VOIDLASE_Play1.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+        </p>
+        <p>2Dレーザーアクションゲーム<br>
+          2023年 実装担当
+        </p>
+        <p>レーザーを駆使して駆け回る2Dアクション<br>
+          様々な場所で出展・展示した
+        </p>
+        <a href="/html/Voidlase.html">
+          <button class="otherbutton">
+          専用ページ
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>文字の間からの脱出</h2>
+        <img src="/images/Other/Escape/RoomOfINIMUEL/RoomOfINIMUEL_Play1.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
+        </p>
+        <p>3D脱出ゲーム<br>
+          2023年3月 シナリオ以外担当
+        </p>
+        <p>遺物のパズルを解いて脱出を目指す<br>
+          これまでより見た目を重視
+        </p>
+        <a href="https://unityroom.com/games/as_roomofiemel" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>RE:鯵の素〜Aji Fry Factory〜</h2>
+        <img src="/images/Other/AjiNoMoto.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
+        </p>
+        <p>2.5Dカジュアルゲーム<br>
+          2022年12月
+        </p>
+        <p>アジを開きまくって、アジフライを大量生産<br>
+          過去に複数人で制作した作品のリメイク作</p>
+        <a href="https://unityroom.com/games/ass_re_ajifryfactory" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>Anomaly Corrector</h2>
+        <img src="/images/Other/AnomalyCorrector_2.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
+        </p>
+        <p>3D間違い探しゲーム<br>
+          2022年9月 シナリオ以外担当
+        </p>
+        <p>異変を見つけて報告するゲーム<br>
+          雰囲気の演出を重視</p>
+        <a href="https://unityroom.com/games/as_anomalycorrector_tameru" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>欠けた世界、駆ける</h2>
+        <img src="/images/Other/CW_s.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
+        </p>
+        <p>Cluster用ワールド<br>
+          2022年3月
+        </p>
+        <p>無機質な奇妙な世界を駆け抜けるワールド<br>
+          ClusterGAMEJAM 2022 in SPRING アスレチック部門入賞</p>
+        <a href="https://cluster.mu/w/ce504fcf-46f5-4567-bdcb-4d56ac6f6617" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Link
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>正月の間からの脱出</h2>
+        <img src="/images/Other/Escape/Escape_Shou.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
+        </p>
+        <p>3D脱出ゲーム<br>
+          2021年12月 シナリオ以外担当
+        </p>
+        <p>盆と正月が一緒に来たような状況から脱出するゲーム<br>
+          閲覧数が10万を突破した
+          </p>
+        <a href="https://unityroom.com/games/as_roomofshogatu" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>NoNameMech v2</h2>
+        <img src="/images/Other/N2M2_background.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>3Dロボットアクションゲーム<br>
+          2021年12月
+        </p>
+        <p>大量のパーツを繋げてアセンブルできるゲーム<br>大量の多色パーツの軽量描画を重視</p>
+        <a href="https://unityroom.com/games/as_archive_nonamemech2" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>INIAD GAME SHOW 2021 展示会場</h2>
+        <img src="/images/Other/INIADGameShow2021.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>Cluster用ワールド<br>
+          2021年10月
+        </p>
+        <p>所属サークルの作品を展示した、どこか不思議な美術館<br>
+          Stencil maskを用いた表現に挑戦</p>
+        <a href="https://cluster.mu/w/9de29f39-4b90-4317-b3eb-4311946bd8c1" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Link
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>大体INIAD</h2>
+        <img src="/images/Other/SomethingINIAD.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>Cluster用ワールド<br>
+          2021年10月
+        </p>
+        <p>大学をそれとなく再現したワールド</p>
+        <a href="https://cluster.mu/w/7407bf42-499d-45ad-96c7-9b9ebc329818" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Link
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>雨の振る箱庭</h2>
+        <img src="/images/Other/RainMiniatureGarden/RainyGarden.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>Cluster用ワールド<br>
+          2021年10月
+        </p>
+        <p>雨が降っているワールド<br>
+          バーチャルホーム的なものを作ろうとした名残</p>
+        <a href="https://cluster.mu/w/d3b21e71-a071-468a-904c-f975dc0001ca" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Link
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>ちゅうの間からの脱出</h2>
+        <img src="/images/Other/Escape/Escape_chuu.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
+        </p>
+        <p>3D脱出ゲーム<br>
+          2021年9月 シナリオ以外担当
+        </p>
+        <p>変わり者の親類から相続した"ちゅうの間"から脱出するゲーム<br>
+          閲覧数が5万を突破した
+          </p>
+        <a href="https://unityroom.com/games/as_roomofchu" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>NoNameMech v1</h2>
+        <img src="/images/Other/N2M1_background.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>3Dロボットアクションゲーム<br>
+          2021年3月
+        </p>
+        <p>シンプルなロボットアクションゲーム<br>
+          大量の敵の管理の最適化を行った</p>
+        <a href="https://unityroom.com/games/as_archive_nonamemech1" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>GridLab</h2>
+        <img src="/images/Other/GridLab_2.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+        </p>
+        <p>3DFPSゲーム<br>
+          2020年9月 実装等担当
+        </p>
+        <p>U22プログラミング・コンテスト向けに作成したゲーム<br>
+          ゲーム内でステージを作り、パルクールFPSで遊べる</p>
+      </div>
+
+      <div class="box">
+          <h2>セイビングパル</h2>
+        <img src="/images/Other/SavingPal_2.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
+          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
+        </p>
+        <p>3DRPGアクションゲーム<br>
+          2019年8月 実装等担当
+        </p>
+        <p>Unityインターハイ2019向けに作成したゲーム<br>
+          一次突破、入賞した</p>
+      </div>
+
+      <div class="box">
+          <h2>LunarDefender</h2>
+        <img src="/images/Other/LunarDefender2/LunarDefender2_7.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>3Dロボットアクションゲーム<br>
+          2019年4月
+        </p>
+        <p>はじめて作ったロボットアクションゲーム<br>
+          速さを重視、アセンブルもできる
+        </p>
+      </div>
+
+      <div class="box">
+          <h2>Shine Dive</h2>
+        <img src="/images/Other/ShineDive.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>3Dフライトゲーム<br>
+          2018年10月
+        </p>
+        <p>宙に浮かんだ輪をくぐるゲーム<br>
+      今でもカメラ等の演出の例として役に立っている</p>
+        <a href="https://unityroom.com/games/flighttest_shinedive" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+      <div class="box">
+          <h2>LunarDefender</h2>
+        <img src="/images/Other/LunarDefender1/LunarDefender1_10.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>3DFPSゲーム<br>
+          2018年4月
+        </p>
+        <p>近未来な月面基地を守るFPSゲーム<br>
+          ミッションをクリアして素材を集め、新たな銃を作ることができる</p>
+      </div>
+
+      <div class="box">
+          <h2>MyCraft</h2>
+        <img src="/images/Other/MyCraft.jpg" width="98%" class="otherimg">
+        <p class="othertags">
+          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
+        </p>
+        <p>3D建築ゲーム<br>
+          2017年8月
+        </p>
+        <p>ブロックを配置して遊べるゲーム<br>
+          地形の自動生成にも挑戦</p>
+        <a href="https://unityroom.com/games/asra_dreamer_mycraft1" target="_blank" rel="noopener noreferrer">
+          <button class="otherbutton">
+          Play
+          </button>
+        </a>
+      </div>
+
+    </div>
+
+    <br>
 
   </body>
 
