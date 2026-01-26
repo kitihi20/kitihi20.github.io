@@ -1,12 +1,25 @@
 
+/*上 右 下 左?*/
+
 :root {
     --ShadowBlock_ShadowSize: 32px;
+    --ShadowBlock_ShadowSizex2: 64px;
     --ShadowBlock_Margin: 42px;
     --ShadowBlock_MarginTop: 82px;
 
     --ShadowBlock_T_ShadowSize: 8px;
     --ShadowBlock_T_Margin: 18px;
   }
+
+
+table{
+    text-align: left;
+    border-left: solid 1px var(--Border_Color);
+}
+th{
+    font-weight: normal;
+    padding: 2px 16px 2px 16px;
+}
 
 .shadow{
     box-shadow: 0px 0px var(--ShadowBlock_ShadowSize) var(--ShadowBlock_ShadowSize) var(--ShadowColor);
@@ -25,3 +38,198 @@ margin: var(--ShadowBlock_T_Margin);
 }
 
 
+/*ーーーー 一文字ずつ表示するのに使用 ーーーー*/
+.typing {
+  opacity: 0;
+}
+/* アニメーション開始時にクラスを付与して見えるようにする */
+.typing.is-visible {
+  opacity: 1;
+}
+
+
+/*ーーーー 汎用フェードに使用 ーーーー*/
+.fade{
+  opacity: 0;
+  animation: fadeAnim linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: view();/*上からX% 下からX%の範囲で遷移*/
+}
+@keyframes fadeAnim{
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  90% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+.fadeAndMove{
+  animation: fadeAndMoveAnim linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: view();/*上からX% 下からX%の範囲で遷移*/
+}
+@keyframes fadeAndMoveAnim{
+  0% {
+    opacity: 0;
+    transform: translateY(-64px);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+  90% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-64px);
+  }
+}
+.moveLeft{
+  animation: moveLeftAnim linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: view();/*上からX% 下からX%の範囲で遷移*/
+}
+@keyframes moveLeftAnim{
+  0% {
+    transform: translateX(32px);
+  }
+  30% {
+    transform: translateX(0px);
+  }
+  90% {
+    transform: translateX(0px);
+  }
+  100% {
+    transform: translateX(32px);
+  }
+}
+.moveRight{
+  animation: moveRightAnim linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: view();/*上からX% 下からX%の範囲で遷移*/
+}
+@keyframes moveRightAnim{
+  0% {
+    transform: translateX(-32px);
+  }
+  30% {
+    transform: translateX(0px);
+  }
+  90% {
+    transform: translateX(0px);
+  }
+  100% {
+    transform: translateX(-32px);
+  }
+}
+
+
+/*ーーーー ブラー付きフェード ーーーー*/
+.blurFade{
+  opacity: 0;
+  animation: blurFade linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: view();/*上からX% 下からX%の範囲で遷移*/
+}
+@keyframes blurFade{
+  0% {
+    opacity: 0;
+    filter: blur(4px);
+  }
+  30% {
+    opacity: 1;
+    filter: blur(0px);
+  }
+  100% {
+    opacity: 1;
+    filter: blur(0px);
+  }
+}
+
+
+/*ーーーー タイトル動かすのに使用 ーーーー*/
+.titleMove{
+  opacity: 1;
+  animation: titleMoveAnim linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: scroll();/*上からX% 下からX%の範囲で遷移*/
+}
+@keyframes titleMoveAnim{
+  0% {
+    opacity: 1;
+    transform: translateY(0vh);
+  }
+  30% {
+    opacity: 0;
+    transform: translateY(-50vh);
+  }
+}
+
+
+/*ーーーー 背景動かすのに使用 ーーーー*/
+/*背景上半分*/
+.backgroundMove1{
+  animation: backgroundMove1Anim linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: scroll();/*上からX% 下からX%の範囲で遷移*/
+}
+@keyframes backgroundMove1Anim{
+  0% {
+    transform: translateY(50vh);
+  }
+  100% {
+    transform: translateY(150vh);
+  }
+}
+/*背景下半分*/
+.backgroundMove2{
+  animation: backgroundMove2Anim linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: scroll();/*上からX% 下からX%の範囲で遷移*/
+}
+@keyframes backgroundMove2Anim{
+  0% {
+    transform: translateY(150vh);
+  }
+  100% {
+    transform: translateY(250vh);
+  }
+}
+/*背景メカ*/
+.backgroundMove3{
+  animation: backgroundMove2Anim linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: scroll();/*上からX% 下からX%の範囲で遷移*/
+}
+@keyframes backgroundMove2Anim{
+  0% {
+    transform: translateY(100vh);
+  }
+  100% {
+    transform: translateY(200vh);
+  }
+}
+
+
+/*ーーーー ページ読み込み時フェードイン ーーーー*/
+.autoFadeIN {
+  opacity: 0;
+  animation: fadeINAnim linear both;
+  animation-duration: 3s;
+}
+@keyframes fadeINAnim{
+  0% {
+    opacity: 0;
+  }
+  100% {
+    opacity: 1;
+  }
+}
