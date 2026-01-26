@@ -7,14 +7,107 @@
     <title>kitihi20_works</title>
   </head>
 
-  <body id="body" style="margin: 0px; height: 100%;">
+
+  <style>
+.fade {
+  opacity: 0; /* 初期状態は非表示 */
+  animation: fadeAndMoveAnim linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: view(block 10% 20%);/*上からX% 下からX%の範囲で遷移*/
+}
+.move {
+  opacity: 0;
+  animation: moveAnim linear forwards;
+  animation-duration: 1ms; /* Firefox では、アニメーションを適用するために必要 */
+  animation-timeline: view(block 10% 20%);/*上からX% 下からX%の範囲で遷移*/
+}
+/*
+@keyframes fadeAnim {
+  from {
+    opacity: 0;
+  }
+  to {
+    opacity: 1;
+  }
+}
+*/
+@keyframes fadeAnim{
+  0% {
+    opacity: 0;
+  }
+  30% {
+    opacity: 1;
+  }
+  60% {
+    opacity: 1;
+  }
+  100% {
+    opacity: 0;
+  }
+}
+@keyframes fadeAndMoveAnim{
+  0% {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+  30% {
+    opacity: 1;
+    transform: translateX(0px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateX(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateX(32px);
+  }
+}
+@keyframes moveAnim{
+  0% {
+    opacity: 0;
+    transform: translateY(-32px);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+  60% {
+    opacity: 1;
+    transform: translateY(0px);
+  }
+  100% {
+    opacity: 0;
+    transform: translateY(-32px);
+  }
+}
+  </style>
+
+
+
+  <body id="body" style="margin: 0px; height: 100%; overflow-x: hidden;">
+
+    <h1><div class="fade">TestText</div></h1>
+
+    <div>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+    </div>
 
     <img style="
     object-fit: cover;
     position: absolute;
     top: 50%;
     left: 50%;
-    transform: translate(-50%,-50%);" src="./images/Other/worksImage3.webp" width="110%">
+    transform: translate(-50%,-50%);" src="./images/Other/worksImage3.webp" width="100%">
 
     <h1 style="
     object-fit: cover;
@@ -62,6 +155,77 @@
         7<br>
         8
       </p>
+    </div>
+
+    <div>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+    </div>
+
+    <h1><div class="move">TestText</div></h1>
+
+    <div>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+    </div>
+
+    <h1><div class="fade">TestText</div></h1>
+
+    <div>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+    </div>
+
+    <h1><div class="fade">TestText</div></h1>
+
+    <div>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+    </div>
+
+    <div>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
+      <p>test1</p>
+      <p>test2</p>
+      <p>test3</p>
+      <p>test4</p>
+      <p>test5</p>
     </div>
 
   </body>
