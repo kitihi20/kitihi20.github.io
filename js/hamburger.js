@@ -12,18 +12,9 @@ function CreateMenu()
   <span class="hbline " id="hbline3"></span>
 </button>
 
-<!--<a href="./index.html">
-<button class="none blborder">
-  <img src="./images/AS-MadeIconProt_small.png" width="40px">
-  <span id="headertxt" class="CGf">
-    kitihi20
-  </span>
-</button>
-</a>-->
-
 <div style="height: 100%;">
   <a href="/index.html">
-    <img src="/images/AS-MadeIconProt_small.png" width="40px" height="100%" 
+    <img src="/images/kitihi20_icon_bold_512.webp" width="32px" height="100%" 
     class="hoverChangeScale" style="position:absolute; object-fit: contain; right: 60px;">
   </a>
 </div>
