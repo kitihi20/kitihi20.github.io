@@ -1,0 +1,139 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>文字数カウンター</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        body {
+            background-color: #f8fafc;
+        }
+        .counter-card {
+            transition: all 0.2s ease;
+        }
+        .counter-card:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 6px -1px rgb(0 0 0 / 0.1);
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4">
+    <div class="w-full max-w-3xl bg-white rounded-2xl shadow-xl overflow-hidden border border-slate-200">
+        <!-- Header -->
+        <div class="bg-indigo-600 p-6">
+            <h1 class="text-2xl font-bold text-white flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                </svg>
+                文字数カウンター
+            </h1>
+            <p class="text-indigo-100 mt-1 text-sm">入力したテキストの統計をリアルタイムで表示します。</p>
+        </div>
+
+        <div class="p-6 space-y-6">
+            <!-- Text Input Area -->
+            <div class="relative">
+                <textarea 
+                    id="textInput" 
+                    class="w-full h-64 p-4 text-slate-700 bg-slate-50 border border-slate-300 rounded-xl focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none transition-all resize-none text-lg placeholder-slate-400"
+                    placeholder="ここにテキストを入力またはペーストしてください..."
+                ></textarea>
+                <button 
+                    id="clearBtn"
+                    class="absolute top-3 right-3 p-2 text-slate-400 hover:text-red-500 hover:bg-red-50 rounded-lg transition-colors"
+                    title="クリア"
+                >
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                        <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                    </svg>
+                </button>
+            </div>
+
+            <!-- Results Grid -->
+            <div class="grid grid-cols-2 md:grid-cols-4 gap-4">
+                <div class="counter-card p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">純粋な文字数</p>
+                    <p id="totalChars" class="text-3xl font-bold text-indigo-600">0</p>
+                </div>
+                
+                <div class="counter-card p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">改行を除く</p>
+                    <p id="noNewLines" class="text-3xl font-bold text-emerald-600">0</p>
+                </div>
+
+                <div class="counter-card p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">空白・改行を除く</p>
+                    <p id="noWhitespace" class="text-3xl font-bold text-blue-600">0</p>
+                </div>
+
+                <div class="counter-card p-4 bg-slate-50 border border-slate-200 rounded-xl text-center">
+                    <p class="text-xs font-semibold text-slate-500 uppercase tracking-wider mb-1">単語数 (英語等)</p>
+                    <p id="wordCount" class="text-3xl font-bold text-amber-600">0</p>
+                </div>
+            </div>
+
+            <!-- Extra Info -->
+            <div class="flex justify-between items-center text-xs text-slate-400 pt-2 border-t border-slate-100">
+                <span>自動保存なし - プライバシーに配慮したブラウザ内処理</span>
+                <span id="readingTime">読了目安: 0分</span>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM Elements
+        const textInput = document.getElementById('textInput');
+        const clearBtn = document.getElementById('clearBtn');
+        const totalCharsDisplay = document.getElementById('totalChars');
+        const noNewLinesDisplay = document.getElementById('noNewLines');
+        const noWhitespaceDisplay = document.getElementById('noWhitespace');
+        const wordCountDisplay = document.getElementById('wordCount');
+        const readingTimeDisplay = document.getElementById('readingTime');
+
+        /**
+         * Counts characters and words based on the input text
+         */
+        function updateCounts() {
+            const text = textInput.value;
+
+            // 1. Total characters (pure)
+            const total = text.length;
+
+            // 2. Excluding new lines
+            const noNewLines = text.replace(/\n/g, '').length;
+
+            // 3. Excluding all whitespace (spaces, tabs, newlines)
+            const noWhitespace = text.replace(/\s/g, '').length;
+
+            // 4. Word count (Assuming English words separated by spaces)
+            // Filters out empty strings from the split array
+            const words = text.trim().split(/\s+/).filter(word => word.length > 0);
+            const wordCount = words.length;
+
+            // 5. Reading time estimation (Roughly 400-600 chars per min for Japanese, 200 words for English)
+            // Using a simple weighted average or focusing on characters for mixed text
+            const readingMinutes = Math.ceil(total / 500) || 0;
+
+            // Update UI
+            totalCharsDisplay.textContent = total.toLocaleString();
+            noNewLinesDisplay.textContent = noNewLines.toLocaleString();
+            noWhitespaceDisplay.textContent = noWhitespace.toLocaleString();
+            wordCountDisplay.textContent = wordCount.toLocaleString();
+            readingTimeDisplay.textContent = `読了目安: 約 ${readingMinutes} 分`;
+        }
+
+        // Event Listeners
+        textInput.addEventListener('input', updateCounts);
+
+        clearBtn.addEventListener('click', () => {
+            textInput.value = '';
+            updateCounts();
+            textInput.focus();
+        });
+
+        // Initialize on load
+        window.onload = updateCounts;
+    </script>
+</body>
+</html>
