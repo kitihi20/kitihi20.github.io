@@ -1,0 +1,493 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>Web Window System</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        :root {
+            --sidebar-width: 10%;
+            --bg-color: #1e1e2e;
+            --sidebar-color: #181825;
+            --window-bg: #f5f5f7;
+            --header-color: #e5e5e5;
+            --accent-color: #3b82f6;
+        }
+
+        body, html {
+            margin: 0;
+            padding: 0;
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+            background-color: var(--bg-color);
+        }
+
+        #desktop-container {
+            display: flex;
+            width: 100vw;
+            height: 100vh;
+        }
+
+        /* Sidebar Styling */
+        #sidebar {
+            width: var(--sidebar-width);
+            min-width: 80px;
+            background-color: var(--sidebar-color);
+            color: white;
+            display: flex;
+            flex-direction: column;
+            padding: 10px;
+            border-right: 1px solid #313244;
+            z-index: 1000;
+            box-shadow: 2px 0 10px rgba(0,0,0,0.3);
+        }
+
+        .sidebar-btn {
+            background: #313244;
+            border: none;
+            color: white;
+            padding: 12px 8px;
+            margin-bottom: 8px;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 12px;
+            text-align: center;
+            transition: all 0.2s;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .sidebar-btn:hover {
+            background: #45475a;
+        }
+
+        .sidebar-btn.active-window {
+            border-left: 4px solid var(--accent-color);
+            background: #45475a;
+        }
+
+        .new-window-btn {
+            background: var(--accent-color);
+            font-weight: bold;
+            margin-bottom: 20px;
+        }
+
+        .new-window-btn:hover {
+            background: #2563eb;
+        }
+
+        /* Workspace Area */
+        #workspace {
+            flex-grow: 1;
+            position: relative;
+            overflow: hidden;
+            background: radial-gradient(circle, #313244 1px, transparent 1px);
+            background-size: 30px 30px;
+        }
+
+        /* Window Styling */
+        .window {
+            position: absolute;
+            min-width: 300px;
+            min-height: 200px;
+            background: var(--window-bg);
+            border-radius: 12px;
+            box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            transition: transform 0.1s ease-out;
+            touch-action: none; /* Crucial for custom touch handling */
+        }
+
+        .window.focused {
+            box-shadow: 0 15px 40px rgba(0,0,0,0.6), 0 0 0 2px var(--accent-color);
+            z-index: 500;
+        }
+
+        .window.minimized {
+            display: none;
+        }
+
+        /* Window Header */
+        .window-header {
+            height: 44px;
+            background: var(--header-color);
+            display: flex;
+            align-items: center;
+            padding: 0 8px;
+            border-bottom: 1px solid #d1d1d1;
+            user-select: none;
+        }
+
+        .drag-handle {
+            width: 30px;
+            height: 30px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: move;
+            background: #ccc;
+            border-radius: 6px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+
+        .address-bar {
+            flex-grow: 1;
+            display: flex;
+            gap: 4px;
+            align-items: center;
+            background: white;
+            border-radius: 6px;
+            padding: 2px 8px;
+            margin: 0 8px;
+            border: 1px solid #ccc;
+        }
+
+        .address-input {
+            width: 100%;
+            border: none;
+            outline: none;
+            font-size: 13px;
+            background: transparent;
+        }
+
+        .window-controls {
+            display: flex;
+            gap: 6px;
+            align-items: center;
+        }
+
+        .control-btn {
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            border: none;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            font-size: 14px;
+            transition: opacity 0.2s;
+        }
+
+        .btn-close { background: #ff5f57; color: #4b0000; }
+        .btn-min { background: #ffbd2e; color: #4b3900; }
+        .btn-max { background: #28c840; color: #004b00; }
+        
+        .zoom-controls {
+            display: flex;
+            align-items: center;
+            gap: 4px;
+            margin-right: 10px;
+            font-size: 12px;
+        }
+
+        .zoom-btn {
+            background: #ddd;
+            border: none;
+            padding: 2px 6px;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+
+        /* Window Content */
+        .window-content {
+            flex-grow: 1;
+            position: relative;
+            background: white;
+        }
+
+        .content-frame {
+            width: 100%;
+            height: 100%;
+            border: none;
+            transform-origin: top left;
+        }
+
+        /* Interaction Overlays */
+        .iframe-overlay {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            z-index: 10;
+            display: none; /* Only visible during drag/resize */
+        }
+
+        /* Resize Handle */
+        .resize-handle {
+            position: absolute;
+            right: 0;
+            bottom: 0;
+            width: 20px;
+            height: 20px;
+            background: linear-gradient(135deg, transparent 50%, #999 50%);
+            cursor: nwse-resize;
+            z-index: 20;
+            border-bottom-right-radius: 12px;
+        }
+
+        /* Utility */
+        .icon-svg {
+            width: 16px;
+            height: 16px;
+            fill: currentColor;
+        }
+    </style>
+</head>
+<body>
+
+<div id="desktop-container">
+    <aside id="sidebar">
+        <button class="sidebar-btn new-window-btn" onclick="createNewWindow()">＋ New Window</button>
+        <div id="window-list" class="flex flex-col overflow-y-auto">
+            <!-- Dynamic window list -->
+        </div>
+    </aside>
+
+    <main id="workspace">
+        <!-- Windows will be injected here -->
+    </main>
+</div>
+
+<script>
+    const workspace = document.getElementById('workspace');
+    const windowList = document.getElementById('window-list');
+    let windowCount = 0;
+    let activeWindow = null;
+    let zIndexCounter = 100;
+
+    const DEFAULT_URL = "https://kitihi20.github.io/html/HiddenPage.html";
+
+    function createNewWindow(initialUrl = DEFAULT_URL) {
+        windowCount++;
+        const id = `win-${windowCount}`;
+        
+        const windowEl = document.createElement('div');
+        windowEl.id = id;
+        windowEl.className = 'window focused';
+        windowEl.style.width = '600px';
+        windowEl.style.height = '400px';
+        windowEl.style.left = `${50 + (windowCount % 10) * 20}px`;
+        windowEl.style.top = `${50 + (windowCount % 10) * 20}px`;
+        windowEl.style.zIndex = ++zIndexCounter;
+
+        windowEl.innerHTML = `
+            <div class="window-header">
+                <div class="drag-handle" title="ドラッグ">
+                    <svg viewBox="0 0 24 24" class="icon-svg"><path d="M10,13V11H14V13H10M10,17V15H14V17H10M10,9V7H14V9H10M5,13V11H9V13H5M5,17V15H9V17H5M5,9V7H9V9H5M15,13V11H19V13H15M15,17V15H19V17H15M15,9V7H19V9H15Z" /></svg>
+                </div>
+                <div class="address-bar">
+                    <input type="text" class="address-input" value="${initialUrl}" placeholder="URLを入力...">
+                    <button class="search-btn p-1 hover:bg-gray-200 rounded">
+                        <svg viewBox="0 0 24 24" class="icon-svg"><path d="M9.5,3A6.5,6.5 0 0,1 16,9.5C16,11.11 15.41,12.59 14.44,13.73L14.71,14H15.5L20.5,19L19,20.5L14,15.5V14.71L13.73,14.44C12.59,15.41 11.11,16 9.5,16A6.5,6.5 0 0,1 3,9.5A6.5,6.5 0 0,1 9.5,3M9.5,5C7,5 5,7 5,9.5C5,12 7,14 9.5,14C12,14 14,12 14,9.5C14,7 12,5 9.5,5Z" /></svg>
+                    </button>
+                </div>
+                <div class="zoom-controls">
+                    <button class="zoom-btn zoom-out">－</button>
+                    <span class="zoom-level">100%</span>
+                    <button class="zoom-btn zoom-in">＋</button>
+                </div>
+                <div class="window-controls">
+                    <button class="control-btn btn-min" title="最小化">_</button>
+                    <button class="control-btn btn-max" title="最大化">□</button>
+                    <button class="control-btn btn-close" title="閉じる">×</button>
+                </div>
+            </div>
+            <div class="window-content">
+                <div class="iframe-overlay"></div>
+                <iframe src="${initialUrl}" class="content-frame"></iframe>
+            </div>
+            <div class="resize-handle"></div>
+        `;
+
+        workspace.appendChild(windowEl);
+        setupWindowEvents(windowEl, id);
+        updateSidebar();
+        focusWindow(windowEl);
+    }
+
+    function setupWindowEvents(win, id) {
+        const header = win.querySelector('.window-header');
+        const dragHandle = win.querySelector('.drag-handle');
+        const resizeHandle = win.querySelector('.resize-handle');
+        const closeBtn = win.querySelector('.btn-close');
+        const minBtn = win.querySelector('.btn-min');
+        const maxBtn = win.querySelector('.btn-max');
+        const addressInput = win.querySelector('.address-input');
+        const searchBtn = win.querySelector('.search-btn');
+        const iframe = win.querySelector('.content-frame');
+        const overlay = win.querySelector('.iframe-overlay');
+        const zoomIn = win.querySelector('.zoom-in');
+        const zoomOut = win.querySelector('.zoom-out');
+        const zoomLevelText = win.querySelector('.zoom-level');
+
+        let zoom = 1;
+        let isDragging = false;
+        let isResizing = false;
+        let startX, startY, startLeft, startTop, startWidth, startHeight;
+        let isMaximized = false;
+        let prevRect = null;
+
+        // Focus logic
+        win.addEventListener('pointerdown', () => focusWindow(win));
+
+        // Dragging logic
+        const startDrag = (e) => {
+            if (isMaximized) return;
+            isDragging = true;
+            startX = e.clientX || e.touches?.[0].clientX;
+            startY = e.clientY || e.touches?.[0].clientY;
+            startLeft = parseInt(win.style.left);
+            startTop = parseInt(win.style.top);
+            overlay.style.display = 'block';
+            win.classList.add('focused');
+        };
+
+        // Header and Drag handle both allow movement
+        dragHandle.addEventListener('pointerdown', startDrag);
+        header.addEventListener('pointerdown', (e) => {
+            if (e.target.closest('.address-bar') || e.target.closest('.window-controls') || e.target.closest('.zoom-controls')) return;
+            startDrag(e);
+        });
+
+        // Resizing logic
+        resizeHandle.addEventListener('pointerdown', (e) => {
+            isResizing = true;
+            startX = e.clientX || e.touches?.[0].clientX;
+            startY = e.clientY || e.touches?.[0].clientY;
+            startWidth = parseInt(win.style.width);
+            startHeight = parseInt(win.style.height);
+            overlay.style.display = 'block';
+            e.preventDefault();
+            e.stopPropagation();
+        });
+
+        // Global move listener
+        const onMove = (e) => {
+            const currentX = e.clientX || e.touches?.[0].clientX;
+            const currentY = e.clientY || e.touches?.[0].clientY;
+
+            if (isDragging) {
+                const dx = currentX - startX;
+                const dy = currentY - startY;
+                win.style.left = `${startLeft + dx}px`;
+                win.style.top = `${startTop + dy}px`;
+            }
+
+            if (isResizing) {
+                const dx = currentX - startX;
+                const dy = currentY - startY;
+                win.style.width = `${Math.max(300, startWidth + dx)}px`;
+                win.style.height = `${Math.max(200, startHeight + dy)}px`;
+            }
+        };
+
+        const onEnd = () => {
+            isDragging = false;
+            isResizing = false;
+            overlay.style.display = 'none';
+        };
+
+        window.addEventListener('pointermove', onMove);
+        window.addEventListener('pointerup', onEnd);
+
+        // Window Controls
+        closeBtn.onclick = () => {
+            win.remove();
+            updateSidebar();
+        };
+
+        minBtn.onclick = () => {
+            win.classList.add('minimized');
+            updateSidebar();
+        };
+
+        maxBtn.onclick = () => {
+            if (isMaximized) {
+                win.style.width = prevRect.w;
+                win.style.height = prevRect.h;
+                win.style.left = prevRect.l;
+                win.style.top = prevRect.t;
+                win.style.borderRadius = '12px';
+                isMaximized = false;
+            } else {
+                prevRect = {
+                    w: win.style.width,
+                    h: win.style.height,
+                    l: win.style.left,
+                    t: win.style.top
+                };
+                win.style.width = '100%';
+                win.style.height = '100%';
+                win.style.left = '0';
+                win.style.top = '0';
+                win.style.borderRadius = '0';
+                isMaximized = true;
+            }
+        };
+
+        // Navigation
+        const navigate = () => {
+            let url = addressInput.value;
+            if (!url.startsWith('http')) url = 'https://' + url;
+            iframe.src = url;
+        };
+
+        searchBtn.onclick = navigate;
+        addressInput.onkeypress = (e) => { if (e.key === 'Enter') navigate(); };
+
+        // Zoom logic
+        const updateZoom = () => {
+            iframe.style.width = `${100 / zoom}%`;
+            iframe.style.height = `${100 / zoom}%`;
+            iframe.style.transform = `scale(${zoom})`;
+            zoomLevelText.innerText = `${Math.round(zoom * 100)}%`;
+        };
+
+        zoomIn.onclick = () => { zoom += 0.1; updateZoom(); };
+        zoomOut.onclick = () => { zoom = Math.max(0.2, zoom - 0.1); updateZoom(); };
+    }
+
+    function focusWindow(win) {
+        document.querySelectorAll('.window').forEach(w => w.classList.remove('focused'));
+        win.classList.remove('minimized');
+        win.classList.add('focused');
+        win.style.zIndex = ++zIndexCounter;
+        activeWindow = win;
+        updateSidebar();
+    }
+
+    function updateSidebar() {
+        windowList.innerHTML = '';
+        const windows = document.querySelectorAll('.window');
+        
+        windows.forEach(win => {
+            const id = win.id;
+            const url = win.querySelector('.address-input').value;
+            const btn = document.createElement('button');
+            btn.className = `sidebar-btn ${win.classList.contains('focused') ? 'active-window' : ''}`;
+            btn.innerText = `Win ${id.split('-')[1]}`;
+            btn.title = url;
+            
+            btn.onclick = () => focusWindow(win);
+            windowList.appendChild(btn);
+        });
+    }
+
+    // Initialize with one window
+    window.onload = () => {
+        createNewWindow();
+    };
+
+</script>
+
+</body>
+</html>
