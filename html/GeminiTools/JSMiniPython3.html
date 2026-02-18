@@ -1,0 +1,432 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Lite Python Evaluator</title>
+    <style>
+        :root {
+            --bg-color: #0d1117;
+            --panel-bg: #161b22;
+            --border-color: #30363d;
+            --text-color: #c9d1d9;
+            --accent-color: #58a6ff;
+            --error-color: #f85149;
+            --comment-color: #8b949e;
+            --line-number-color: #484f58;
+        }
+
+        body {
+            margin: 0;
+            padding: 0;
+            font-family: 'Consolas', 'Monaco', 'Courier New', monospace;
+            background-color: var(--bg-color);
+            color: var(--text-color);
+            display: flex;
+            flex-direction: column;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        header {
+            padding: 1rem 2rem;
+            background-color: var(--panel-bg);
+            border-bottom: 1px solid var(--border-color);
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        h1 {
+            margin: 0;
+            font-size: 1.2rem;
+            color: var(--accent-color);
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background-color: #238636;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #2ea043;
+        }
+
+        .shortcut-hint {
+            font-size: 0.8rem;
+            color: var(--comment-color);
+        }
+
+        main {
+            flex: 1;
+            display: flex;
+            flex-direction: row;
+            overflow: hidden;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        @media (max-width: 768px) {
+            main {
+                flex-direction: column;
+            }
+        }
+
+        .panel {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .panel-header {
+            background-color: var(--panel-bg);
+            padding: 5px 15px;
+            font-size: 0.8rem;
+            border-bottom: 1px solid var(--border-color);
+            color: var(--comment-color);
+            display: flex;
+            justify-content: space-between;
+        }
+
+        .editor-container {
+            display: flex;
+            flex: 1;
+            overflow: hidden;
+            position: relative;
+        }
+
+        .line-numbers {
+            width: 40px;
+            padding: 10px 0;
+            text-align: right;
+            background-color: var(--bg-color);
+            color: var(--line-number-color);
+            font-size: 14px;
+            line-height: 1.5;
+            user-select: none;
+            border-right: 1px solid var(--border-color);
+        }
+
+        .editor-wrapper {
+            flex: 1;
+            position: relative;
+        }
+
+        textarea, .output-area {
+            width: 100%;
+            height: 100%;
+            background: transparent;
+            border: none;
+            color: var(--text-color);
+            font-family: inherit;
+            font-size: 14px;
+            line-height: 1.5;
+            padding: 10px;
+            resize: none;
+            outline: none;
+            white-space: pre;
+            box-sizing: border-box;
+        }
+
+        .output-area {
+            overflow-y: auto;
+            color: var(--accent-color);
+        }
+
+        .output-line {
+            min-height: 1.5em;
+        }
+
+        .error {
+            color: var(--error-color);
+        }
+
+        footer {
+            height: 200px;
+            background-color: var(--panel-bg);
+            padding: 1rem 2rem;
+            overflow-y: auto;
+            font-size: 0.9rem;
+            border-top: 1px solid var(--border-color);
+        }
+
+        .docs {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 20px;
+        }
+
+        .docs h3 {
+            margin-top: 0;
+            color: var(--accent-color);
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 5px;
+        }
+
+        .docs table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .docs td {
+            padding: 4px 0;
+        }
+
+        .docs code {
+            background: var(--bg-color);
+            padding: 2px 4px;
+            border-radius: 4px;
+        }
+
+        /* Scrollbar styling */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-color);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border-color);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--line-number-color);
+        }
+    </style>
+</head>
+<body>
+
+<header>
+    <h1>Lite Python Evaluator</h1>
+    <div class="controls">
+        <span class="shortcut-hint">Ctrl + Enter で実行</span>
+        <button class="btn" onclick="executeCode()">実行</button>
+    </div>
+</header>
+
+<main>
+    <!-- 入力パネル -->
+    <div class="panel">
+        <div class="panel-header">プログラム入力 (Python風)</div>
+        <div class="editor-container">
+            <div id="input-line-numbers" class="line-numbers">1</div>
+            <div class="editor-wrapper">
+                <textarea id="code-input" spellcheck="false" placeholder="# ここにコードを入力してください&#10;x = 10&#10;y = 5&#10;z = (x + y) ** 2&#10;sqrt(z)"></textarea>
+            </div>
+        </div>
+    </div>
+
+    <!-- 出力パネル -->
+    <div class="panel" style="border-left: 1px solid var(--border-color);">
+        <div class="panel-header">実行結果</div>
+        <div class="editor-container">
+            <div id="output-line-numbers" class="line-numbers">1</div>
+            <div id="output-display" class="output-area"></div>
+        </div>
+    </div>
+</main>
+
+<footer>
+    <div class="docs">
+        <div>
+            <h3>演算子</h3>
+            <table>
+                <tr><td><code>+</code>, <code>-</code>, <code>*</code>, <code>/</code></td><td>基本演算</td></tr>
+                <tr><td><code>**</code></td><td>累乗 (2 ** 3 = 8)</td></tr>
+                <tr><td><code>//</code></td><td>切捨て除算 (7 // 2 = 3)</td></tr>
+                <tr><td><code>%</code></td><td>剰余</td></tr>
+                <tr><td><code>=</code></td><td>変数代入</td></tr>
+            </table>
+        </div>
+        <div>
+            <h3>主要関数 (Math)</h3>
+            <table>
+                <tr><td><code>sqrt(x)</code></td><td>平方根</td></tr>
+                <tr><td><code>abs(x)</code></td><td>絶対値</td></tr>
+                <tr><td><code>sin(x)</code>, <code>cos(x)</code>, <code>tan(x)</code></td><td>三角関数</td></tr>
+                <tr><td><code>log(x)</code>, <code>exp(x)</code></td><td>対数・指数</td></tr>
+                <tr><td><code>round(x)</code></td><td>四捨五入</td></tr>
+            </table>
+        </div>
+        <div>
+            <h3>定数・その他</h3>
+            <table>
+                <tr><td><code>PI</code></td><td>円周率 (π)</td></tr>
+                <tr><td><code>E</code></td><td>ネイピア数 (e)</td></tr>
+                <tr><td><code>#</code></td><td>コメントアウト</td></tr>
+                <tr><td>変数は一度定義すると以降の行で利用可能です。</td></tr>
+            </table>
+        </div>
+    </div>
+</footer>
+
+<script>
+    const inputArea = document.getElementById('code-input');
+    const outputDisplay = document.getElementById('output-display');
+    const inputLineNums = document.getElementById('input-line-numbers');
+    const outputLineNums = document.getElementById('output-line-numbers');
+
+    // 初期スコープの設定 (Math関数を展開)
+    const createInitialScope = () => {
+        const scope = {};
+        const mathProps = Object.getOwnPropertyNames(Math);
+        mathProps.forEach(prop => {
+            scope[prop] = Math[prop];
+        });
+        // Python風のエイリアス
+        scope['PI'] = Math.PI;
+        scope['E'] = Math.E;
+        return scope;
+    };
+
+    // 行番号の更新
+    function updateLineNumbers() {
+        const lines = inputArea.value.split('\n').length;
+        let lineNumsHtml = '';
+        for (let i = 1; i <= lines; i++) {
+            lineNumsHtml += i + '<br>';
+        }
+        inputLineNums.innerHTML = lineNumsHtml;
+        outputLineNums.innerHTML = lineNumsHtml;
+    }
+
+    // Python特有の演算子をJS用に変換
+    function preprocessLine(line) {
+        // コメント除去
+        line = line.split('#')[0].trim();
+        if (!line) return null;
+
+        // 累乗 ** は JSの ** と同じなのでそのまま
+        // 整数除算 // を Math.floor(a/b) 的な処理に置換
+        // 簡易的な置換（ネストには非対応だが一行計算なら概ね動作）
+        if (line.includes('//')) {
+            const parts = line.split('//');
+            if (parts.length === 2) {
+                line = `Math.floor((${parts[0]}) / (${parts[1]}))`;
+            }
+        }
+        
+        return line;
+    }
+
+    function executeCode() {
+        const lines = inputArea.value.split('\n');
+        const scope = createInitialScope();
+        outputDisplay.innerHTML = '';
+        
+        let hasError = false;
+
+        lines.forEach((originalLine, index) => {
+            const outputLine = document.createElement('div');
+            outputLine.className = 'output-line';
+
+            if (hasError) {
+                outputDisplay.appendChild(outputLine);
+                return;
+            }
+
+            const processed = preprocessLine(originalLine);
+            
+            if (processed === null) {
+                // 空行またはコメントのみ
+                outputDisplay.appendChild(outputLine);
+                return;
+            }
+
+            try {
+                // 代入文の判定 (例: x = 10)
+                if (/^[a-zA-Z_][a-zA-Z0-9_]*\s*=/.test(processed)) {
+                    const parts = processed.split('=');
+                    const varName = parts[0].trim();
+                    const expression = parts.slice(1).join('=').trim();
+                    
+                    // 式を現在のスコープで評価
+                    const result = evaluateInScope(expression, scope);
+                    scope[varName] = result;
+                    // 代入行は何も出力しない
+                } else {
+                    // 通常の計算式
+                    const result = evaluateInScope(processed, scope);
+                    outputLine.textContent = formatResult(result);
+                }
+            } catch (err) {
+                outputLine.textContent = `Error: ${err.message}`;
+                outputLine.classList.add('error');
+                hasError = true;
+            }
+
+            outputDisplay.appendChild(outputLine);
+        });
+
+        updateLineNumbers();
+    }
+
+    // 指定したスコープで文字列式を評価
+    function evaluateInScope(code, scope) {
+        // スコープ内の変数をローカル変数として展開して実行する関数を作成
+        const keys = Object.keys(scope);
+        const values = keys.map(k => scope[k]);
+        const func = new Function(...keys, `return (${code});`);
+        return func(...values);
+    }
+
+    function formatResult(res) {
+        if (res === undefined || res === null) return '';
+        if (typeof res === 'number') {
+            // 浮動小数点の精度調整
+            if (!Number.isInteger(res)) {
+                return parseFloat(res.toFixed(10)).toString();
+            }
+        }
+        return res.toString();
+    }
+
+    // イベントリスナー
+    inputArea.addEventListener('input', updateLineNumbers);
+    
+    inputArea.addEventListener('keydown', (e) => {
+        if (e.ctrlKey && e.key === 'Enter') {
+            executeCode();
+        }
+        // タブ入力を許可
+        if (e.key === 'Tab') {
+            e.preventDefault();
+            const start = inputArea.selectionStart;
+            const end = inputArea.selectionEnd;
+            inputArea.value = inputArea.value.substring(0, start) + "    " + inputArea.value.substring(end);
+            inputArea.selectionStart = inputArea.selectionEnd = start + 4;
+        }
+    });
+
+    // スクロール同期
+    inputArea.addEventListener('scroll', () => {
+        inputLineNums.scrollTop = inputArea.scrollTop;
+    });
+    
+    outputDisplay.addEventListener('scroll', () => {
+        outputLineNums.scrollTop = outputDisplay.scrollTop;
+    });
+
+    // 初期化
+    window.onload = () => {
+        updateLineNumbers();
+        executeCode();
+    };
+</script>
+
+</body>
+</html>
