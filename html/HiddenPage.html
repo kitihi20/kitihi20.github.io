@@ -19,7 +19,7 @@
     <header id="headermain"></header>
 
     <!--背景-->
-    <img src="/images/Other/AnomalyCorrector_background.jpg" 
+    <img src="/images/Other/AnomalyCorrector_background.webp" 
         height="100%" style="object-fit: cover; position: fixed; width: 100%; z-index: -10;">
     
     <!--ヘッダーのスペース分あける用-->
@@ -29,11 +29,11 @@
     <div style="height: 300px; width: 100%; overflow: hidden; position: relative;">
         <img style="object-fit: cover; position: absolute; 
             height: 100%; width: 110%;" 
-            src="/images/Other/LD_Photo.jpg">
+            src="/images/Other/LD_Photo.webp">
 
         <div style="object-fit: cover; position: absolute; padding: 0px;
-            top: 50%; right: 32px; transform: translate(0%,-50%);
-            font-size: 24px; text-align: right;">
+            top: 50%; left: 32px; transform: translate(0%,-50%);
+            font-size: 24px; text-align: left;">
             <h1 style="padding: 0px; margin: 0px;">Hidden Page</h1>
             <h3 style="padding: 0px; margin: 0px;">便利ツール・よく使うサイト等...</h3>
             <div class ="titleShadow"></div>
@@ -51,7 +51,42 @@
         pointer-events: none;">
     </div>
 
+
     <br><br>
+
+    <!--ショートカット-->
+    <div style="background-color: var(--BackgroundColorGradient); padding: 8px;">
+    
+    <span><a href="/html/GeminiTools/CharacterCounter.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/CharCounter_icon.webp">
+    </a></span>
+
+    <span><a href="/html/GeminiTools/JSMiniPython3.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/JSMPythonCalc_icon.webp">
+    </a></span>
+
+    <span><a href="/html/GeminiTools/ColorToAlpha.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/ColorToAlpha_icon.webp">
+    </a></span>
+
+    <span><a href="/html/GeminiTools/CutColor.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/CutTheColor_icon.webp">
+    </a></span>
+
+    <span><a href="/html/GeminiTools/MarkovAudio.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/MarkovAudio_icon.webp">
+    </a></span>
+
+    </div>
+
+
+    <br><br>
+
 
     <div style="background-color: var(--BackgroundColorGradient); padding: 8px;">
     <h1>Useful tools</h1>
@@ -63,7 +98,7 @@
         <div class="box">
             <h2>Squoosh</h2>
             <p>画像を別の形式に変換する<br>
-                圧縮に便利
+                画像の圧縮に便利
             </p>
             <a href="https://squoosh.app/">
                 <button class="otherbutton">
@@ -153,18 +188,6 @@
     <div class="tripleGrid" style="text-align: center;">
 
         <div class="box">
-            <h2>Web Window System</h2>
-            <p>マルチウインドウでWebを見れる<br>
-                セキュリティの都合上、Youtube等は見れない
-            </p>
-            <a href="/html/GeminiTools/WebWindowSystem.html">
-                <button class="otherbutton">
-                Link
-                </button>
-            </a>
-        </div>
-
-        <div class="box">
             <h2>JS-MiniPython Calculator</h2>
             <p>Python風簡易計算機<br>
                 JSのみで駆動、電卓にどうぞ
@@ -206,6 +229,52 @@
                 ルーレットにもどうぞ
             </p>
             <a href="/html/GeminiTools/StringCombinationGenerator.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+    </div>
+
+
+    <div style="background-color: var(--BackgroundColorGradient); padding: 8px;">
+    <h1>Toybox</h1>
+    <h3>思い付きで作られたGemini製の妙なもの達</h3>
+    </div>
+
+    <div class="tripleGrid" style="text-align: center;">
+
+        <div class="box">
+            <h2>Web Window System</h2>
+            <p>マルチウインドウでWebを見れる<br>
+                セキュリティの都合上、Youtube等は見れない
+            </p>
+            <a href="/html/GeminiTools/WebWindowSystem.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Markov Audio</h2>
+            <p>マルコフ連鎖に従い音を再生する<br>
+                色々と応用が利くかもしれない
+            </p>
+            <a href="/html/GeminiTools/MarkovAudio.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Chaos Tetris</h2>
+            <p>あそばせないテトリス<br>
+                Gemini 3.1 Proのユーモア
+            </p>
+            <a href="/html/GeminiGames/NotTetris.html">
                 <button class="otherbutton">
                 Link
                 </button>
