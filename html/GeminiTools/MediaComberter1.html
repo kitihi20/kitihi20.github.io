@@ -1,0 +1,422 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web Media Transcoder Pro</title>
+    <link rel="shortcut icon" href="/images/Favicon/kitihi20.ico">
+    <script src="https://cdn.tailwindcss.com"></script>
+
+    <script src="coi-serviceworker.js"></script>
+
+    <!-- FFmpeg.wasm v0.12.x -->
+<!--
+    <script src="/ffmpeg/ffmpeg/dist/umd/ffmpeg.js"></script>
+    <script src="/ffmpeg/util/dist/umd/index.js"></script>
+-->
+    <link href="https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'JetBrains Mono', monospace;
+        }
+        .glass-panel {
+            background: rgba(30, 41, 59, 0.7);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+        }
+        .console-box {
+            background-color: #020617;
+            border-left: 4px solid #38bdf8;
+            scrollbar-width: thin;
+        }
+        .console-box::-webkit-scrollbar {
+            width: 6px;
+        }
+        .console-box::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 3px;
+        }
+        .progress-bar {
+            transition: width 0.3s ease;
+        }
+        .drop-zone {
+            border: 2px dashed #334155;
+            transition: all 0.2s ease;
+        }
+        .drop-zone.dragover {
+            border-color: #38bdf8;
+            background: rgba(56, 189, 248, 0.05);
+        }
+        input, select {
+            background-color: #020617 !important;
+            border-color: #334155 !important;
+            color: #e2e8f0 !important;
+        }
+        input:focus, select:focus {
+            border-color: #38bdf8 !important;
+            outline: none;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col items-center p-4 md:p-8">
+
+    <div class="w-full max-w-5xl">
+        <!-- Header -->
+        <header class="mb-8 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-bold text-sky-400">MEDIA_TRANSCODER v1.2</h1>
+                <p class="text-slate-400 text-sm mt-1">Advanced Local Media Engine // Extended Parameters</p>
+            </div>
+            <div id="status-badge" class="px-3 py-1 rounded-full text-xs font-bold bg-slate-800 text-slate-500 border border-slate-700">
+                INITIALIZING...
+            </div>
+        </header>
+
+        <main class="grid grid-cols-1 lg:grid-cols-12 gap-6">
+            <!-- Left Column: Settings -->
+            <div class="lg:col-span-4 space-y-6">
+                <div class="glass-panel p-6 rounded-xl">
+                    <h2 class="text-sm font-bold text-slate-300 mb-4 uppercase tracking-widest">Base Settings</h2>
+                    
+                    <div class="space-y-4">
+                        <div>
+                            <label class="block text-[10px] text-slate-500 mb-1">TARGET_FORMAT</label>
+                            <select id="format-select" class="w-full rounded p-2 text-sm border">
+                                <optgroup label="Video Formats">
+                                    <option value="mp4">Video: MP4 (H.264)</option>
+                                    <option value="mov">Video: MOV (QuickTime)</option>
+                                </optgroup>
+                                <optgroup label="Audio Formats">
+                                    <option value="mp3">Audio: MP3</option>
+                                    <option value="wav">Audio: WAV</option>
+                                    <option value="ogg">Audio: OGG</option>
+                                    <option value="m4a">Audio: M4A</option>
+                                </optgroup>
+                            </select>
+                        </div>
+
+                        <!-- Video Specific Settings -->
+                        <div id="video-settings" class="space-y-4 pt-4 border-t border-slate-800">
+                            <h3 class="text-[10px] font-bold text-sky-500 mb-2 underline">VIDEO_PARAMS</h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] text-slate-500 mb-1">FPS</label>
+                                    <select id="v-fps" class="w-full rounded p-1 text-xs border">
+                                        <option value="original">Keep Original</option>
+                                        <option value="60">60 FPS</option>
+                                        <option value="30">30 FPS</option>
+                                        <option value="24">24 FPS</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-500 mb-1">BITRATE (V)</label>
+                                    <select id="v-bitrate" class="w-full rounded p-1 text-xs border">
+                                        <option value="2000k">2.0 Mbps</option>
+                                        <option value="5000k">5.0 Mbps</option>
+                                        <option value="10000k">10 Mbps</option>
+                                        <option value="original">Auto</option>
+                                    </select>
+                                </div>
+                            </div>
+                            <div>
+                                <label class="block text-[10px] text-slate-500 mb-1">RESOLUTION (WIDTH)</label>
+                                <select id="v-scale" class="w-full rounded p-1 text-xs border">
+                                    <option value="original">Original Size</option>
+                                    <option value="1920">1920 (1080p)</option>
+                                    <option value="1280">1280 (720p)</option>
+                                    <option value="854">854 (480p)</option>
+                                </select>
+                            </div>
+                        </div>
+
+                        <!-- Audio Settings (shared/exclusive) -->
+                        <div id="audio-settings" class="space-y-4 pt-4 border-t border-slate-800">
+                            <h3 class="text-[10px] font-bold text-sky-500 mb-2 underline">AUDIO_PARAMS</h3>
+                            <div class="grid grid-cols-2 gap-2">
+                                <div>
+                                    <label class="block text-[10px] text-slate-500 mb-1">BITRATE (A)</label>
+                                    <select id="a-bitrate" class="w-full rounded p-1 text-xs border">
+                                        <option value="128k">128 kbps</option>
+                                        <option value="192k" selected>192 kbps</option>
+                                        <option value="320k">320 kbps</option>
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-[10px] text-slate-500 mb-1">SAMPLE_RATE</label>
+                                    <select id="a-rate" class="w-full rounded p-1 text-xs border">
+                                        <option value="original">Original</option>
+                                        <option value="48000">48 kHz</option>
+                                        <option value="44100">44.1 kHz</option>
+                                    </select>
+                                </div>
+                            </div>
+                        </div>
+
+                        <button id="convert-btn" disabled class="w-full py-3 bg-sky-600 hover:bg-sky-500 disabled:bg-slate-700 disabled:cursor-not-allowed text-white rounded font-bold transition-colors shadow-lg shadow-sky-900/20">
+                            RUN_CONVERSION
+                        </button>
+
+                        <div id="download-container" class="hidden">
+                            <a id="download-link" class="block w-full text-center py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded font-bold transition-colors">
+                                DOWNLOAD_RESULT
+                            </a>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="glass-panel p-6 rounded-xl">
+                    <h2 class="text-sm font-bold text-slate-300 mb-2 uppercase tracking-widest">Progress</h2>
+                    <div class="w-full bg-slate-900 rounded-full h-2 mt-4 overflow-hidden">
+                        <div id="progress-inner" class="progress-bar w-0 h-full bg-sky-500 shadow-[0_0_10px_rgba(56,189,248,0.5)]"></div>
+                    </div>
+                    <div class="flex justify-between mt-2">
+                        <span id="progress-text" class="text-[10px] text-slate-500">0%</span>
+                        <span id="time-text" class="text-[10px] text-slate-500">READY</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Right Column: Dropzone & Terminal -->
+            <div class="lg:col-span-8 space-y-6">
+                <!-- Drop Zone -->
+                <div id="drop-zone" class="drop-zone glass-panel rounded-xl h-48 flex flex-col items-center justify-center cursor-pointer p-4 group">
+                    <input type="file" id="file-input" class="hidden" accept="audio/*,video/*,.mov,.mkv,.avi">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-slate-500 group-hover:text-sky-400 mb-3 transition-colors" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p id="file-display" class="text-sm text-slate-400 text-center">Drag & drop files here (.mp3, .mp4, .mov, etc.)</p>
+                    <p id="file-name" class="text-xs text-sky-400 font-bold mt-2 truncate max-w-full hidden"></p>
+                </div>
+
+                <!-- Console -->
+                <div class="glass-panel rounded-xl flex flex-col h-96 overflow-hidden">
+                    <div class="bg-slate-800 px-4 py-2 border-b border-slate-700 flex justify-between items-center">
+                        <span class="text-[10px] font-bold text-slate-400 tracking-tighter underline">SYSTEM_LOG</span>
+                        <div class="flex space-x-1">
+                            <div class="w-2 h-2 rounded-full bg-slate-600"></div>
+                            <div class="w-2 h-2 rounded-full bg-slate-600"></div>
+                            <div class="w-2 h-2 rounded-full bg-slate-600"></div>
+                        </div>
+                    </div>
+                    <div id="console" class="console-box flex-1 p-4 font-mono text-[11px] overflow-y-auto space-y-1 text-slate-300">
+                        <div class="text-sky-500">[SYSTEM] Initialization sequence started...</div>
+                    </div>
+                </div>
+            </div>
+        </main>
+
+        <footer class="mt-8 text-center text-slate-600 text-[10px]">
+            &copy; 2024 LOCAL_MEDIA_CORE
+        </footer>
+    </div>
+
+    <script type="module">
+        //const { FFmpeg } = FFmpegWASM;
+        //const { fetchFile, toBlobURL } = FFmpegUtil;
+
+        //import { FFmpeg  } from '/ffmpeg/ffmpeg/dist/umd/ffmpeg.js';
+        //import { fetchFile, toBlobURL } from '/ffmpeg/util/dist/umd/index.js';
+        import { FFmpeg  } from '/ffmpeg/ffmpeg/dist/esm/index.js';
+        import { fetchFile, toBlobURL } from '/ffmpeg/util/dist/esm/index.js';
+        //import { FFmpeg } from 'https://unpkg.com/@ffmpeg/ffmpeg@0.12.15/dist/esm/index.js';
+        //import { fetchFile, toBlobURL } from 'https://unpkg.com/@ffmpeg/util@0.12.1/dist/esm/index.js';
+
+        //const ffmpeg = new FFmpeg();
+
+        // Elements
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const fileDisplay = document.getElementById('file-display');
+        const fileNameDisp = document.getElementById('file-name');
+        const convertBtn = document.getElementById('convert-btn');
+        const formatSelect = document.getElementById('format-select');
+        const consoleEl = document.getElementById('console');
+        const progressInner = document.getElementById('progress-inner');
+        const progressText = document.getElementById('progress-text');
+        const statusBadge = document.getElementById('status-badge');
+        const downloadContainer = document.getElementById('download-container');
+        const downloadLink = document.getElementById('download-link');
+
+        // Extended Param Elements
+        const videoSettings = document.getElementById('video-settings');
+        const audioSettings = document.getElementById('audio-settings');
+        const vFps = document.getElementById('v-fps');
+        const vBitrate = document.getElementById('v-bitrate');
+        const vScale = document.getElementById('v-scale');
+        const aBitrate = document.getElementById('a-bitrate');
+        const aRate = document.getElementById('a-rate');
+
+        let ffmpeg = null;
+        let selectedFile = null;
+
+        // UI Toggle logic
+        formatSelect.addEventListener('change', () => {
+            const isVideo = ['mp4', 'mov'].includes(formatSelect.value);
+            videoSettings.style.display = isVideo ? 'block' : 'none';
+        });
+
+        // Initialize FFmpeg
+        async function init() {
+            try {
+                ffmpeg = new FFmpeg();
+                log('Loading FFmpeg core...');
+                const baseURL = '/ffmpeg/core-mt/dist/umd';
+                await ffmpeg.load({
+                    coreURL: await toBlobURL(`${baseURL}/ffmpeg-core.js`, 'text/javascript'),
+                    wasmURL: await toBlobURL(`${baseURL}/ffmpeg-core.wasm`, 'application/wasm'),
+                });
+                statusBadge.innerText = 'ONLINE';
+                statusBadge.classList.replace('text-slate-500', 'text-emerald-400');
+                statusBadge.classList.replace('bg-slate-800', 'bg-emerald-900/30');
+                log('System ready.');
+            } catch (err) {
+                console.error(err);
+                log('Initialization error: ' + err.message, 'error');
+                statusBadge.innerText = 'OFFLINE';
+            }
+        }
+
+        function log(message, type = 'info') {
+            const div = document.createElement('div');
+            const time = new Date().toLocaleTimeString([], { hour12: false, hour: '2-digit', minute: '2-digit', second: '2-digit' });
+            let color = 'text-slate-400';
+            if (type === 'error') color = 'text-rose-500';
+            if (type === 'success') color = 'text-emerald-400';
+            if (type === 'process') color = 'text-sky-300';
+            
+            div.innerHTML = `<span class="opacity-40">[${time}]</span> <span class="${color}">${message}</span>`;
+            consoleEl.appendChild(div);
+            consoleEl.scrollTop = consoleEl.scrollHeight;
+        }
+
+        // Dropzone logic
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => handleFileSelect(e.target.files[0]));
+        dropZone.addEventListener('dragover', (e) => { e.preventDefault(); dropZone.classList.add('dragover'); });
+        dropZone.addEventListener('dragleave', () => dropZone.classList.remove('dragover'));
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            handleFileSelect(e.dataTransfer.files[0]);
+        });
+
+        function handleFileSelect(file) {
+            if (!file) return;
+            selectedFile = file;
+            fileDisplay.classList.add('hidden');
+            fileNameDisp.innerText = `READY: ${file.name} (${(file.size / 1024 / 1024).toFixed(2)} MB)`;
+            fileNameDisp.classList.remove('hidden');
+            convertBtn.disabled = false;
+            downloadContainer.classList.add('hidden');
+            log(`Input stream established: ${file.name}`);
+        }
+
+        convertBtn.addEventListener('click', async () => {
+            if (!selectedFile || !ffmpeg) return;
+
+            const targetExt = formatSelect.value;
+            const inputName = 'input_' + selectedFile.name.replace(/\s+/g, '_');
+            const outputName = `output.${targetExt}`;
+
+            try {
+                convertBtn.disabled = true;
+                downloadContainer.classList.add('hidden');
+                progressInner.style.width = '0%';
+                progressText.innerText = '0%';
+                
+                log(`Encoding process started: ${targetExt.toUpperCase()}`, 'process');
+
+                ffmpeg.on('log', ({ message }) => {
+                    if (!message.includes('frame=') && message.length > 5) {
+                        log(`[CORE] ${message.substring(0, 100)}...`);
+                    }
+                });
+
+                ffmpeg.on('progress', ({ progress }) => {
+                    const p = Math.round(progress * 100);
+                    if (p >= 0 && p <= 100) {
+                        progressInner.style.width = `${p}%`;
+                        progressText.innerText = `${p}%`;
+                    }
+                });
+
+                // Load file to Virtual FS
+                const fileData = await fetchFile(selectedFile);
+                await ffmpeg.writeFile(inputName, fileData);
+
+                // Build Command Arguments
+                let args = ['-i', inputName];
+                
+                const isVideo = ['mp4', 'mov'].includes(targetExt);
+
+                if (isVideo) {
+                    // Video settings
+                    args.push('-c:v', 'libx264');
+                    if (vBitrate.value !== 'original') args.push('-b:v', vBitrate.value);
+                    if (vFps.value !== 'original') args.push('-r', vFps.value);
+                    if (vScale.value !== 'original') args.push('-vf', `scale=${vScale.value}:-1`);
+                    
+                    // Audio within video
+                    args.push('-c:a', 'aac');
+                    args.push('-b:a', aBitrate.value);
+                    if (aRate.value !== 'original') args.push('-ar', aRate.value);
+
+                    args.push('-preset', 'ultrafast'); // Critical for browser performance
+                    args.push('-movflags', 'faststart');
+                } else {
+                    // Audio only settings
+                    if (targetExt === 'mp3') args.push('-c:a', 'libmp3lame');
+                    else if (targetExt === 'm4a') args.push('-c:a', 'aac');
+                    
+                    args.push('-b:a', aBitrate.value);
+                    if (aRate.value !== 'original') args.push('-ar', aRate.value);
+                }
+
+                args.push(outputName);
+
+                log('Executing: ffmpeg ' + args.join(' '));
+                await ffmpeg.exec(args);
+
+                // Read output
+                const data = await ffmpeg.readFile(outputName);
+                const blob = new Blob([data.buffer], { type: getMimeType(targetExt) });
+                const url = URL.createObjectURL(blob);
+
+                downloadLink.href = url;
+                downloadLink.download = `transcoded_${selectedFile.name.split('.')[0]}.${targetExt}`;
+                downloadContainer.classList.remove('hidden');
+                
+                log('Task completed successfully.', 'success');
+                progressInner.style.width = '100%';
+                progressText.innerText = '100%';
+
+                // Cleanup
+                await ffmpeg.deleteFile(inputName);
+                await ffmpeg.deleteFile(outputName);
+
+            } catch (err) {
+                console.error(err);
+                log('Execution fault: ' + err.message, 'error');
+            } finally {
+                convertBtn.disabled = false;
+            }
+        });
+
+        function getMimeType(ext) {
+            const types = {
+                'mp3': 'audio/mpeg',
+                'wav': 'audio/wav',
+                'ogg': 'audio/ogg',
+                'm4a': 'audio/mp4',
+                'mp4': 'video/mp4',
+                'mov': 'video/quicktime'
+            };
+            return types[ext] || 'application/octet-stream';
+        }
+
+        window.onload = init;
+    </script>
+</body>
+</html>

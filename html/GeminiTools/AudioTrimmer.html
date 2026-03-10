@@ -1,0 +1,622 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio Trimmer Pro</title>
+    <script src="/js/tailwindcss_4_2_1.js"></script>
+    <!-- MP3 Encoder Library -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/lamejs/1.2.1/lame.all.min.js"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=JetBrains+Mono:wght@400;700&display=swap');
+
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+            font-family: 'JetBrains+Mono', monospace;
+        }
+
+        .waveform-container {
+            background-color: #1e293b;
+            border: 1px solid #334155;
+            position: relative;
+            overflow-x: auto;
+            overflow-y: hidden;
+            height: 250px;
+            cursor: crosshair;
+        }
+
+        canvas {
+            display: block;
+        }
+
+        .selection-overlay {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            background-color: rgba(34, 211, 238, 0.2);
+            border-left: 2px solid #22d3ee;
+            border-right: 2px solid #22d3ee;
+            pointer-events: none;
+            display: none;
+        }
+
+        .playhead {
+            position: absolute;
+            top: 0;
+            width: 2px;
+            height: 100%;
+            background-color: #f43f5e;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        /* Custom Scrollbar */
+        .waveform-container::-webkit-scrollbar {
+            height: 8px;
+        }
+        .waveform-container::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        .waveform-container::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        .waveform-container::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+
+        .btn-primary {
+            background-color: #0ea5e9;
+            transition: all 0.2s;
+        }
+        .btn-primary:hover {
+            background-color: #38bdf8;
+            box-shadow: 0 0 15px rgba(14, 165, 233, 0.4);
+        }
+        .btn-secondary {
+            background-color: #334155;
+        }
+        .btn-secondary:hover {
+            background-color: #475569;
+        }
+        
+        #drop-zone.dragover {
+            border-color: #22d3ee;
+            background-color: #1e293b;
+        }
+
+        select {
+            appearance: none;
+            background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' fill='none' viewBox='0 0 24 24' stroke='%2394a3b8'%3E%3Cpath stroke-linecap='round' stroke-linejoin='round' stroke-width='2' d='M19 9l-7 7-7-7'%3E%3C/path%3E%3C/svg%3E");
+            background-repeat: no-repeat;
+            background-position: right 0.5rem center;
+            background-size: 1.5em 1.5em;
+            padding-right: 2.5rem;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8 border-b border-slate-700 pb-4 flex justify-between items-end">
+            <div>
+                <h1 class="text-3xl font-bold text-cyan-400">AUDIO_TRIMMER_PRO <span class="text-sm font-normal text-slate-500">v1.0.0</span></h1>
+                <p class="text-slate-400 mt-1">Extract segments with surgical precision.</p>
+            </div>
+            <div id="file-info" class="text-right text-xs text-slate-500 hidden">
+                <p id="filename-display"></p>
+                <p id="duration-display"></p>
+            </div>
+        </header>
+
+        <!-- Drop Zone -->
+        <div id="drop-zone" class="border-2 border-dashed border-slate-600 rounded-xl p-12 text-center transition-all cursor-pointer mb-6">
+            <input type="file" id="file-input" class="hidden" accept="audio/*,video/*">
+            <div class="space-y-4">
+                <div class="text-5xl">📁</div>
+                <p class="text-lg">Drag & drop audio/video file or <span class="text-cyan-400">click to browse</span></p>
+                <p class="text-sm text-slate-500">Supports MP3, WAV, M4A, MP4, etc.</p>
+            </div>
+        </div>
+
+        <!-- Editor Area -->
+        <div id="editor-container" class="hidden space-y-6">
+            <div class="flex flex-wrap gap-4 items-center justify-between bg-slate-800 p-4 rounded-lg">
+                <div class="flex flex-wrap gap-2">
+                    <button id="btn-play-selection" title="選択範囲を再生" class="btn-primary px-4 py-2 rounded font-bold text-slate-900 flex items-center gap-2">
+                        <span>▶</span> 選択範囲
+                    </button>
+                    <button id="btn-play-from-start" title="選択開始地点から最後まで再生" class="btn-secondary px-4 py-2 rounded font-bold flex items-center gap-2 border border-cyan-500/30">
+                        <span>⏯</span> 開始点から
+                    </button>
+                    <button id="btn-play-all" title="音声全体を再生" class="btn-secondary px-4 py-2 rounded font-bold flex items-center gap-2 border border-slate-600">
+                        <span>🔄</span> 全再生
+                    </button>
+                    <button id="btn-stop" title="停止" class="btn-secondary px-4 py-2 rounded font-bold flex items-center gap-2 bg-rose-900/40 hover:bg-rose-800">
+                        <span>■</span> 停止
+                    </button>
+                </div>
+                
+                <div class="flex gap-4 items-center">
+                    <div class="flex gap-2 items-center">
+                        <span class="text-xs text-slate-400">ZOOM:</span>
+                        <button id="btn-zoom-out" class="btn-secondary w-10 h-10 rounded-full font-bold">-</button>
+                        <span id="zoom-level" class="text-xs w-12 text-center">100%</span>
+                        <button id="btn-zoom-in" class="btn-secondary w-10 h-10 rounded-full font-bold">+</button>
+                    </div>
+
+                    <div class="h-8 w-[1px] bg-slate-700 mx-2 hidden md:block"></div>
+
+                    <div class="flex items-center gap-2">
+                        <select id="export-format" class="bg-slate-900 border border-slate-700 text-xs px-3 py-2 rounded outline-none focus:border-emerald-500 text-slate-300">
+                            <option value="wav">WAV (PCM)</option>
+                            <option value="mp3">MP3 (128kbps)</option>
+                        </select>
+                        <button id="btn-export" class="bg-emerald-600 hover:bg-emerald-500 px-6 py-2 rounded font-bold flex items-center gap-2 transition-all">
+                            <span>↓</span> EXPORT
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <div class="relative">
+                <div id="waveform-wrapper" class="waveform-container rounded-lg">
+                    <canvas id="waveform-canvas"></canvas>
+                    <div id="selection-overlay" class="selection-overlay"></div>
+                    <div id="playhead" class="playhead" style="left: 0;"></div>
+                </div>
+                <!-- Time Markers -->
+                <div class="flex justify-between text-[10px] text-slate-500 mt-1 px-1">
+                    <span id="time-start">00:00.00</span>
+                    <span id="time-selection-info" class="text-cyan-400 font-bold uppercase tracking-wider">Mouse wheel to scroll waveform</span>
+                    <span id="time-end">00:00.00</span>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                    <h3 class="text-xs text-slate-500 uppercase mb-2">Selection Start</h3>
+                    <p id="val-start" class="text-xl font-bold text-cyan-400">0.000s</p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                    <h3 class="text-xs text-slate-500 uppercase mb-2">Selection End</h3>
+                    <p id="val-end" class="text-xl font-bold text-cyan-400">0.000s</p>
+                </div>
+                <div class="bg-slate-800/50 p-4 rounded-lg border border-slate-700">
+                    <h3 class="text-xs text-slate-500 uppercase mb-2">Total Duration</h3>
+                    <p id="val-duration" class="text-xl font-bold text-cyan-400">0.000s</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Notification -->
+        <div id="notification" class="fixed bottom-8 right-8 bg-cyan-600 text-white px-6 py-3 rounded-lg shadow-2xl transform translate-y-24 transition-transform duration-300 pointer-events-none z-50">
+            Processing...
+        </div>
+    </div>
+
+    <script>
+        // --- Core Variables ---
+        let audioContext;
+        let audioBuffer;
+        let sourceNode;
+        let zoomLevel = 1.0;
+        const basePixelsPerSecond = 50;
+        
+        let selectionStart = 0; // seconds
+        let selectionEnd = 0;   // seconds
+        let isSelecting = false;
+        
+        let isPlaying = false;
+        let startTime = 0;
+        let currentPlaybackStart = 0;
+        let playInterval;
+
+        // --- DOM Elements ---
+        const dropZone = document.getElementById('drop-zone');
+        const fileInput = document.getElementById('file-input');
+        const editorContainer = document.getElementById('editor-container');
+        const canvas = document.getElementById('waveform-canvas');
+        const ctx = canvas.getContext('2d');
+        const overlay = document.getElementById('selection-overlay');
+        const playhead = document.getElementById('playhead');
+        const waveformWrapper = document.getElementById('waveform-wrapper');
+        
+        // Buttons
+        const btnPlaySelection = document.getElementById('btn-play-selection');
+        const btnPlayFromStart = document.getElementById('btn-play-from-start');
+        const btnPlayAll = document.getElementById('btn-play-all');
+        const btnStop = document.getElementById('btn-stop');
+        const btnZoomIn = document.getElementById('btn-zoom-in');
+        const btnZoomOut = document.getElementById('btn-zoom-out');
+        const btnExport = document.getElementById('btn-export');
+        const exportFormatSelect = document.getElementById('export-format');
+        
+        // Displays
+        const zoomDisplay = document.getElementById('zoom-level');
+        const valStart = document.getElementById('val-start');
+        const valEnd = document.getElementById('val-end');
+        const valDuration = document.getElementById('val-duration');
+        const timeSelectionInfo = document.getElementById('time-selection-info');
+        const notification = document.getElementById('notification');
+
+        // --- Event Listeners ---
+        
+        dropZone.onclick = () => fileInput.click();
+        dropZone.ondragover = (e) => { e.preventDefault(); dropZone.classList.add('dragover'); };
+        dropZone.ondragleave = () => dropZone.classList.remove('dragover');
+        dropZone.ondrop = (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('dragover');
+            if (e.dataTransfer.files.length) handleFile(e.dataTransfer.files[0]);
+        };
+        
+        fileInput.onchange = (e) => {
+            if (e.target.files.length) handleFile(e.target.files[0]);
+        };
+
+        btnZoomIn.onclick = () => { zoomLevel *= 1.5; updateWaveform(); };
+        btnZoomOut.onclick = () => { zoomLevel = Math.max(0.1, zoomLevel / 1.5); updateWaveform(); };
+        
+        btnPlaySelection.onclick = () => {
+            const start = Math.min(selectionStart, selectionEnd);
+            const duration = Math.abs(selectionEnd - selectionStart);
+            playAudioRange(start, duration);
+        };
+
+        btnPlayFromStart.onclick = () => {
+            const start = Math.min(selectionStart, selectionEnd);
+            const duration = audioBuffer.duration - start;
+            playAudioRange(start, duration);
+        };
+
+        btnPlayAll.onclick = () => {
+            playAudioRange(0, audioBuffer.duration);
+        };
+
+        btnStop.onclick = stopAudio;
+        btnExport.onclick = exportSelection;
+
+        // Waveform Interaction
+        waveformWrapper.onmousedown = (e) => {
+            if (!audioBuffer) return;
+            isSelecting = true;
+            const x = getMouseX(e);
+            selectionStart = xToTime(x);
+            selectionEnd = selectionStart;
+            updateSelectionUI();
+        };
+
+        window.onmousemove = (e) => {
+            if (!isSelecting) return;
+            const x = getMouseX(e);
+            selectionEnd = xToTime(x);
+            updateSelectionUI();
+        };
+
+        window.onmouseup = () => {
+            if (isSelecting) {
+                isSelecting = false;
+                if (selectionStart > selectionEnd) {
+                    [selectionStart, selectionEnd] = [selectionEnd, selectionStart];
+                }
+                updateSelectionUI();
+            }
+        };
+
+        // Mouse Wheel Scroll
+        waveformWrapper.addEventListener('wheel', (e) => {
+            if (!audioBuffer) return;
+            e.preventDefault();
+            // Map vertical scroll (deltaY) to horizontal scroll
+            waveformWrapper.scrollLeft += e.deltaY;
+        }, { passive: false });
+
+        // --- Functions ---
+
+        async function handleFile(file) {
+            showNotification("ファイルを読み込み中...");
+            const arrayBuffer = await file.arrayBuffer();
+            
+            if (!audioContext) audioContext = new (window.AudioContext || window.webkitAudioContext)();
+            
+            try {
+                audioBuffer = await audioContext.decodeAudioData(arrayBuffer);
+                
+                // UI Setup
+                dropZone.classList.add('hidden');
+                editorContainer.classList.remove('hidden');
+                document.getElementById('file-info').classList.remove('hidden');
+                document.getElementById('filename-display').innerText = file.name;
+                document.getElementById('duration-display').innerText = formatTime(audioBuffer.duration);
+                
+                // Initialize Selection
+                selectionStart = 0;
+                selectionEnd = audioBuffer.duration;
+                
+                updateWaveform();
+                updateSelectionUI();
+                showNotification("読み込み完了");
+            } catch (err) {
+                console.error(err);
+                showNotification("エラー: ファイルの形式がサポートされていないか、壊れています。");
+            }
+        }
+
+        function updateWaveform() {
+            if (!audioBuffer) return;
+
+            const pixelsPerSecond = basePixelsPerSecond * zoomLevel;
+            const width = audioBuffer.duration * pixelsPerSecond;
+            const height = canvas.height = 250;
+            canvas.width = width;
+            
+            zoomDisplay.innerText = Math.round(zoomLevel * 100) + "%";
+
+            const channelData = audioBuffer.getChannelData(0);
+            const step = Math.ceil(channelData.length / width);
+            
+            ctx.clearRect(0, 0, width, height);
+            ctx.fillStyle = '#22d3ee';
+            
+            const amp = height / 2;
+            
+            for (let i = 0; i < width; i++) {
+                let min = 1.0;
+                let max = -1.0;
+                
+                for (let j = 0; j < step; j++) {
+                    const datum = channelData[(i * step) + j];
+                    if (datum < min) min = datum;
+                    if (datum > max) max = datum;
+                }
+                
+                // Draw bar
+                ctx.fillRect(i, (1 + min) * amp, 1, Math.max(1, (max - min) * amp));
+            }
+            
+            updateSelectionUI();
+            document.getElementById('time-end').innerText = formatTime(audioBuffer.duration);
+        }
+
+        function updateSelectionUI() {
+            const pixelsPerSecond = basePixelsPerSecond * zoomLevel;
+            const xStart = selectionStart * pixelsPerSecond;
+            const xEnd = selectionEnd * pixelsPerSecond;
+            
+            const left = Math.min(xStart, xEnd);
+            const width = Math.abs(xEnd - xStart);
+            
+            overlay.style.display = 'block';
+            overlay.style.left = left + 'px';
+            overlay.style.width = width + 'px';
+            
+            valStart.innerText = selectionStart.toFixed(3) + "s";
+            valEnd.innerText = selectionEnd.toFixed(3) + "s";
+            valDuration.innerText = Math.abs(selectionEnd - selectionStart).toFixed(3) + "s";
+            
+            timeSelectionInfo.innerText = `SELECTED: ${formatTime(selectionStart)} - ${formatTime(selectionEnd)}`;
+        }
+
+        function getMouseX(e) {
+            const rect = waveformWrapper.getBoundingClientRect();
+            return e.clientX - rect.left + waveformWrapper.scrollLeft;
+        }
+
+        function xToTime(x) {
+            const pixelsPerSecond = basePixelsPerSecond * zoomLevel;
+            let time = x / pixelsPerSecond;
+            return Math.max(0, Math.min(audioBuffer.duration, time));
+        }
+
+        function formatTime(seconds) {
+            const m = Math.floor(seconds / 60);
+            const s = Math.floor(seconds % 60);
+            const ms = Math.floor((seconds % 1) * 100);
+            return `${m.toString().padStart(2, '0')}:${s.toString().padStart(2, '0')}.${ms.toString().padStart(2, '0')}`;
+        }
+
+        // --- Audio Control ---
+
+        function playAudioRange(start, duration) {
+            if (isPlaying) stopAudio();
+            if (!audioBuffer) return;
+            
+            sourceNode = audioContext.createBufferSource();
+            sourceNode.buffer = audioBuffer;
+            sourceNode.connect(audioContext.destination);
+            
+            currentPlaybackStart = start;
+            startTime = audioContext.currentTime;
+            
+            sourceNode.start(0, start, duration);
+            isPlaying = true;
+            
+            // Playhead animation
+            const pixelsPerSecond = basePixelsPerSecond * zoomLevel;
+            playInterval = setInterval(() => {
+                const elapsed = audioContext.currentTime - startTime;
+                const currentTime = currentPlaybackStart + elapsed;
+                playhead.style.left = (currentTime * pixelsPerSecond) + "px";
+                
+                if (elapsed >= duration) stopAudio();
+            }, 16);
+            
+            sourceNode.onended = () => {
+                if (isPlaying) stopAudio();
+            };
+        }
+
+        function stopAudio() {
+            if (sourceNode) {
+                try { sourceNode.stop(); } catch(e) {}
+                sourceNode = null;
+            }
+            clearInterval(playInterval);
+            isPlaying = false;
+            playhead.style.left = "0";
+        }
+
+        // --- Export Logic ---
+
+        async function exportSelection() {
+            if (!audioBuffer) return;
+            
+            const start = Math.min(selectionStart, selectionEnd);
+            const end = Math.max(selectionStart, selectionEnd);
+            const duration = end - start;
+            const sampleRate = audioBuffer.sampleRate;
+            const numChannels = audioBuffer.numberOfChannels;
+            
+            const startSample = Math.floor(start * sampleRate);
+            const endSample = Math.floor(end * sampleRate);
+            const frameCount = endSample - startSample;
+            
+            if (frameCount <= 0) {
+                showNotification("範囲を指定してください");
+                return;
+            }
+
+            const format = exportFormatSelect.value;
+            showNotification(`${format.toUpperCase()}形式で書き出し中...`);
+            
+            // Create New AudioBuffer for selected segment
+            const newBuffer = audioContext.createBuffer(numChannels, frameCount, sampleRate);
+            for (let channel = 0; channel < numChannels; channel++) {
+                const nowBuffering = audioBuffer.getChannelData(channel);
+                const newBuffering = newBuffer.getChannelData(channel);
+                for (let i = 0; i < frameCount; i++) {
+                    newBuffering[i] = nowBuffering[startSample + i];
+                }
+            }
+
+            let blob;
+            if (format === 'wav') {
+                blob = audioBufferToWav(newBuffer);
+            } else if (format === 'mp3') {
+                blob = audioBufferToMp3(newBuffer);
+            }
+
+            if (blob) {
+                const url = URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = url;
+                link.download = `trimmed_audio_${new Date().getTime()}.${format}`;
+                link.click();
+                showNotification(`書き出しが完了しました (${format.toUpperCase()})`);
+            }
+        }
+
+        // Helper: AudioBuffer to WAV format
+        function audioBufferToWav(buffer) {
+            const numChannels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const format = 1; // PCM
+            const bitDepth = 16;
+            
+            const bytesPerSample = bitDepth / 8;
+            const blockAlign = numChannels * bytesPerSample;
+            
+            const bufferLength = buffer.length;
+            const dataSize = bufferLength * blockAlign;
+            const headerSize = 44;
+            const totalSize = headerSize + dataSize;
+            
+            const arrayBuffer = new ArrayBuffer(totalSize);
+            const view = new DataView(arrayBuffer);
+            
+            const writeString = (offset, string) => {
+                for (let i = 0; i < string.length; i++) {
+                    view.setUint8(offset + i, string.charCodeAt(i));
+                }
+            };
+            
+            writeString(0, 'RIFF');
+            view.setUint32(4, totalSize - 8, true);
+            writeString(8, 'WAVE');
+            writeString(12, 'fmt ');
+            view.setUint32(16, 16, true);
+            view.setUint16(20, format, true);
+            view.setUint16(22, numChannels, true);
+            view.setUint32(24, sampleRate, true);
+            view.setUint32(28, sampleRate * blockAlign, true);
+            view.setUint16(32, blockAlign, true);
+            view.setUint16(34, bitDepth, true);
+            writeString(36, 'data');
+            view.setUint32(40, dataSize, true);
+            
+            let offset = 44;
+            for (let i = 0; i < bufferLength; i++) {
+                for (let channel = 0; channel < numChannels; channel++) {
+                    let sample = buffer.getChannelData(channel)[i];
+                    sample = Math.max(-1, Math.min(1, sample));
+                    sample = sample < 0 ? sample * 0x8000 : sample * 0x7FFF;
+                    view.setInt16(offset, sample, true);
+                    offset += 2;
+                }
+            }
+            
+            return new Blob([arrayBuffer], { type: 'audio/wav' });
+        }
+
+        // Helper: AudioBuffer to MP3 format using lamejs
+        function audioBufferToMp3(buffer) {
+            const channels = buffer.numberOfChannels;
+            const sampleRate = buffer.sampleRate;
+            const kbps = 128;
+            const mp3encoder = new lamejs.Mp3Encoder(channels, sampleRate, kbps);
+            const mp3Data = [];
+
+            const sampleCount = buffer.length;
+            
+            if (channels === 2) {
+                const left = buffer.getChannelData(0);
+                const right = buffer.getChannelData(1);
+                
+                // Convert to Int16
+                const leftInt = new Int16Array(sampleCount);
+                const rightInt = new Int16Array(sampleCount);
+                for (let i = 0; i < sampleCount; i++) {
+                    leftInt[i] = left[i] < 0 ? left[i] * 0x8000 : left[i] * 0x7FFF;
+                    rightInt[i] = right[i] < 0 ? right[i] * 0x8000 : right[i] * 0x7FFF;
+                }
+
+                const chunkSize = 1152;
+                for (let i = 0; i < sampleCount; i += chunkSize) {
+                    const lChunk = leftInt.subarray(i, i + chunkSize);
+                    const rChunk = rightInt.subarray(i, i + chunkSize);
+                    const mp3buf = mp3encoder.encodeBuffer(lChunk, rChunk);
+                    if (mp3buf.length > 0) mp3Data.push(mp3buf);
+                }
+            } else {
+                // Mono
+                const samples = buffer.getChannelData(0);
+                const samplesInt = new Int16Array(sampleCount);
+                for (let i = 0; i < sampleCount; i++) {
+                    samplesInt[i] = samples[i] < 0 ? samples[i] * 0x8000 : samples[i] * 0x7FFF;
+                }
+                
+                const chunkSize = 1152;
+                for (let i = 0; i < sampleCount; i += chunkSize) {
+                    const chunk = samplesInt.subarray(i, i + chunkSize);
+                    const mp3buf = mp3encoder.encodeBuffer(chunk);
+                    if (mp3buf.length > 0) mp3Data.push(mp3buf);
+                }
+            }
+
+            const mp3buf = mp3encoder.flush();
+            if (mp3buf.length > 0) mp3Data.push(mp3buf);
+
+            return new Blob(mp3Data, { type: 'audio/mp3' });
+        }
+
+        function showNotification(text) {
+            notification.innerText = text;
+            notification.style.transform = "translateY(0)";
+            setTimeout(() => {
+                notification.style.transform = "translateY(100px)";
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
