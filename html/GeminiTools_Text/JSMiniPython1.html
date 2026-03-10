@@ -1,0 +1,260 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JS-Python Mini Interpreter</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@400;500&display=swap');
+        
+        body {
+            background-color: #0f172a;
+            color: #e2e8f0;
+        }
+        
+        .code-font {
+            font-family: 'Fira Code', monospace;
+        }
+
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 8px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #475569;
+            border-radius: 4px;
+        }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #64748b;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col p-4 md:p-8">
+
+    <header class="max-w-5xl mx-auto w-full mb-8">
+        <h1 class="text-3xl font-bold text-blue-400 mb-2">Mini Python Interpreter</h1>
+        <p class="text-slate-400 text-sm">JavaScriptで構築された簡易的な数式実行環境です。</p>
+    </header>
+
+    <main class="max-w-5xl mx-auto w-full flex-grow grid grid-cols-1 lg:grid-cols-2 gap-6 mb-12">
+        <!-- Editor Section -->
+        <div class="flex flex-col h-[500px]">
+            <div class="flex items-center justify-between bg-slate-800 px-4 py-2 rounded-t-lg border-b border-slate-700">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Editor (Script)</span>
+                <span class="text-[10px] text-slate-500">Ctrl + Enter to run</span>
+            </div>
+            <textarea 
+                id="editor" 
+                class="flex-grow bg-slate-900 text-blue-300 p-4 code-font resize-none focus:outline-none focus:ring-1 focus:ring-blue-500 rounded-b-lg border border-slate-700 custom-scrollbar"
+                placeholder="# 変数を定義して計算できます&#10;x = 10&#10;y = 20&#10;result = (x + y) * 2&#10;print('Result is:')&#10;result"
+            >x = 5
+y = 10
+z = 1
+area = (z + x) * y
+print("矩形の面積は:")
+area</textarea>
+            
+            <button 
+                id="run-btn"
+                class="mt-4 bg-blue-600 hover:bg-blue-500 text-white font-bold py-3 px-6 rounded-lg transition-colors flex items-center justify-center gap-2 shadow-lg active:transform active:scale-95"
+            >
+                <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="5 3 19 12 5 21 5 3"></polygon></svg>
+                実行する
+            </button>
+        </div>
+
+        <!-- Output Section -->
+        <div class="flex flex-col h-[500px]">
+            <div class="flex items-center justify-between bg-slate-800 px-4 py-2 rounded-t-lg border-b border-slate-700">
+                <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">Console (Output)</span>
+                <button id="clear-btn" class="text-[10px] text-slate-500 hover:text-slate-300 transition-colors uppercase">Clear</button>
+            </div>
+            <div 
+                id="output" 
+                class="flex-grow bg-black text-green-400 p-4 code-font overflow-y-auto rounded-b-lg border border-slate-700 custom-scrollbar whitespace-pre-wrap"
+            ></div>
+        </div>
+    </main>
+
+    <!-- Documentation Section -->
+    <footer class="max-w-5xl mx-auto w-full bg-slate-800/50 p-6 rounded-xl border border-slate-700 mb-8">
+        <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
+            <svg xmlns="http://www.w3.org/2000/svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"></circle><line x1="12" y1="16" x2="12" y2="12"></line><line x1="12" y1="8" x2="12.01" y2="8"></line></svg>
+            対応機能の説明
+        </h2>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-6 text-sm">
+            <div>
+                <h3 class="text-blue-400 font-semibold mb-2">基本操作</h3>
+                <ul class="space-y-2 text-slate-300">
+                    <li><code class="bg-slate-700 px-1 rounded text-blue-200">変数名 = 値</code> : 数値や文字列を変数に保存します。</li>
+                    <li><code class="bg-slate-700 px-1 rounded text-blue-200">print(内容)</code> : コンソールに値を出力します。</li>
+                    <li><code class="bg-slate-700 px-1 rounded text-blue-200">末尾の行</code> : 代入でない式の場合、その結果が最後に出力されます。</li>
+                </ul>
+            </div>
+            <div>
+                <h3 class="text-blue-400 font-semibold mb-2">演算子</h3>
+                <ul class="space-y-2 text-slate-300">
+                    <li>算術演算: <code class="bg-slate-700 px-1 rounded text-blue-200">+</code>, <code class="bg-slate-700 px-1 rounded text-blue-200">-</code>, <code class="bg-slate-700 px-1 rounded text-blue-200">*</code>, <code class="bg-slate-700 px-1 rounded text-blue-200">/</code></li>
+                    <li>高度な演算: <code class="bg-slate-700 px-1 rounded text-blue-200">**</code> (べき乗), <code class="bg-slate-700 px-1 rounded text-blue-200">%</code> (余り)</li>
+                    <li>文字列: <code class="bg-slate-700 px-1 rounded text-blue-200">"hello" + " world"</code> のように結合可能です。</li>
+                </ul>
+            </div>
+        </div>
+    </footer>
+
+    <script>
+        /**
+         * 簡易インタープリターのロジック
+         */
+        class MiniInterpreter {
+            constructor() {
+                this.variables = {};
+                this.outputBuffer = [];
+            }
+
+            // 出力バッファに追加
+            print(...args) {
+                const formatted = args.map(arg => 
+                    typeof arg === 'object' ? JSON.stringify(arg) : arg
+                ).join(' ');
+                this.outputBuffer.push(formatted);
+                return undefined;
+            }
+
+            // 1行の実行
+            executeLine(line) {
+                line = line.trim();
+                if (!line || line.startsWith('#')) return null;
+
+                // 代入文のチェック (例: x = 10)
+                const assignmentMatch = line.match(/^([a-zA-Z_]\w*)\s*=\s*(.*)$/);
+                
+                try {
+                    if (assignmentMatch) {
+                        const varName = assignmentMatch[1];
+                        const expression = assignmentMatch[2];
+                        
+                        // 変数コンテキスト内で評価
+                        const value = this.evaluate(expression);
+                        this.variables[varName] = value;
+                        return null; // 代入は結果を表示しない
+                    } else {
+                        // 通常の式または関数呼び出し
+                        return this.evaluate(line);
+                    }
+                } catch (error) {
+                    throw new Error(`Execution error at line "${line}": ${error.message}`);
+                }
+            }
+
+            // 式の評価
+            evaluate(code) {
+                // print関数のシミュレーション
+                const context = { 
+                    ...this.variables, 
+                    print: (...args) => this.print(...args),
+                    Math: Math
+                };
+
+                // 変数名を展開するためのキー配列
+                const keys = Object.keys(context);
+                const values = Object.values(context);
+
+                // Pythonのべき乗 ** を JSの Math.pow もしくは ** に変換（ES2016+）
+                // 簡易的にそのままJSのevalに渡す（JSも ** をサポートしているため）
+                
+                try {
+                    // Functionコンストラクタを使用して、限定的なスコープで実行
+                    const fn = new Function(...keys, `return (${code})`);
+                    return fn(...values);
+                } catch (e) {
+                    throw e;
+                }
+            }
+
+            // スクリプト全体の実行
+            run(script) {
+                this.outputBuffer = [];
+                const lines = script.split('\n');
+                let lastResult = null;
+
+                for (let line of lines) {
+                    const result = this.executeLine(line);
+                    if (result !== null && result !== undefined) {
+                        lastResult = result;
+                    }
+                }
+
+                return {
+                    logs: this.outputBuffer,
+                    result: lastResult
+                };
+            }
+        }
+
+        // UI制御
+        const editor = document.getElementById('editor');
+        const runBtn = document.getElementById('run-btn');
+        const clearBtn = document.getElementById('clear-btn');
+        const outputDisplay = document.getElementById('output');
+        const interpreter = new MiniInterpreter();
+
+        function runCode() {
+            const code = editor.value;
+            
+            try {
+                const { logs, result } = interpreter.run(code);
+                
+                let outputHtml = '';
+                
+                // ログ（print出力）を表示
+                if (logs.length > 0) {
+                    outputHtml += logs.map(log => `<div class="mb-1 text-slate-300"><span>&gt;</span> ${log}</div>`).join('');
+                }
+
+                // 最終的な評価結果を表示
+                if (result !== null) {
+                    outputHtml += `<div class="mt-2 text-yellow-400 font-bold border-t border-slate-800 pt-2 flex items-center gap-2">
+                        <span class="text-xs text-slate-500">Out:</span> ${result}
+                    </div>`;
+                }
+
+                if (outputHtml === '') {
+                    outputHtml = '<div class="text-slate-500 italic">No output</div>';
+                }
+
+                outputDisplay.innerHTML = outputHtml;
+                // 自動スクロール
+                outputDisplay.scrollTop = outputDisplay.scrollHeight;
+
+            } catch (error) {
+                outputDisplay.innerHTML = `<div class="text-red-500 font-bold flex flex-col gap-1">
+                    <span>⚠️ Error</span>
+                    <span class="text-xs opacity-80">${error.message}</span>
+                </div>`;
+            }
+        }
+
+        // イベントリスナー
+        runBtn.addEventListener('click', runCode);
+
+        clearBtn.addEventListener('click', () => {
+            outputDisplay.innerHTML = '';
+        });
+
+        // Ctrl + Enter で実行
+        editor.addEventListener('keydown', (e) => {
+            if (e.ctrlKey && e.key === 'Enter') {
+                e.preventDefault();
+                runCode();
+            }
+        });
+
+        // 初期実行（任意）
+        // window.onload = runCode;
+    </script>
+</body>
+</html>
