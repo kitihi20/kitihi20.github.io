@@ -1,0 +1,554 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU & iGPU Performance Dashboard</title>
+    <!-- Tailwind CSS (CDN) -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        background: '#0d1117',
+                        surface: '#161b22',
+                        border: '#30363d',
+                        textMain: '#c9d1d9',
+                        textMuted: '#8b949e',
+                        accent: '#58a6ff',
+                        accentHover: '#3182ce',
+                    },
+                    fontFamily: {
+                        sans: ['-apple-system', 'BlinkMacSystemFont', '"Segoe UI"', 'Helvetica', 'Arial', 'sans-serif', '"Apple Color Emoji"', '"Segoe UI Emoji"'],
+                    }
+                }
+            }
+        }
+    </script>
+    <!-- Chart.js (CDN) -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        /* カスタムスクロールバー（エンジニア向けダークテーマ） */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0d1117; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #30363d; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #8b949e; 
+        }
+        
+        /* テーブルの粘着ヘッダーの影 */
+        th {
+            box-shadow: 0 1px 0 0 #30363d;
+        }
+        
+        /* チェックボックスのカスタムスタイル */
+        input[type="checkbox"] {
+            accent-color: #58a6ff;
+            cursor: pointer;
+        }
+    </style>
+</head>
+<body class="bg-background text-textMain font-sans h-screen flex flex-col p-4 gap-4 overflow-hidden">
+
+    <!-- ヘッダー -->
+    <header class="flex justify-between items-center pb-2 border-b border-border shrink-0">
+        <div>
+            <h1 class="text-xl font-bold text-white flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-accent"><rect width="16" height="16" x="4" y="4" rx="2"/><rect width="6" height="6" x="9" y="9" rx="1"/><path d="M15 2v2"/><path d="M15 20v2"/><path d="M2 15h2"/><path d="M2 9h2"/><path d="M20 15h2"/><path d="M20 9h2"/><path d="M9 2v2"/><path d="M9 20v2"/></svg>
+                Processor Performance Dashboard
+            </h1>
+            <p class="text-xs text-textMuted mt-1">CPU及び内蔵GPUの性能を比較・分析するツール</p>
+        </div>
+    </header>
+
+    <!-- 上段：グラフとコントロールパネル -->
+    <div class="flex flex-col lg:flex-row gap-4 h-[45%] shrink-0">
+        <!-- グラフエリア -->
+        <div class="w-full lg:w-2/3 bg-surface border border-border rounded-lg p-4 flex flex-col relative">
+            <div class="flex justify-between items-center mb-4 shrink-0">
+                <h2 class="text-sm font-semibold text-white">性能比較グラフ</h2>
+                <div class="flex items-center gap-2">
+                    <label for="metricSelector" class="text-xs text-textMuted">比較指標:</label>
+                    <select id="metricSelector" class="bg-background border border-border text-sm text-textMain rounded px-2 py-1 outline-none focus:border-accent cursor-pointer transition-colors">
+                        <!-- JSで動的生成 -->
+                    </select>
+                </div>
+            </div>
+            <div class="flex-1 relative w-full h-full min-h-0">
+                <canvas id="performanceChart"></canvas>
+            </div>
+            <div id="chartEmptyState" class="absolute inset-0 flex flex-col items-center justify-center bg-surface/90 backdrop-blur-sm hidden z-10 rounded-lg">
+                <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="text-textMuted mb-2"><path d="M3 3v18h18"/><path d="m19 9-5 5-4-4-3 3"/></svg>
+                <p class="text-textMuted text-sm">下の表から比較したいCPUを選択してください</p>
+            </div>
+        </div>
+
+        <!-- コントロールパネル (フィルタ & カラム設定) -->
+        <div class="w-full lg:w-1/3 bg-surface border border-border rounded-lg p-4 flex flex-col overflow-y-auto">
+            <h2 class="text-sm font-semibold text-white mb-4 shrink-0">コントロールパネル</h2>
+            
+            <!-- 検索フィルター -->
+            <div class="mb-6 shrink-0">
+                <label for="searchInput" class="block text-xs font-medium text-textMuted mb-1">データ絞り込み (設計, 型番, GPU等)</label>
+                <div class="relative">
+                    <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                        <svg class="h-4 w-4 text-textMuted" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M9 3.5a5.5 5.5 0 100 11 5.5 5.5 0 000-11zM2 9a7 7 0 1112.452 4.391l3.328 3.329a.75.75 0 11-1.06 1.06l-3.329-3.328A7 7 0 012 9z" clip-rule="evenodd" /></svg>
+                    </div>
+                    <input type="text" id="searchInput" class="block w-full pl-9 pr-3 py-2 bg-background border border-border rounded-md text-sm text-white placeholder-textMuted focus:outline-none focus:border-accent focus:ring-1 focus:ring-accent transition-all" placeholder="キーワードで検索...">
+                </div>
+            </div>
+
+            <!-- カラム表示設定 -->
+            <div class="flex-1 flex flex-col min-h-0">
+                <label class="block text-xs font-medium text-textMuted mb-2 shrink-0">表示カラム設定</label>
+                <div class="bg-background border border-border rounded-md p-3 overflow-y-auto flex-1">
+                    <div id="columnSettings" class="grid grid-cols-1 sm:grid-cols-2 gap-y-2 gap-x-4">
+                        <!-- JSで動的生成 -->
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 下段：データテーブル -->
+    <div class="flex-1 bg-surface border border-border rounded-lg flex flex-col overflow-hidden min-h-0">
+        <div class="p-3 border-b border-border flex justify-between items-center bg-[#1c2128] shrink-0">
+            <div class="flex items-center gap-4">
+                <h2 class="text-sm font-semibold text-white">CPU一覧</h2>
+                <div class="flex items-center gap-2">
+                    <button onclick="selectAllCurrent()" class="text-xs bg-background border border-border hover:border-accent hover:text-accent px-2 py-1 rounded transition-colors text-textMain">表示を全選択</button>
+                    <button onclick="clearAllSelection()" class="text-xs bg-background border border-border hover:border-accent hover:text-accent px-2 py-1 rounded transition-colors text-textMain">全解除</button>
+                </div>
+            </div>
+            <span id="rowCount" class="text-xs text-accent font-medium bg-accent/10 px-2 py-1 rounded-full">0 件表示</span>
+        </div>
+        <div class="flex-1 overflow-auto">
+            <table class="w-full text-left border-collapse text-sm whitespace-nowrap">
+                <thead class="bg-[#1c2128] text-textMuted text-xs sticky top-0 z-10">
+                    <tr id="tableHeader">
+                        <!-- JSで動的生成 -->
+                    </tr>
+                </thead>
+                <tbody id="tableBody" class="divide-y divide-border text-textMain">
+                    <!-- JSで動的生成 -->
+                </tbody>
+            </table>
+            <div id="tableEmptyState" class="hidden flex-col items-center justify-center py-12">
+                <p class="text-textMuted">該当するデータが見つかりません</p>
+            </div>
+        </div>
+    </div>
+
+    <!-- アプリケーションロジック -->
+    <script>
+        // 1. サンプルデータ (ユーザー提供のCSV抜粋に基づく)
+        // ※ 実際の運用時は fetch('data.csv').then(res => res.text()).then(csvText => init(csvText)) のように置き換えてください。
+        /*const rawCSVData = `設計,発売年,シリーズ,グレード,型番,シングル性能,マルチ性能,コア数,スレッド数,コア分類,最大ブーストクロック,TDP,TDP Up,TDP Down,内蔵GPU,GPUベースクロック,GPUターボクロック,iGPU-FP32理論値,内蔵NPU,NPU TOPS,追加情報
+AMD,2024,Ryzen AI,9,HX370,3957,35063,12,24,4|8,5.1,28,54,15,AMD Radeon 890M,0.62,2.9,5524,AMD Ryzen AI,50,
+AMD,2025,Ryzen,7,250,3702,25355,8,16,8,5.1,28,30,15,AMD Radeon 780M,0.8,2.7,4201,AMD Ryzen AI,16,Ryzen 7 8840Uと同一
+AMD,2025,Ryzen,7,170,3406,22993,8,16,8,4.75,45,54,35,AMD Radeon 680M,2,2.2,3379,None,0,Ryzen 7 7735HS、Ryzen 7 6800Hとほぼ同一
+AMD,2021,Ryzen,7,5800H,3001,20599,8,16,8,4.4,45,54,35,AMD Radeon Graphics,2,2,1536,None,0,
+Intel,2023,Core,i7,13700H,2685,25988,14,20,6|8,5.0,45,115,35,Intel Iris Xe,1.5,1.5,1459,None,0,
+Intel,2024,Core Ultra,7,155H,2300,23000,16,22,6|8|2,4.8,28,115,20,Intel Arc,0.3,2.25,3686,Intel AI Boost,34,
+Apple,2023,M3,Max,,3100,21000,14,14,10|4,4.0,30,78,10,Apple 30-core GPU,1.0,1.4,7200,Apple Neural Engine,18,
+AMD,2023,Ryzen,9,7940HS,3600,28000,8,16,8,5.2,35,54,35,AMD Radeon 780M,0.8,2.8,4300,AMD Ryzen AI,10,`;*/
+
+
+        // 2. 状態管理
+        let cpuData = [];          // 全データ
+        let filteredData = [];     // 絞り込み後データ
+        let selectedIds = new Set(); // 比較選択されたCPUのID
+        
+        let currentSortKey = null; // 現在のソートキー
+        let isAscending = true;    // 昇順かどうか
+        
+        // グラフで表示可能な数値指標
+        const numericMetrics = ['シングル性能', 'マルチ性能', 'コア数', 'スレッド数', '最大ブーストクロック', 'TDP', 'GPUベースクロック', 'GPUターボクロック', 'iGPU-FP32理論値', 'NPU TOPS'];
+        let currentMetric = 'シングル性能';
+        let chartInstance = null;
+
+        // カラム管理
+        // ※「シリーズ」「グレード」「型番」は「CPU名」として結合するため、デフォルトでは個別表示しない
+        const defaultVisibleColumns = ['設計', 'CPU名', 'シングル性能', 'マルチ性能', 'コア数', '内蔵GPU', 'iGPU-FP32理論値', 'NPU TOPS', '追加情報'];
+        let allColumns = [];
+        let visibleColumns = new Set(defaultVisibleColumns);
+
+        // 3. 初期化関数
+        function init(rawCSVData) {
+            parseCSV(rawCSVData);
+            setupMetricSelector();
+            renderColumnSettings();
+            
+            // 初期の数件をグラフ用に選択状態にする
+            if(cpuData.length > 0) selectedIds.add(cpuData[0].id);
+            if(cpuData.length > 1) selectedIds.add(cpuData[1].id);
+
+            applyFilter(); // filteredDataの生成とテーブル描画
+            
+            // イベントリスナー登録
+            document.getElementById('searchInput').addEventListener('input', applyFilter);
+            document.getElementById('metricSelector').addEventListener('change', (e) => {
+                currentMetric = e.target.value;
+                updateChart();
+            });
+        }
+
+        // CSVパース処理
+        function parseCSV(csvText) {
+            const lines = csvText.trim().split('\n');
+            if (lines.length === 0) return;
+
+            const headers = lines[0].split(',').map(h => h.trim());
+            allColumns = ['CPU名', ...headers.filter(h => !['シリーズ', 'グレード', '型番'].includes(h))];
+
+            for (let i = 1; i < lines.length; i++) {
+                const row = lines[i].split(',').map(cell => cell.trim());
+                if (row.length !== headers.length) continue;
+
+                const obj = { id: i }; // 一意のIDを付与
+                headers.forEach((header, index) => {
+                    let val = row[index];
+                    // 数値として扱えるものは変換
+                    if (numericMetrics.includes(header)) {
+                        val = val ? parseFloat(val) : null;
+                    }
+                    obj[header] = val;
+                });
+
+                // 要件: シリーズ・グレード・型番を結合し、CPU名として扱う
+                const series = obj['シリーズ'] || '';
+                const grade = obj['グレード'] || '';
+                const model = obj['型番'] || '';
+                obj['CPU名'] = `${series} ${grade} ${model}`.replace(/\\s+/g, ' ').trim();
+
+                cpuData.push(obj);
+            }
+        }
+
+        // フィルター適用と再描画
+        function applyFilter() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            
+            filteredData = cpuData.filter(item => {
+                // オブジェクトの全値を取得し、一つの文字列にして検索対象とする
+                const searchString = Object.values(item).join(' ').toLowerCase();
+                return searchString.includes(query);
+            });
+
+            sortFilteredData(); // フィルタ後にソートを適用
+
+            document.getElementById('rowCount').textContent = `${filteredData.length} 件表示`;
+            
+            const tableEmptyState = document.getElementById('tableEmptyState');
+            if(filteredData.length === 0) {
+                tableEmptyState.style.display = 'flex';
+                document.getElementById('tableBody').innerHTML = '';
+            } else {
+                tableEmptyState.style.display = 'none';
+                renderTable();
+            }
+        }
+
+        // カラム設定パネルの描画
+        function renderColumnSettings() {
+            const container = document.getElementById('columnSettings');
+            container.innerHTML = '';
+
+            allColumns.forEach(col => {
+                const label = document.createElement('label');
+                label.className = 'flex items-center gap-2 cursor-pointer group';
+                
+                const checkbox = document.createElement('input');
+                checkbox.type = 'checkbox';
+                checkbox.className = 'rounded border-border bg-background focus:ring-accent w-4 h-4';
+                checkbox.checked = visibleColumns.has(col);
+                
+                checkbox.addEventListener('change', (e) => {
+                    if (e.target.checked) {
+                        visibleColumns.add(col);
+                    } else {
+                        visibleColumns.delete(col);
+                    }
+                    renderTable(); // カラムが変更されたらテーブルのみ再描画
+                });
+
+                const span = document.createElement('span');
+                span.className = 'text-xs text-textMain group-hover:text-white transition-colors';
+                span.textContent = col;
+
+                label.appendChild(checkbox);
+                label.appendChild(span);
+                container.appendChild(label);
+            });
+        }
+
+        // テーブルの描画
+        function renderTable() {
+            const thead = document.getElementById('tableHeader');
+            const tbody = document.getElementById('tableBody');
+            
+            // ヘッダー生成
+            const allSelected = filteredData.length > 0 && filteredData.every(item => selectedIds.has(item.id));
+            thead.innerHTML = `<th class="px-4 py-3 font-semibold w-10 text-center"><input type="checkbox" onchange="toggleAllSelection(this.checked)" class="w-4 h-4 rounded" ${allSelected ? 'checked' : ''}></th>`;
+            
+            allColumns.forEach(col => {
+                if (visibleColumns.has(col)) {
+                    thead.innerHTML += `
+                        <th class="px-4 py-3 font-semibold cursor-pointer hover:text-white transition-colors select-none group" onclick="sortBy('${col}')">
+                            <div class="flex items-center gap-1">
+                                ${col}
+                                <span class="text-[10px] ${currentSortKey === col ? 'text-accent' : 'text-transparent group-hover:text-textMuted'}">
+                                    ${currentSortKey === col ? (isAscending ? '▲' : '▼') : '▲'}
+                                </span>
+                            </div>
+                        </th>`;
+                }
+            });
+
+            // ボディ生成
+            tbody.innerHTML = '';
+            filteredData.forEach(item => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-[#1f242c] transition-colors cursor-default group';
+                
+                // 行が選択されている場合のハイライト
+                if (selectedIds.has(item.id)) {
+                    tr.classList.add('bg-[#1f242c]/50');
+                }
+
+                // チェックボックス列
+                const tdCheck = document.createElement('td');
+                tdCheck.className = 'px-4 py-2 text-center border-r border-border/30';
+                tdCheck.innerHTML = `<input type="checkbox" ${selectedIds.has(item.id) ? 'checked' : ''} onchange="toggleSelection(${item.id})" class="w-4 h-4 rounded">`;
+                tr.appendChild(tdCheck);
+
+                // データ列
+                allColumns.forEach(col => {
+                    if (visibleColumns.has(col)) {
+                        const td = document.createElement('td');
+                        td.className = 'px-4 py-2';
+                        
+                        let displayValue = item[col];
+                        if(displayValue === null || displayValue === undefined || displayValue === '') {
+                            displayValue = '<span class="text-textMuted">-</span>';
+                        } else if (typeof displayValue === 'number') {
+                            displayValue = displayValue.toLocaleString(); // 数値をカンマ区切りに
+                        }
+                        
+                        // CPU名などの主要項目を少し強調
+                        if(col === 'CPU名' || col === '型番') {
+                            td.innerHTML = `<span class="font-medium text-white">${displayValue}</span>`;
+                        } else {
+                            td.innerHTML = displayValue;
+                        }
+                        tr.appendChild(td);
+                    }
+                });
+                tbody.appendChild(tr);
+            });
+            
+            // グラフも更新 (選択状態が視覚的に変わるため)
+            updateChart();
+        }
+
+        // グラフ用指標セレクトボックスのセットアップ
+        function setupMetricSelector() {
+            const selector = document.getElementById('metricSelector');
+            numericMetrics.forEach(metric => {
+                const option = document.createElement('option');
+                option.value = metric;
+                option.textContent = metric;
+                selector.appendChild(option);
+            });
+        }
+
+        // ソート実行
+        window.sortBy = function(key) {
+            if (currentSortKey === key) {
+                isAscending = !isAscending;
+            } else {
+                currentSortKey = key;
+                isAscending = true;
+            }
+            sortFilteredData();
+            renderTable();
+        };
+
+        // ソート処理
+        function sortFilteredData() {
+            if (!currentSortKey) return;
+            
+            filteredData.sort((a, b) => {
+                let valA = a[currentSortKey];
+                let valB = b[currentSortKey];
+                
+                // 空値を末尾へ
+                const isEmptyA = valA === null || valA === undefined || valA === '';
+                const isEmptyB = valB === null || valB === undefined || valB === '';
+                
+                if (isEmptyA && isEmptyB) return 0;
+                if (isEmptyA) return 1;
+                if (isEmptyB) return -1;
+
+                // 数値としてパース可能であれば数値として比較
+                const numA = Number(valA);
+                const numB = Number(valB);
+
+                if (!isNaN(numA) && !isNaN(numB)) {
+                    return isAscending ? numA - numB : numB - numA;
+                } else {
+                    const strA = String(valA).toLowerCase();
+                    const strB = String(valB).toLowerCase();
+                    if (strA < strB) return isAscending ? -1 : 1;
+                    if (strA > strB) return isAscending ? 1 : -1;
+                    return 0;
+                }
+            });
+        }
+
+        // 現在表示されている項目を全選択
+        window.selectAllCurrent = function() {
+            filteredData.forEach(item => selectedIds.add(item.id));
+            renderTable();
+        };
+
+        // 選択をすべて解除
+        window.clearAllSelection = function() {
+            selectedIds.clear();
+            renderTable();
+        };
+        
+        // ヘッダーのチェックボックス用
+        window.toggleAllSelection = function(checked) {
+            if (checked) {
+                filteredData.forEach(item => selectedIds.add(item.id));
+            } else {
+                filteredData.forEach(item => selectedIds.delete(item.id));
+            }
+            renderTable();
+        };
+
+        // 選択状態の切り替え
+        window.toggleSelection = function(id) {
+            if (selectedIds.has(id)) {
+                selectedIds.delete(id);
+            } else {
+                selectedIds.add(id);
+            }
+            // テーブル行の背景色更新のためにテーブルも再描画
+            renderTable();
+        };
+
+        // グラフの描画・更新
+        function updateChart() {
+            const emptyState = document.getElementById('chartEmptyState');
+            
+            if (selectedIds.size === 0) {
+                emptyState.classList.remove('hidden');
+                if (chartInstance) {
+                    chartInstance.destroy();
+                    chartInstance = null;
+                }
+                return;
+            }
+            
+            emptyState.classList.add('hidden');
+
+            // 選択されたデータのみを抽出 (ソート結果をグラフに反映させるため filteredData を使用)
+            const chartData = filteredData.filter(item => selectedIds.has(item.id));
+            
+            const labels = chartData.map(item => item['CPU名']);
+            const data = chartData.map(item => item[currentMetric] || 0);
+
+            const ctx = document.getElementById('performanceChart').getContext('2d');
+
+            // グラフの構成設定
+            const config = {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [{
+                        label: currentMetric,
+                        data: data,
+                        backgroundColor: 'rgba(88, 166, 255, 0.8)', // Tailwind accent color
+                        borderColor: 'rgba(88, 166, 255, 1)',
+                        borderWidth: 1,
+                        borderRadius: 4,
+                        maxBarThickness: 60
+                    }]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    animation: { duration: 300 },
+                    plugins: {
+                        legend: { display: false },
+                        tooltip: {
+                            backgroundColor: 'rgba(22, 27, 34, 0.9)',
+                            titleColor: '#fff',
+                            bodyColor: '#c9d1d9',
+                            borderColor: '#30363d',
+                            borderWidth: 1,
+                            padding: 10,
+                            displayColors: false,
+                            callbacks: {
+                                label: function(context) {
+                                    return context.dataset.label + ': ' + context.parsed.y.toLocaleString();
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                color: '#30363d', // border color
+                                drawBorder: false,
+                            },
+                            ticks: {
+                                color: '#8b949e', // textMuted
+                                font: { family: 'system-ui' },
+                                callback: function(value) {
+                                    return value.toLocaleString();
+                                }
+                            }
+                        },
+                        x: {
+                            grid: { display: false },
+                            ticks: {
+                                color: '#c9d1d9', // textMain
+                                font: { family: 'system-ui' },
+                                maxRotation: 45,
+                                minRotation: 0
+                            }
+                        }
+                    }
+                }
+            };
+
+            if (chartInstance) {
+                chartInstance.data = config.data;
+                chartInstance.options = config.options;
+                chartInstance.update();
+            } else {
+                chartInstance = new Chart(ctx, config);
+            }
+        }
+
+        // アプリケーション起動
+        //document.addEventListener('DOMContentLoaded', init);
+        fetch('CPU.csv').then(res => res.text()).then(csvText => init(csvText))
+
+    </script>
+</body>
+</html>

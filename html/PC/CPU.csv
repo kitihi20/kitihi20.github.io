@@ -1,0 +1,34 @@
+設計,発売年,シリーズ,グレード,型番,シングル性能,マルチ性能,コア数,スレッド数,コア分類,最大ブーストクロック,TDP,TDP Up,TDP Down,内蔵GPU,GPUベースクロック,GPUターボクロック,iGPU-FP32理論値,内蔵NPU,NPU TOPS,追加情報
+AMD,2024,Ryzen AI,9,HX370,3957,35063,12,24,4|8,5.1,28,54,15,AMD Radeon 890M,0.62,2.9,5524,AMD Ryzen AI,50,
+AMD,2025,Ryzen AI,7,350,3866,25011,8,16,4|4,5,28,54,15,AMD Radeon 860M,0.8,3,4335,AMD Ryzen AI,50,
+AMD,2025,Ryzen AI,5,340,3706,19611,6,12,3|3,4.8,28,54,15,AMD Radeon 840M,0.8,2.9,1568,AMD Ryzen AI,50,
+AMD,2025,Ryzen,7,250,3702,25355,8,16,8,5.1,28,30,15,AMD Radeon 780M,0.8,2.7,4201,AMD Ryzen AI,16,Ryzen 7 8840Uと同一
+AMD,2025,Ryzen,5,240,3682,22937,6,12,6,5,45,54,35,AMD Radeon 760M,0.8,2.6,2663,AMD Ryzen AI,16,Ryzen 5 8645HSと同一
+AMD,2025,Ryzen,7,170,3406,22993,8,16,8,4.75,45,54,35,AMD Radeon 680M,2,2.2,3379,None,0,Ryzen 7 7735HS、Ryzen 7 6800Hとほぼ同一
+AMD,2025,Ryzen,5,150,3127,15376,6,12,6,4.55,45,54,35,AMD Radeon 660M,1.4,1.9,1459,None,0,ryzen 5 7535HS、Ryzen 5 6600Hとほぼ同一
+AMD,2021,Ryzen,7,5800H,3001,20599,8,16,8,4.4,45,54,35,AMD Radeon RX Vega 8,0.4,1.75,1792,None,0,
+AMD,2021,Ryzen,5,5500H,2910,11392,6,12,6,4.2,45,54,35,AMD Radeon RX Vega 6,0.4,1.8,1383,None,0,
+AMD,2020,Ryzen,3,4300U,2294,7344,4,4,4,3.7,15,25,10,AMD Radeon RX Vega 5,0.4,1.4,896,None,0,低価格ミニPCに多い
+Intel,2024,Core Ultra,7,258V,4035,18942,8,8,4|4,4.8,17,37,8,Intel Arc 140V,0.4,1.95,6240,Intel AI Boost,47,メモリ内蔵32GB
+Intel,2024,Core Ultra,5,228V,3741,17502,8,8,4|4,4.5,17,37,8,Intel Arc 130V,0.4,1.85,5180,Intel AI Boost,40,メモリ内蔵32GB
+Intel,2025,Core Ultra,7,255H,4325,30629,16,16,6|8|2,5.1,28,115,20,Intel Arc 140T,0.6,2.25,5458,Intel AI Boost,13,
+Intel,2025,Core Ultra,5,225H,4293,28630,14,14,4|8|2,4.9,28,115,20,Intel Arc 130T,0.6,2.2,3942,Intel AI Boost,13,
+Intel,2025,Core Ultra,7,255U,3645,17845,12,14,2|8|2,5.2,15,57,12,Intel Graphics (Xe 4Core),0.6,2.1,2084,Intel AI Boost,12,
+Intel,2025,Core Ultra,5,225U,3548,18029,12,14,2|8|2,4.8,15,57,12,Intel Graphics (Xe 4Core),0.6,2,1985,Intel AI Boost,12,
+Intel,2023,Core Ultra,7,155H,3428,24607,16,22,6|8|2,4.8,28,115,20,Intel Arc Graphics (Xe 8Core),0.6,2.25,4460,Intel AI Boost,11,
+Intel,2023,Core Ultra,5,125H,3352,20525,14,18,4|8|2,4.5,28,115,20,Intel Arc Graphics (Xe 7Core),0.6,2.2,3942,Intel AI Boost,11,
+Intel,2023,Core Ultra,7,155U,3317,16160,12,14,2|8|2,4.8,15,57,12,Intel Graphics (Xe 4Core),0.6,1.95,1935,Intel AI Boost,11,
+Intel,2023,Core Ultra,5,125U,3254,16925,12,14,2|8|2,4.3,15,57,12,Intel Graphics (Xe 4Core),0.6,1.85,1835,Intel AI Boost,11,
+Intel,2023,Core i,7,1360P,3432,18475,12,16,4|8,5,28,64,20,Intel Iris Xe Graphics (96EUs),0.4,1.5,2230,None,0,
+Intel,2023,Core i,5,1350P,3523,18800,12,16,4|8,4.7,28,64,20,Intel Iris Xe Graphics (80EUs),0.4,1.5,1859,None,0,
+Intel,2023,Core i,7,13700H,3567,26027,14,20,6|8,5,45,115,35,Intel Iris Xe Graphics (96EUs),0.4,1.5,2230,None,0,
+Intel,2023,Core i,5,13500H,3377,21050,12,16,4|8,4.7,45,115,35,Intel Iris Xe Graphics (80EUs),0.4,1.45,1797,None,0,
+Intel,2023,Core i,7,1355U,3400,14021,10,12,2|8,5,15,55,12,Intel Iris Xe Graphics (96EUs),0.35,1.3,1993,None,0,
+Intel,2023,Core i,5,1345U,3315,14067,10,12,2|8,4.7,15,55,12,Intel Iris Xe Graphics (80EUs),0.35,1.25,1549,None,0,
+Intel,2023,N,,100,1892,5341,4,4,4,3.4,6,25,,Intel UHD Graphics (24EUs),0.3,0.75,288,None,0,低価格ミニPCに多い
+Intel,2021,Celeron,,N4500,1277,1796,2,2,2,2.8,6,,4.8,Intel UHD Graphics (16EUs),0.35,0.75,193,None,0,NextGIGA端末下限
+Apple,2025,,,M5,5803,27718,10,10,4|6,4.61,28,,15,M5 (10 Core),0.34,1.9,5133,Apple Neural Engine,60,Mac メモリ内蔵
+Apple,2021,,,M1,3755,17205,8,8,6|2,3.2,18,20,10,M1 (8Core),0.39,1.3,2610,Apple Neural Engine,11,Mac メモリ内蔵8or16GB
+Apple,2024,,,A18 Pro,4092,12859,6,6,2|4,4.04,12,,,A18 Pro (6 Core),0.39,1.68,3589,Apple Neural Engine,38,Mac メモリ内蔵8GB
+Qualcomm,2024,Snapdragon X,Elite,X1E-80-100,3232,22774,12,12,12,4,23,80,12,Qualcomm Adreno X1-85,0.3,1.2,3680,Qualcomm Hexagon,45,ARM
+Qualcomm,2024,Snapdragon X,Plus,X1P-42-100,3222,17873,8,8,8,3.4,23,80,12,Qualcomm Adreno X1-45,0.3,0.65,1680,Qualcomm Hexagon,45,ARM

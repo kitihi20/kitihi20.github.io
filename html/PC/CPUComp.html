@@ -1,0 +1,223 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>CPU性能比較ツール</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/PapaParse/5.4.1/papaparse.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        .selected-row { background-color: #ebf8ff; /* tailwind blue-100 */ }
+        th { cursor: pointer; }
+        th:hover { background-color: #e2e8f0; }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 p-6">
+
+    <div class="max-w-7xl mx-auto">
+        <h1 class="text-3xl font-bold mb-6 text-center text-blue-600">CPU性能比較ツール</h1>
+
+        <div class="bg-white p-4 rounded shadow mb-6 flex justify-between items-center">
+            <div>
+                <p class="text-sm text-gray-600 mb-2">サーバー上のCSVを読み込むか、ローカルファイルを選択してください。</p>
+                <input type="file" id="fileInput" accept=".csv" class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-700 hover:file:bg-blue-100" />
+            </div>
+            <div>
+                <button onclick="loadFromServer()" class="bg-blue-500 hover:bg-blue-700 text-white font-bold py-2 px-4 rounded">
+                    サーバーから再読み込み
+                </button>
+            </div>
+        </div>
+
+        <div class="bg-white p-6 rounded shadow mb-6">
+            <h2 class="text-xl font-semibold mb-4">性能比較グラフ（表から選択したCPU）</h2>
+            <div class="relative h-80 w-full">
+                <canvas id="comparisonChart"></canvas>
+            </div>
+            <p class="text-sm text-gray-500 mt-2 text-center">※下の表から行をクリックすると、このグラフにCPUが追加・削除されます。</p>
+        </div>
+
+        <div class="bg-white p-6 rounded shadow overflow-x-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-semibold">CPU一覧</h2>
+                <input type="text" id="searchInput" placeholder="型番やシリーズで検索..." class="border p-2 rounded w-64" oninput="filterData()">
+            </div>
+            <table class="w-full text-left border-collapse">
+                <thead>
+                    <tr class="bg-gray-200 border-b-2 border-gray-300" id="tableHeader">
+                        </tr>
+                </thead>
+                <tbody id="tableBody">
+                    </tbody>
+            </table>
+        </div>
+    </div>
+
+    <script>
+        // 設定: サーバー上のCSVファイル名
+        const CSV_FILE_PATH = '/html/PC/CPU.csv'; 
+        
+        let cpuData = [];
+        let filteredData = [];
+        let selectedCpus = new Set();
+        let chartInstance = null;
+        let currentSort = { column: null, asc: true };
+
+        const displayColumns = ['設計', 'シリーズ', '型番', 'シングル性能', 'マルチ性能', 'コア数', 'スレッド数', '最大ブーストクロック', 'TDP'];
+
+        // 初期化処理
+        window.onload = () => {
+            initChart();
+            loadFromServer();
+        };
+
+        // サーバーからCSVを取得
+        async function loadFromServer() {
+            try {
+                const response = await fetch(CSV_FILE_PATH);
+                if (!response.ok) throw new Error('Network response was not ok');
+                const csvText = await response.text();
+                parseCSV(csvText);
+            } catch (error) {
+                console.warn('サーバーからの読み込みに失敗しました。ローカル環境の場合はファイルを選択してください。', error);
+            }
+        }
+
+        // ファイルアップロードのハンドラ
+        document.getElementById('fileInput').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                parseCSV(e.target.result);
+            };
+            reader.readAsText(file);
+        });
+
+        // CSVの解析 (PapaParseを使用)
+        function parseCSV(csvText) {
+            Papa.parse(csvText, {
+                header: true,
+                skipEmptyLines: true,
+                complete: function(results) {
+                    cpuData = results.data.map((row, index) => {
+                        row._id = index; // 一意のIDを付与
+                        // 数値として扱う列の変換
+                        ['シングル性能', 'マルチ性能', 'コア数', 'スレッド数', '最大ブーストクロック', 'TDP'].forEach(col => {
+                            row[col] = parseFloat(row[col]) || 0;
+                        });
+                        return row;
+                    });
+                    filteredData = [...cpuData];
+                    selectedCpus.clear();
+                    renderTable();
+                    updateChart();
+                }
+            });
+        }
+
+        // テーブルの描画
+        function renderTable() {
+            const headRaw = document.getElementById('tableHeader');
+            const tbodyRaw = document.getElementById('tableBody');
+            
+            // ヘッダーの生成
+            headRaw.innerHTML = displayColumns.map(col => {
+                let arrow = '';
+                if (currentSort.column === col) {
+                    arrow = currentSort.asc ? ' ↑' : ' ↓';
+                }
+                return `<th class="p-3 whitespace-nowrap" onclick="sortData('${col}')">${col}${arrow}</th>`;
+            }).join('');
+
+            // ボディの生成
+            tbodyRaw.innerHTML = filteredData.map(row => {
+                const isSelected = selectedCpus.has(row._id);
+                const trClass = isSelected ? 'selected-row border-b' : 'border-b hover:bg-gray-50';
+                
+                const tdHTML = displayColumns.map(col => {
+                    return `<td class="p-3">${row[col]}</td>`;
+                }).join('');
+
+                return `<tr class="${trClass} cursor-pointer" onclick="toggleSelection(${row._id})">${tdHTML}</tr>`;
+            }).join('');
+        }
+
+        // 検索フィルター
+        function filterData() {
+            const query = document.getElementById('searchInput').value.toLowerCase();
+            filteredData = cpuData.filter(row => {
+                return Object.values(row).some(val => 
+                    String(val).toLowerCase().includes(query)
+                );
+            });
+            renderTable();
+        }
+
+        // ソート処理
+        function sortData(column) {
+            if (currentSort.column === column) {
+                currentSort.asc = !currentSort.asc;
+            } else {
+                currentSort.column = column;
+                currentSort.asc = true; // デフォルトは昇順
+            }
+
+            filteredData.sort((a, b) => {
+                let valA = a[column];
+                let valB = b[column];
+                
+                if (valA < valB) return currentSort.asc ? -1 : 1;
+                if (valA > valB) return currentSort.asc ? 1 : -1;
+                return 0;
+            });
+            renderTable();
+        }
+
+        // CPUの選択/解除
+        function toggleSelection(id) {
+            if (selectedCpus.has(id)) {
+                selectedCpus.delete(id);
+            } else {
+                selectedCpus.add(id);
+            }
+            renderTable();
+            updateChart();
+        }
+
+        // グラフの初期化
+        function initChart() {
+            const ctx = document.getElementById('comparisonChart').getContext('2d');
+            chartInstance = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: [],
+                    datasets: [
+                        { label: 'シングル性能', data: [], backgroundColor: 'rgba(54, 162, 235, 0.7)' },
+                        { label: 'マルチ性能', data: [], backgroundColor: 'rgba(255, 99, 132, 0.7)' }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    maintainAspectRatio: false,
+                    scales: {
+                        y: { beginAtZero: true }
+                    }
+                }
+            });
+        }
+
+        // グラフの更新
+        function updateChart() {
+            const selectedData = cpuData.filter(row => selectedCpus.has(row._id));
+            
+            chartInstance.data.labels = selectedData.map(row => row['型番']);
+            chartInstance.data.datasets[0].data = selectedData.map(row => row['シングル性能']);
+            chartInstance.data.datasets[1].data = selectedData.map(row => row['マルチ性能']);
+            
+            chartInstance.update();
+        }
+    </script>
+</body>
+</html>
