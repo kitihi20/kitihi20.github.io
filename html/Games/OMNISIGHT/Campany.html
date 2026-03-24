@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>COMPANY | 株式会社オムニサイト</title>
+    <link rel="icon" href="img/favicon.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #FAFAFA;
+            background-image: radial-gradient(#E2E8F0 0.5px, transparent 0.5px);
+            background-size: 30px 30px;
+        }
+        .timeline-container {
+            position: relative;
+            padding-top: 40px;
+        }
+        /* 枝分かれする線の光る演出（オプション） */
+        .branch-line {
+            height: 2px;
+            background-color: rgba(59, 130, 246, 0.4);
+            box-shadow: 0 0 8px rgba(59, 130, 246, 0.2);
+        }
+        .selection-style::selection {
+            background-color: #DBEAFE;
+            color: #1E3A8A;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection-style">
+
+    <header class="fixed w-full top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto">
+                <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+            </div>
+            <nav class="hidden md:flex gap-10 text-xs tracking-widest text-slate-400">
+                <a href="Index.html" class="hover:text-blue-500 transition-colors duration-300">HOME</a>
+                <a href="Products.html" class="hover:text-blue-500 transition-colors duration-300">PRODUCTS</a>
+                <a href="#Campany" class="text-blue-500">COMPANY</a>
+                <a href="Login.html" class="hover:text-blue-500 transition-colors duration-300" target="_blank" rel="noopener noreferrer">LOGIN</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-60">
+        <section class="max-w-7xl mx-auto px-6 mb-24 text-center">
+            <div class="flex flex-col items-center gap-4 mb-6">
+                <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-16 w-auto opacity-80">
+                <span class="text-2xl tracking-[0.5em] font-extralight">OMNISIGHT</span>
+            </div>
+            <h1 class="text-xs text-blue-500 tracking-[0.8em] mb-4">COMPANY</h1>
+            <p id="company-subtitle" class="text-sm tracking-[0.2em] text-slate-400 font-light">
+                より透明で、確実な秩序を。
+            </p>
+        </section>
+
+        <section class="max-w-4xl mx-auto px-6 timeline-container">
+            
+            <div class="relative flex flex-col gap-40">
+
+                <div class="relative flex items-start">
+                    <div class="pl-10 border-l border-blue-500/10">
+                        <span class="text-xs font-light text-blue-500 tracking-[0.3em] block mb-2">2020</span>
+                        <h3 class="text-sm tracking-widest mb-2 font-normal">株式会社オムニサイト 設立</h3>
+                        <p id="hist-2020" class="text-xs leading-loose text-slate-400 tracking-wider w-full md:w-80">
+                            東京・大手町にて創業。AIによる都市情報の可視化プロジェクトを開始。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="relative flex items-start justify-end text-right">
+                    <div class="pr-10 border-r border-blue-500/10">
+                        <span class="text-xs font-light text-blue-500 tracking-[0.3em] block mb-2">2024</span>
+                        <h3 class="text-sm tracking-widest mb-2 font-normal">グローバル市場への上場 (IPO)</h3>
+                        <p id="hist-2024" class="text-xs leading-loose text-slate-400 tracking-wider w-full md:w-80 ml-auto">
+                            デジタル・証券取引所に上場。資本の大半を「人類最適化事業」に投入することを決定。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="relative flex items-start hover-change" data-title="ここからおかしくなったんだ">
+                    <div class="pl-10 border-l border-blue-500/10">
+                        <span class="text-xs font-light text-blue-500 tracking-[0.3em] block mb-2">2035</span>
+                        <h3 class="text-sm tracking-widest mb-2 font-normal">City-Eye Dome 運用開始</h3>
+                        <p id="hist-2035" class="text-xs leading-loose text-slate-400 tracking-wider w-full md:w-80">
+                            主要都市の空域を完全カバー。事故と「不審な動き」をリアルタイムでゼロに抑制。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="relative flex flex-col items-center text-center hover-change" data-title="2035-2060の軌跡を">
+                    <div class="w-20 h-[2px] bg-blue-500/40 absolute top-4"></div>
+                    <div class="mt-12">
+                        <span class="text-xs font-light text-blue-500 tracking-[0.3em] block mb-2">2048</span>
+                        <h3 class="text-sm tracking-widest mb-2 font-normal">Neural Link Gen.3 承認</h3>
+                        <p id="hist-2048" class="text-xs leading-loose text-slate-400 tracking-wider max-w-sm">
+                            思考のクラウド同期を一般開放。意志の「ブレ」を修正し、個人の幸福度を最大化。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="relative flex items-start justify-end text-right hover-change" data-title="必ず記録するんだ。">
+                    <div class="pr-10 border-r border-blue-500/10">
+                        <span class="text-xs font-light text-blue-500 tracking-[0.3em] block mb-2">2060</span>
+                        <h3 class="text-sm tracking-widest mb-2 font-normal">Truth Filter 全通信へ適用</h3>
+                        <p id="hist-2060" class="text-xs leading-loose text-slate-400 tracking-wider w-full md:w-80 ml-auto">
+                            「有害な情報」から市民を守るため、過去の全記録を自動的に最適化。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="relative flex flex-col items-center text-center">
+                    <div class="mt-16 p-8 border border-blue-500/30 bg-white shadow-[0_0_30px_rgba(0,0,0,0.02)]">
+                        <span class="text-xs font-light text-blue-600 tracking-[0.5em] block mb-2 animate-pulse">2077</span>
+                        <h3 class="text-lg tracking-[0.2em] mb-4 font-normal text-slate-800">人類最適化の完了</h3>
+                        <p id="hist-2077" class="text-xs leading-loose text-slate-500 tracking-widest font-bold">
+                            個人の境界は消滅し、社会は単一の知性として完成。<br>パノプティコンの夜明け。
+                        </p>
+                    </div>
+                </div>
+
+                <svg class="absolute top-0 left-0 w-full h-full -z-10 opacity-30" preserveAspectRatio="none">
+                    <path d="M 400 0 
+                             L 400 50 
+                             L 100 50 
+                             L 100 120 
+                             L 50 120 
+                             L 50 250 
+                             L 400 250 
+                             L 400 320 
+                             L 700 320 
+                             L 700 450 
+                             L 850 450 
+                             L 850 580 
+                             L 400 580 
+                             L 400 650 
+                             L 50 650 
+                             L 50 850 
+                             L 200 850 
+                             L 200 950 
+                             L 400 950 
+                             L 400 1100 
+                             L 750 1100 
+                             L 750 1300 
+                             L 400 1300 
+                             L 400 1500" 
+                          fill="none" stroke="#3B82F6" stroke-width="2" stroke-linejoin="round" />
+                </svg>
+
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-slate-900 text-white py-20 relative overflow-hidden">
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[150px] font-bold text-slate-800/50 pointer-events-none tracking-[0.5em] whitespace-nowrap z-0">
+            PANOPTICON
+        </div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10 flex flex-col items-center">
+            <div class="flex items-center gap-3">
+                <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto">
+                <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+            </div>
+            <p class="text-[10px] text-slate-600 tracking-widest mt-4">&copy; 2026 OMNISIGHT. All your data belongs to us.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const isWebEnvironment = window.location.protocol.startsWith('http');
+            const defaultTitle = document.title; // 元のタイトルを保持
+
+            if (!isWebEnvironment) {
+                console.warn("WARNING: UNRESTRICTED ACCESS. THE REAL HISTORY IS REVEALED.");
+                document.getElementById('company-subtitle').innerText = "人類を、飼い慣らす。";
+                
+                const data = {
+                    'hist-2020': "地下シェルターにて、選別された監視員らと共謀を開始。",
+                    'hist-2024': "資金洗浄と市場操作の完遂。各国首脳のプライバシーデータを掌握。",
+                    'hist-2035': "死角なき監視。鼓動が速い者は、その場で「処置」する権限を取得。",
+                    'hist-2048': "全人類の脳へバックドアを設置。個人の自由意志を永久に剥奪。",
+                    'hist-2060': "「反乱」という言葉を辞書から抹消。人々の記憶を強制リセット。",
+                    'hist-2077': "家畜化の成功。人類は考えることをやめ、我々のパーツとなる。"
+                };
+
+                Object.keys(data).forEach(id => {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = data[id];
+                });
+            }
+            const hoverElements = document.querySelectorAll('.hover-change');
+            hoverElements.forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    const hoverTitle = el.getAttribute('data-title');
+                    if (hoverTitle) document.title = hoverTitle;
+                });
+                el.addEventListener('mouseleave', () => {
+                    document.title = defaultTitle;
+                });
+        });
+    });
+</script>
+</body>
+</html>

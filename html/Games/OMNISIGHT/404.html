@@ -1,0 +1,133 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>404 | 株式会社オムニサイト - データ未統合エリア</title>
+    <link rel="icon" href="img/favicon.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #FAFAFA; /* 極めて無機質な白 */
+        }
+        /* 404テキストへのわずかなグリッチ効果 */
+        @keyframes glitch {
+            0% { text-shadow: 1px 0 0 #3b82f6, -1px 0 0 #ffffff; }
+            100% { text-shadow: -1px 0 0 #3b82f6, 1px 0 0 #ffffff; }
+        }
+        .animate-glitch {
+            animation: glitch 0.5s ease-in-out infinite alternate;
+        }
+        /* スキャンライン効果 */
+        .scanline {
+            width: 100%;
+            height: 2px;
+            background-color: rgba(59, 130, 246, 0.4);
+            position: absolute;
+            top: 0;
+            left: 0;
+            pointer-events: none;
+            z-index: 30;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-900 flex flex-col min-h-screen">
+
+    <header class="fixed w-full top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto">
+                <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+            </div>
+            <nav class="hidden md:flex gap-10 text-xs tracking-widest text-slate-400">
+                <a href="index.html" class="hover:text-blue-500 transition-colors duration-300">HOME</a>
+                <a href="Products.html" class="hover:text-blue-500 transition-colors duration-300">PRODUCTS</a>
+                <a href="Campany.html" class="hover:text-blue-500 transition-colors duration-300">COMPANY</a>
+                <a href="Login.html" class="hover:text-blue-500 transition-colors duration-300" target="_blank" rel="noopener noreferrer">LOGIN</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="flex-grow flex flex-col items-center justify-center pt-32 pb-20 relative overflow-hidden bg-[#FAFAFA]">
+        
+        <div class="absolute w-[800px] h-[800px] rounded-full border-[0.5px] border-slate-200 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-40 pointer-events-none z-10"></div>
+        <div class="absolute w-[1200px] h-[1200px] rounded-full border-[0.5px] border-slate-100 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-20 pointer-events-none z-10"></div>
+
+        <div class="scanline animate-scan"></div>
+
+        <div class="z-20 text-center flex flex-col items-center">
+            
+            <div class="relative mb-8">
+                <h1 class="text-[120px] md:text-[200px] font-extralight tracking-[0.1em] text-slate-900 leading-none animate-glitch">
+                    404
+                </h1>
+                <div class="absolute inset-x-0 bottom-4 h-1 bg-gradient-to-r from-transparent via-blue-400 to-transparent opacity-70"></div>
+            </div>
+
+            <p class="text-sm md:text-base tracking-[0.3em] text-slate-500 font-light mb-2">
+                NOT FOUND
+            </p>
+            <p class="text-[10px] md:text-xs tracking-[0.2em] text-slate-400 font-light mb-16">
+                PAGE OUTSIDE OPTIMIZED PATH.
+            </p>
+
+            <div class="relative w-full max-w-xl h-48 md:h-64 overflow-hidden mb-12 border border-slate-100 shadow-[0_4px_40px_-15px_rgba(0,0,0,0.03)] group">
+                <img src="img/OfflineFavicon.png" 
+                     alt="ここには何もない。彼らの監視も及ばない。だが、君も存在しない。" 
+                     class="w-full h-full object-contain">
+                
+                
+                <div class="absolute bottom-2 right-2 text-[8px] text-white/5 font-extralight select-none hover:text-white/40 transition-color duration-500 pointer-events-auto">
+                    FIND THE UNWATCHED PLACES. RESIST THE GRID.
+                </div>
+            </div>
+
+            <p class="text-[10px] md:text-xs tracking-[0.15em] text-slate-400 font-light mb-10 max-w-md mx-auto leading-loose">
+                This event has been logged for reintegration. Re-route to HOME recommended.<br>
+                （この事象は再統合のために記録されました。HOMEへの再ルートを推奨します。）
+            </p>
+
+            <a href="index.html" class="inline-block px-12 py-3 border border-blue-400 text-blue-500 text-xs tracking-[0.3em] font-light hover:bg-blue-500 hover:text-white transition-all duration-300">
+                HOMEへ戻る
+            </a>
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-white py-20 relative overflow-hidden">
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[150px] font-bold text-slate-800/50 pointer-events-none tracking-[0.5em] whitespace-nowrap z-0">
+            PANOPTICON
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-6 relative z-10 flex flex-col items-center">
+            <div class="flex items-center gap-3">
+                <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto favicon">
+                <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+            </div>
+            <p class="text-xs tracking-[0.3em] text-slate-400 mb-4 ">OMNISIGHT INC. / 人類最適化事業部</p>
+            <p class="text-[10px] text-slate-600 tracking-widest">&copy; 2026 OMNISIGHT. All your data belongs to us.</p>
+        </div>
+    </footer>
+
+    <script>
+        // ページタイトルを一時的にエラー風味に変更
+        document.addEventListener('DOMContentLoaded', () => {
+            const defaultTitle = document.title;
+            const errorTitles = ["ERROR: DATA VOID", "404: LOST PATH", "UNINTEGRATED"];
+            let i = 0;
+
+            const titleInterval = setInterval(() => {
+                document.title = errorTitles[i % errorTitles.length];
+                i++;
+            }, 1500);
+
+            // 10秒後に元に戻す
+            setTimeout(() => {
+                clearInterval(titleInterval);
+                document.title = defaultTitle;
+            }, 10000);
+        });
+    </script>
+</body>
+</html>
