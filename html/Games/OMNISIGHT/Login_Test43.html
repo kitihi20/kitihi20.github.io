@@ -4,8 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>システム認証 | 株式会社オムニサイト</title>
-    <link rel="icon" href="img/favicon.png" type="image/x-icon">
-    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <script src="https://kitihi20.github.io/js/tailwindcss_4_2_1.js"></script>
     <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@200;300;400&display=swap" rel="stylesheet">
     <style>
         body {
@@ -34,8 +35,8 @@
             <div class="flex items-center gap-3">
                 <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
             </div>
-            <div class="text-xs tracking-widest text-blue-500 font-light">
-                AUTHORIZED PERSONNEL ONLY
+            <div class="authorized text-xs tracking-widest text-blue-500 font-light">
+                AUTHORIZED PERSONNEL ONLY?
             </div>
         </div>
     </header>
@@ -43,11 +44,11 @@
     <header class="fixed w-full top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 z-50">
         <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
             <div class="flex items-center gap-3">
-            <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto">
+            <img src="https://kitihi20.github.io/html/Games/OMNISIGHT/img/icon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto">
             <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
             </div>
-            <div class="text-xs tracking-widest text-blue-500 font-light">
-                AUTHORIZED PERSONNEL ONLY
+            <div class="authorized text-xs tracking-widest text-blue-500 font-light">
+                AUTHORIZED PERSONNEL ONLY?
             </div>
         </div>
     </header>
@@ -90,6 +91,24 @@
     </footer>
 
     <script>
+        document.addEventListener('DOMContentLoaded', () => 
+        {
+            const isWebEnvironment = window.location.protocol.startsWith('http');
+
+            if (isWebEnvironment) {
+                const authorizedTexts = document.getElementsByClassName('authorized');
+                const facadeText1 = `AUTHORIZED PERSONNEL ONLY`;
+                if (authorizedTexts)
+                {
+                    for(let i = 0; i < authorizedTexts.length; i++)
+                    {
+                        authorizedTexts[i].innerHTML = facadeText1;
+                    }
+                }
+            } 
+        });
+
+
         /**
          * 難読化・復号化エンジン (簡易XOR + Base64)
          * ARGプレイヤーがすぐには読めないが、突破不可能ではない程度の難易度
