@@ -1,0 +1,210 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PRODUCTS | 株式会社オムニサイト</title>
+    <link rel="icon" href="img/favicon.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #FAFAFA;
+        }
+        .animate-scan {
+            animation: scan 4s linear infinite;
+        }
+        @keyframes scan {
+            0% { top: -10%; }
+            100% { top: 110%; }
+        }
+        .selection-style::selection {
+            background-color: #DBEAFE;
+            color: #1E3A8A;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection-style">
+
+    <header class="fixed w-full top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto">
+                <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+            </div>
+            <nav class="hidden md:flex gap-10 text-xs tracking-widest text-slate-400">
+                <a href="Index.html" class="hover:text-blue-500 transition-colors duration-300">HOME</a>
+                <a href="#products" class="text-blue-500">PRODUCTS</a>
+                <a href="Campany.html" class="hover:text-blue-500 transition-colors duration-300">COMPANY</a>
+                <a href="Login.html" class="hover:text-blue-500 transition-colors duration-300" target="_blank" rel="noopener noreferrer">LOGIN</a>
+            </nav>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-20">
+        <section class="max-w-7xl mx-auto px-6 mb-20 text-center">
+            <h1 class="text-xs text-blue-500 tracking-[0.5em] mb-4">PRODUCTS</h1>
+            <p id="page-subtitle" class="text-2xl md:text-3xl font-extralight tracking-[0.2em] text-slate-600">
+                自由を、再定義する。
+            </p>
+        </section>
+
+        <section id="products" class="max-w-7xl mx-auto px-6">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-8">
+                
+                <div class="bg-white border border-slate-100 group hover:border-blue-200 transition-all duration-500">
+                    <div class="relative h-64 overflow-hidden bg-slate-100">
+                        <img src="img/Product_NeuralLinkGen3.webp" alt="思考のノイズは罪である。" 
+                             data-title="CONNECTED TO HIVE"
+                             class="hover-change w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700">
+                        <div class="absolute inset-0 bg-blue-500/5 opacity-100 group-hover:opacity-0 transition-opacity"></div>
+                    </div>
+                    <div class="p-8">
+                        <span class="text-blue-400 text-xs font-light tracking-widest">01</span>
+                        <h3 id="p-title-1" class="text-lg mt-2 mb-4 font-normal tracking-widest">Neural Link Gen.3</h3>
+                        <p id="p-desc-1" class="text-xs leading-loose text-slate-400 tracking-wider">
+                            脳波を直接クラウドへ同期。全人類の思考を統合し、争いのない意志決定を実現します。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-100 group hover:border-blue-200 transition-all duration-500">
+                    <div class="relative h-64 overflow-hidden bg-slate-100">
+                        <img src="img/Product_CityEyeDome.webp" alt="逃げ場など、最初から存在しない。" 
+                             data-title="OMNISIGHTは危険だ！"
+                             class="hover-change w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700">
+                    </div>
+                    <div class="p-8">
+                        <span class="text-blue-400 text-xs font-light tracking-widest">02</span>
+                        <h3 id="p-title-2" class="text-lg mt-2 mb-4 font-normal tracking-widest">City-Eye Dome</h3>
+                        <p id="p-desc-2" class="text-xs leading-loose text-slate-400 tracking-wider">
+                            全方位スキャンカメラ。都市の隅々までを0.01秒単位で監視し、不審な鼓動を検知します。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-100 group hover:border-blue-200 transition-all duration-500">
+                    <div class="relative h-64 overflow-hidden bg-slate-100">
+                        <img src="img/Product_EmotionBalancer.webp" alt="偽りの笑顔も、数値化される。" 
+                             data-title="我々で止めなくてはならない！"
+                             class="hover-change w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700">
+                    </div>
+                    <div class="p-8">
+                        <span class="text-blue-400 text-xs font-light tracking-widest">03</span>
+                        <h3 id="p-title-3" class="text-lg mt-2 mb-4 font-normal tracking-widest">Emotion Balancer</h3>
+                        <p id="p-desc-3" class="text-xs leading-loose text-slate-400 tracking-wider">
+                            ナノマシンによる感情制御。悲しみや怒りを自動で中和し、一定の幸福感を保証します。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-100 group hover:border-blue-200 transition-all duration-500">
+                    <div class="relative h-64 overflow-hidden bg-slate-100">
+                        <img src="img/Product_CreditScorerX.webp" alt="価値のない人間は、接続を切られる。" 
+                             data-title="右下のQRをダウンロードしてくれ"
+                             class="hover-change w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700">
+                    </div>
+                    <div class="p-8">
+                        <span class="text-blue-400 text-xs font-light tracking-widest">04</span>
+                        <h3 id="p-title-4" class="text-lg mt-2 mb-4 font-normal tracking-widest">Credit Scorer X</h3>
+                        <p id="p-desc-4" class="text-xs leading-loose text-slate-400 tracking-wider">
+                            社会貢献度をリアルタイム格付け。スコアの低い市民には適切な制限を課し、社会の質を維持します。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-100 group hover:border-blue-200 transition-all duration-500">
+                    <div class="relative h-64 overflow-hidden bg-slate-100">
+                        <img src="img/Product_TruthFilter.webp" alt="知らなくていいことは、消去される。" 
+                             data-title="そして表層に騙されてはいけない"
+                             class="hover-change w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700">
+                    </div>
+                    <div class="p-8">
+                        <span class="text-blue-400 text-xs font-light tracking-widest">05</span>
+                        <h3 id="p-title-5" class="text-lg mt-2 mb-4 font-normal tracking-widest">Truth Filter</h3>
+                        <p id="p-desc-5" class="text-xs leading-loose text-slate-400 tracking-wider">
+                            情報の自動選別エンジン。社会にとって有害なニュースや過去の記録を瞬時に「修正」します。
+                        </p>
+                    </div>
+                </div>
+
+                <div class="bg-white border border-slate-100 group hover:border-blue-200 transition-all duration-500">
+                    <div class="relative h-64 overflow-hidden bg-slate-100">
+                        <img src="img/Product_BioLockID.webp" alt="最後のひとりまで、我々の管理下に。" 
+                             data-title="ページをローカルに引きずり下ろせ"
+                             class="hover-change w-full h-full object-cover grayscale group-hover:grayscale-0 transition-all duration-700">
+                    </div>
+                    <div class="p-8">
+                        <span class="text-blue-400 text-xs font-light tracking-widest">06</span>
+                        <h3 id="p-title-6" class="text-lg mt-2 mb-4 font-normal tracking-widest">Bio-Lock ID</h3>
+                        <p id="p-desc-6" class="text-xs leading-loose text-slate-400 tracking-wider">
+                            遺伝子レベルの個人認証。逃亡や偽装を不可能にし、完全なトレーサビリティを確立します。
+                        </p>
+                    </div>
+                </div>
+
+            </div>
+        </section>
+
+
+        <div class="flex justify-center py-10">
+            <img src="img/QR.png" alt="QR Code" class="w-32 h-32 object-contain grayscale hover:grayscale-0 transition-all duration-700">
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-white py-20 relative overflow-hidden">
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[150px] font-bold text-slate-800/50 pointer-events-none tracking-[0.5em] whitespace-nowrap z-0">
+            PANOPTICON
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-6 relative z-10 flex flex-col items-center">
+            <div class="flex items-center gap-3">
+                <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto">
+                <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+            </div>
+            <p class="text-xs tracking-[0.3em] text-slate-400 mb-4 ">OMNISIGHT INC. / 人類最適化事業部</p>
+            <p class="text-[10px] text-slate-600 tracking-widest">&copy; 2026 OMNISIGHT. All your data belongs to us.</p>
+        </div>
+    </footer>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const isWebEnvironment = window.location.protocol.startsWith('http');
+            const defaultTitle = document.title;
+
+            // 1. 環境によるテキストの書き換え
+            if (!isWebEnvironment) {
+                console.warn("WARNING: UNRESTRICTED ACCESS DETECTED. YOU ARE VIEWING THE TRUTH.");
+                document.getElementById('page-subtitle').innerText = "支配を、完成させる。";
+                
+                const titles = {
+                    "p-title-1": "精神服従デバイス",
+                    "p-title-2": "全方位処刑システム",
+                    "p-title-3": "薬物による去勢",
+                    "p-title-4": "生存資格選別機",
+                    "p-title-5": "記憶改竄エンジン",
+                    "p-title-6": "死体管理タグ"
+                };
+
+                for (let id in titles) {
+                    const el = document.getElementById(id);
+                    if (el) el.innerText = titles[id];
+                }
+            }
+
+            // 2. タイトル書き換えギミック (Index.htmlから移植)
+            const hoverElements = document.querySelectorAll('.hover-change');
+            hoverElements.forEach(el => {
+                el.addEventListener('mouseenter', () => {
+                    const hoverTitle = el.getAttribute('data-title');
+                    if (hoverTitle) document.title = hoverTitle;
+                });
+                el.addEventListener('mouseleave', () => {
+                    document.title = defaultTitle;
+                });
+            });
+        });
+    </script>
+</body>
+</html>

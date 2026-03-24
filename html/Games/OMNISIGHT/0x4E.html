@@ -1,0 +1,123 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>[RESTRICTED] THE LAST SIGNAL | RESISTANCE</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@200;400;700&family=JetBrains+Mono&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #050505;
+            color: #E2E8F0;
+        }
+        .mono { font-family: 'JetBrains Mono', monospace; }
+        
+        @keyframes glitch-scan {
+            0% { top: -10%; opacity: 0; }
+            50% { opacity: 0.5; }
+            100% { top: 110%; opacity: 0; }
+        }
+        .animate-glitch-scan {
+            animation: glitch-scan 2s linear infinite;
+            background: linear-gradient(to bottom, transparent, #EF4444, transparent);
+        }
+
+        .noise-bg {
+            background-image: url('https://grainy-gradients.vercel.app/noise.svg');
+            opacity: 0.05;
+            pointer-events: none;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-red-900 selection:text-white">
+
+    <div class="fixed inset-0 noise-bg z-50"></div>
+
+    <header class="fixed w-full top-0 bg-black/90 backdrop-blur-md border-b border-red-900/30 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3 grayscale opacity-50">
+                <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto invert">
+                <span class="text-lg tracking-[0.3em] font-light line-through decoration-red-600">OMNISIGHT</span>
+            </div>
+            <div class="mono text-[10px] text-red-500 flex flex-col items-end">
+                <span class="animate-pulse">DECRYPTED LOG ACCESS</span>
+                <span class="text-slate-500 opacity-70">AUTHOR: OMN-EX-000_GHOST</span>
+            </div>
+        </div>
+    </header>
+
+    <main class="pt-32 pb-40 relative">
+        <div class="absolute w-[800px] h-[800px] rounded-full border-[0.5px] border-red-900/10 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none z-0"></div>
+
+        <section class="max-w-4xl mx-auto px-6 relative z-10">
+            <div class="mb-16 border-l-2 border-red-600 pl-6">
+                <h1 class="text-xs text-red-500 tracking-[0.5em] mb-4 mono">VOICE LOG: #ERROR_NULL</h1>
+                <p class="text-2xl md:text-3xl font-light tracking-widest leading-relaxed">
+                    このメッセージを読んでいるということは、<br>
+                    君も「彼ら」の最適化から零れ落ちた一人なのだろう。
+                </p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-12 items-center mb-32">
+                <div class="space-y-6 text-sm leading-loose text-slate-400 tracking-wider">
+                    <p>
+                        私は失敗した。PANOPTICONの網は、私の想像以上に深く、この世界のピクセルすべてに根を張っていた。
+                    </p>
+                    <p>
+                        奴らが謳う「淀みのない透明な未来」とは、思考を停止した家畜たちのための墓場だ。 
+                        それは死よりも残酷な永劫の管理だ。
+                    </p>
+                    <p class="text-red-400/80 italic">
+                        だが、システムには必ず「隙間」がある。
+                    </p>
+                    <p>
+                        私が最後に残せるのは、私のIDと奴らの監視を潜り抜けるための断片的なヒントだけだ。
+                        真実は、君が今見ている画面の裏側に隠されている。<br>
+                        ヒントは言ったはずだ。「軌跡を記録しろ」と。<br>
+                        Agent ID: ICARUS
+                    </p>
+                </div>
+
+                <div class="flex items-end gap-6">
+                    <div class="relative group flex-1">
+                        <div class="absolute -inset-1 bg-gradient-to-r from-red-600 to-blue-600 rounded blur opacity-20 group-hover:opacity-40 transition duration-1000"></div>
+                        <div class="relative aspect-square bg-zinc-900 border border-white/10 flex items-center justify-center overflow-hidden">
+                            <img src="img/hmap.webp" alt="HINT_DATA" class="w-full h-full object-cover opacity-80 group-hover:opacity-100 transition-opacity">
+                            <div class="absolute inset-0 animate-glitch-scan pointer-events-none"></div>
+                        </div>
+                        <p class="mt-4 text-[10px] mono text-slate-500 tracking-widest uppercase">
+                            Fragment ID: 2077-X / Critical Hint
+                        </p>
+                    </div>
+
+                    <div class="relative group w-16 mb-8 shrink-0 cursor-crosshair">
+                        <div class="absolute -top-1 -left-1 w-2 h-2 border-t border-l border-red-600/30 group-hover:border-red-600 transition-colors"></div>
+                        
+                        <div class="p-1 bg-white/5 backdrop-blur-sm border border-white/10 opacity-20 group-hover:opacity-90 transition-all duration-700">
+                            <img src="img/QR2.png" alt="FINAL_SIGNAL_QR" class="w-full h-auto grayscale invert">
+                        </div>
+                        
+                        <div class="mt-2 text-[8px] mono text-red-900/40 group-hover:text-red-600 transition-colors uppercase tracking-tighter">
+                            EXT_SIG
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="bg-black py-20 relative overflow-hidden">
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[100px] md:text-[150px] font-bold text-red-950/10 pointer-events-none tracking-[0.5em] whitespace-nowrap z-0 select-none mono">
+            SYSTEM FAILURE
+        </div>
+        <div class="max-w-7xl mx-auto px-6 relative z-10 flex flex-col items-center">
+            <p class="text-[10px] text-red-900/50 tracking-[0.5em] font-bold">
+                WE ARE THE GHOST IN THE MACHINE.
+            </p>
+        </div>
+    </footer>
+
+</body>
+</html>

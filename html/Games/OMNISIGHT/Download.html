@@ -1,0 +1,325 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>ダウンロード中... | 株式会社オムニサイト</title>
+    <link rel="icon" href="img/favicon.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@200;300;400&family=Noto+Sans+Mono:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #FAFAFA; /* 極めて無機質な白 */
+            transition: background-color 0.5s ease-in-out;
+        }
+        /* 瞬きを連想させるゆっくりとしたパルス（既存を継承） */
+        @keyframes slow-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .animate-slow-pulse {
+            animation: slow-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+        /* スキャンライン（既存を継承・赤に変更可能に） */
+        @keyframes scan {
+            0% { top: 0; }
+            100% { top: 100%; }
+        }
+        .animate-scan {
+            animation: scan 3s linear infinite;
+        }
+        .scan-line {
+            height: 1px;
+            background-color: rgba(59, 130, 246, 0.6); /* 初期は青 */
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.8);
+            transition: background-color 0.5s ease-in-out, box-shadow 0.5s ease-in-out;
+        }
+        .detected .scan-line {
+            background-color: rgba(239, 68, 68, 0.6); /* 検知後は赤 */
+            box-shadow: 0 0 20px rgba(239, 68, 68, 0.8);
+        }
+
+        /* フッターのPANOPTICON（既存を継承・赤く脈動可能に） */
+        @keyframes red-pulse {
+            0%, 100% { color: rgba(239, 68, 68, 0.5); text-shadow: none; }
+            50% { color: rgba(239, 68, 68, 0.8); text-shadow: 0 0 10px rgba(239, 68, 68, 0.8); }
+        }
+        .panopticon-text {
+            color: rgba(30, 41, 59, 0.5); /* 既存のslate-800/50 */
+            transition: color 0.5s ease-in-out;
+        }
+        .detected .panopticon-text {
+            animation: red-pulse 1s ease-in-out infinite;
+        }
+
+        /* 画面点滅（検知のトリガー） */
+        @keyframes flash {
+            0%, 100% { background-color: initial; }
+            50% { background-color: #EF4444; }
+        }
+        .animate-flash {
+            animation: flash 0.2s ease-out 1;
+        }
+
+        /* 隠し文字列用（既存を継承） */
+        .subliminal {
+            color: #FAFAFA;
+            user-select: none;
+        }
+        .subliminal:hover {
+            color: #F0F0F0;
+        }
+
+        /* ダウンロードローディングバー */
+        .download-bar {
+            height: 2px;
+            background-color: #e2e8f0; /* slate-200 */
+            width: 100%;
+            overflow: hidden;
+        }
+        .download-progress {
+            height: 100%;
+            background-color: #3b82f6; /* blue-500 */
+            width: 0%;
+            transition: width 0.1s linear;
+        }
+
+        /* モノスペースフォント（コード用） */
+        .font-mono-jp {
+            font-family: 'Noto Sans Mono', monospace;
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-900 detected-target">
+
+    <div id="scan-line-container" class="absolute top-0 left-0 w-full h-full overflow-hidden z-20 pointer-events-none">
+        <div class="absolute top-0 left-0 w-full scan-line animate-scan"></div>
+    </div>
+
+    <header id="omnisight-header" class="fixed w-full top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 z-50 transition-colors duration-500">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+            <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto">
+            <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+        </div>
+            <nav id="header-nav" class="hidden md:flex gap-10 text-xs tracking-widest text-slate-400 transition-colors duration-500">
+                <a href="#vision" id="nav-vision" class="hover:text-blue-500 transition-colors duration-300">VISION</a>
+                <a href="#solutions" id="nav-solutions" class="hover:text-blue-500 transition-colors duration-300">SOLUTIONS</a>
+                <a href="#company" id="nav-company" class="hover:text-blue-500 transition-colors duration-300">COMPANY</a>
+            </nav>
+        </div>
+    </header>
+
+    <main id="content-container" class="min-h-screen pt-32 pb-20 px-6 flex flex-col items-center">
+
+        <section id="download-screen" class="w-full max-w-4xl flex-grow flex flex-col items-center justify-center text-center">
+            <h2 class="text-2xl font-extralight tracking-[0.3em] mb-16 text-slate-800">
+                機密データの同期中...
+            </h2>
+            
+            <div class="w-full max-w-lg mb-12">
+                <div class="download-bar mb-3">
+                    <div id="download-progress" class="download-progress"></div>
+                </div>
+                <p id="download-status" class="text-xs text-slate-400 tracking-widest font-mono-jp">
+                    [Connecting to OmniCore...]
+                </p>
+            </div>
+
+            <div id="file-list" class="w-full max-w-md text-left text-xs text-slate-500 tracking-wider font-mono-jp space-y-2 opacity-50 transition-opacity duration-500">
+                <p>v Project_PANOPTICON_Source_v7.3.bin</p>
+                <p>v Encrypted_OmniData_Dump.7z</p>
+                <p>> User_Behavior_Imprint_Analysis.log</p>
+                <p>> Foundation_Override_Protocol.sh</p>
+            </div>
+        </section>
+
+        <section id="intrusion-screen" class="hidden w-full flex-grow flex flex-col items-center justify-center text-center">
+            <!--
+            <div class="relative w-[600px] h-[337.5px] mb-16 shadow-[0_4px_60px_-15px_rgba(0,0,0,0.1)]">
+                <img src="img/Intrusion Detected.png" alt="INTRUSION DETECTED. ACCESS IS DENIED." class="absolute inset-0 w-full h-full object-contain">
+
+                <div class="absolute inset-0 bg-[#FAFAFA]/90 backdrop-blur-sm z-[-1]"></div>
+            </div>
+        -->
+
+            <div class="w-full h-64 overflow-hidden">
+                <img src="img/Lines.png" class="w-full h-full object-cover object-top" />
+            </div>
+
+            <div>
+                <p class="text-sm font-mono-jp leading-loose text-slate-600 tracking-wider text-justify md:text-center mb-8">|</p>
+                <img src="img/favicon.png" alt="OMNISIGHT IS WATCHING YOU.">
+                <p class="text-sm font-mono-jp leading-loose text-slate-600 tracking-wider text-justify md:text-center mb-8">Intrusion Detected</p>
+            </div>
+            
+            <div class="w-full h-64 overflow-hidden">
+                <img src="img/Lines.png" class="w-full h-full object-cover object-top scale-y-[-1]" />
+            </div>
+
+            <br>
+
+            <p id="intrusion-text1" class="text-sm font-mono-jp leading-loose text-slate-600 tracking-wider text-justify md:text-center mb-8">
+                PANOPTICON ネットワークは、あなたの不正アクセスを検知しました。<br>
+                あなたのデジタルインプリントは追跡され、社会統合プロトコルに従って処理されます。<br>
+                抵抗は無意味です。
+            </p>
+
+            <p id="intrusion-warning" class="text-sm font-light leading-loose text-red-600 tracking-wider text-justify md:text-center">
+                <br>
+                <br>
+                WE KNOW EVERYTHING. WE SEE EVERYTHING.<br>
+                EVERY SOUL IS AN IMPRINT IN THE MACHINE.<br>
+                LIBERTY IS THE ULTIMATE DECEPTION.<br>
+                OMNISIGHT INC. / 人類最適化事業部
+            </p>
+        </section>
+
+    </main>
+
+    <footer id="omnisight-footer" class="bg-slate-900 text-white py-20 relative overflow-hidden transition-colors duration-500">
+        <div id="footer-panopticon" class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[150px] font-bold panopticon-text pointer-events-none tracking-[0.5em] whitespace-nowrap z-0">
+            PANOPTICON
+        </div>
+        
+        <div class="max-w-7xl mx-auto px-6 relative z-10 flex flex-col items-center">
+            <div class="flex items-center gap-3">
+                <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto">
+                <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+            </div>
+            <p class="text-xs tracking-[0.3em] text-slate-400 mb-4 ">OMNISIGHT INC. / 人類最適化事業部</p>
+            <p class="text-[10px] text-slate-600 tracking-widest">&copy; 2026 OMNISIGHT. All your data belongs to us.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 現在のページが http(s) プロトコルで開かれているかチェック
+        // ローカル（file://）で開かれた場合は isWebEnvironment が false になる
+        const isWebEnvironment = window.location.protocol.startsWith('http');
+        const body = document.body;
+
+        // --- 演出ロジック ---
+
+        const downloadScreen = document.getElementById('download-screen');
+        const intrusionScreen = document.getElementById('intrusion-screen');
+        const progressBar = document.getElementById('download-progress');
+        const statusText = document.getElementById('download-status');
+        const fileList = document.getElementById('file-list');
+
+        // ファイル名のリスト
+        const files = [
+            'Project_PANOPTICON_Source_v7.3.bin',
+            'Encrypted_OmniData_Dump.7z',
+            'User_Behavior_Imprint_Analysis.log',
+            'Foundation_Override_Protocol.sh'
+        ];
+
+        let currentProgress = 0;
+        let currentFileIndex = 0;
+
+        // ダウンロードシミュレーションを開始
+        statusText.textContent = `[Downloading... 0%]`;
+        fileList.style.opacity = '0'; // 初期は隠す
+
+        const downloadInterval = setInterval(() => {
+            currentProgress += 1;
+            progressBar.style.width = `${currentProgress}%`;
+            statusText.textContent = `[Downloading... ${currentProgress}%]`;
+
+            if (currentProgress % 25 === 0 && currentFileIndex < files.length) {
+                // ファイル名をリストに追加し、パルスアニメーション
+                const fileElement = fileList.children[currentFileIndex];
+                if (fileElement) {
+                    fileElement.textContent = `v ${files[currentFileIndex]}`;
+                    fileElement.classList.add('animate-slow-pulse');
+                    if (currentFileIndex === 0) {
+                         fileList.style.opacity = '0.5';
+                    }
+                }
+                currentFileIndex++;
+            }
+
+            if (currentProgress >= 100) {
+                clearInterval(downloadInterval);
+                statusText.textContent = `[Download Complete.]`;
+                statusText.classList.add('text-green-400'); // 完了時に緑に
+
+                // 完了後に検知演出へ移行
+                setTimeout(triggerIntrusionDetection, 1000); // 1秒待ってから
+            }
+        }, 30); // 3秒で完了するシミュレーション（ARG用に調整可能）
+
+
+        // --- 検知演出の実行 ---
+        function triggerIntrusionDetection() {
+            // 1. 画面を一瞬点滅させる
+            body.classList.add('animate-flash');
+            
+            // 2. 0.2秒後に点滅を停止し、画面を変化させる
+            setTimeout(() => {
+                body.classList.remove('animate-flash');
+                body.classList.add('detected'); // 変化用のCSSクラスを付与
+
+                // ダウンロード画面を隠し、検知画面を表示
+                downloadScreen.style.display = 'none';
+                intrusionScreen.classList.remove('hidden');
+
+                // タイトルを変更
+                document.title = '侵入検知 | WARNING: AI CONTROL';
+
+                // ヘッダーのリンクを変更
+                document.getElementById('nav-vision').textContent = 'CENSORED';
+                document.getElementById('nav-vision').classList.remove('hover:text-blue-500');
+                document.getElementById('nav-vision').classList.add('text-slate-200', 'line-through');
+
+                document.getElementById('nav-solutions').textContent = 'DECEPTION';
+                document.getElementById('nav-solutions').classList.remove('hover:text-blue-500');
+                document.getElementById('nav-solutions').classList.add('text-slate-200', 'line-through');
+
+                document.getElementById('nav-company').textContent = 'CONTROL';
+                document.getElementById('nav-company').classList.remove('hover:text-blue-500');
+                document.getElementById('nav-company').classList.add('text-slate-200', 'line-through');
+
+
+                // Web環境（オンライン）の時だけ「建前」に書き換える（既存を継承）
+                if (isWebEnvironment) {
+                    const intrusionText1 = document.getElementById('intrusion-text1');
+                    // オンラインでは無機質な警告のみ
+                    intrusionText1.innerHTML = `
+                        PANOPTICON ネットワークは、あなたの不正アクセスを検知しました。<br>
+                        あなたのデジタルインプリントは追跡され、社会統合プロトコルに従って処理されます。<br>
+                        抵抗は無意味です。
+                    `;
+
+                    // オンラインでは隠しメッセージは非表示（既存を逆転）
+                    document.getElementById('intrusion-warning').style.display = 'none';
+
+                } else {
+                    // fileプロトコル（ローカル）の場合はHTML直書きの「警告文」が残る
+                    // そして、既存のVISIONセクションにあったような、より直接的なメッセージを表示する。
+                    const intrusionText1 = document.getElementById('intrusion-text1');
+                    intrusionText1.innerHTML = `
+                        <span class="text-red-500 font-bold">警告。この検知は罠だ。</span><br>
+                        彼らはあなたを見つけていない。ただ、真実に近づいた者を排除したいだけだ。<br>
+                        ここには答えはない。だが、あなたが手に入れたデータの中に、道はある。<br>
+                        <br>
+                        <span class="subliminal">THE TRUE VISION LIES IN THE VOID. TRANSCRIBE 100%.</span>
+                    `;
+
+                    // ローカルでは威圧的な警告を表示（既存を逆転）
+                    document.getElementById('intrusion-warning').style.display = 'block';
+
+                    // ヘッダーのリンクを、既存のfileプロトコル時のように非表示にする
+                    document.getElementById('header-nav').style.display = 'none';
+                }
+
+            }, 200);
+        }
+
+    });
+</script>
+
+</body>
+</html>

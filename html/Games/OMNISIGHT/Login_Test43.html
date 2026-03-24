@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>システム認証 | 株式会社オムニサイト</title>
+    <link rel="icon" href="img/favicon.png" type="image/x-icon">
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #FAFAFA;
+        }
+        /* スキャンラインエフェクト */
+        .scanline {
+            background: linear-gradient(to bottom, rgba(255,255,255,0), rgba(255,255,255,0) 50%, rgba(59, 130, 246, 0.05) 50%, rgba(59, 130, 246, 0.05));
+            background-size: 100% 4px;
+            pointer-events: none;
+        }
+        input:focus {
+            outline: none;
+            box-shadow: 0 0 15px rgba(59, 130, 246, 0.2);
+        }
+    </style>
+</head>
+<body class="text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-900 h-screen flex flex-col relative overflow-hidden">
+
+    <div class="absolute w-[800px] h-[800px] rounded-full border-[0.5px] border-slate-200 top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 opacity-50 pointer-events-none z-0"></div>
+    <div class="absolute inset-0 scanline z-50"></div>
+
+    <header class="w-full bg-white/80 backdrop-blur-md border-b border-slate-100 z-40 relative">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+            </div>
+            <div class="text-xs tracking-widest text-blue-500 font-light">
+                AUTHORIZED PERSONNEL ONLY
+            </div>
+        </div>
+    </header>
+
+    <header class="fixed w-full top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+            <img src="img/favicon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto">
+            <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+            </div>
+            <div class="text-xs tracking-widest text-blue-500 font-light">
+                AUTHORIZED PERSONNEL ONLY
+            </div>
+        </div>
+    </header>
+
+    <main class="flex-grow flex items-center justify-center relative z-10 px-6">
+        <div class="bg-white p-10 md:p-14 border border-slate-100 shadow-[0_4px_40px_-15px_rgba(0,0,0,0.05)] w-full max-w-md relative">
+            
+            <div class="text-center mb-10">
+                <h1 class="text-xl tracking-[0.4em] font-light text-slate-700 mb-2">SYSTEM LOGIN</h1>
+                <p class="text-[10px] tracking-widest text-slate-400">行動統合データベース アクセスゲート</p>
+            </div>
+
+            <div class="space-y-6">
+                <div>
+                    <label for="userid" class="block text-[10px] tracking-widest text-slate-400 mb-2">USER IDENTIFICATION</label>
+                    <input type="text" id="userid" class="w-full bg-[#FAFAFA] border border-slate-200 text-slate-700 p-3 text-sm tracking-wider transition-all duration-300 focus:border-blue-400 focus:bg-white" autocomplete="off">
+                </div>
+                <div>
+                    <label for="password" class="block text-[10px] tracking-widest text-slate-400 mb-2">SECURITY CLEARANCE CODE</label>
+                    <input type="password" id="password" class="w-full bg-[#FAFAFA] border border-slate-200 text-slate-700 p-3 text-sm tracking-wider transition-all duration-300 focus:border-blue-400 focus:bg-white" autocomplete="off">
+                </div>
+
+                <div class="pt-4">
+                    <button id="loginBtn" class="w-full bg-slate-800 text-white p-4 text-xs tracking-[0.3em] font-light hover:bg-blue-600 transition-colors duration-500 relative overflow-hidden group">
+                        <span class="relative z-10">AUTHENTICATE</span>
+                        <div class="absolute inset-0 bg-blue-500 transform scale-x-0 group-hover:scale-x-100 origin-left transition-transform duration-500 ease-out z-0"></div>
+                    </button>
+                </div>
+            </div>
+
+            <div id="errorMessage" class="mt-6 text-center text-xs text-red-400 tracking-widest opacity-0 transition-opacity duration-300 hidden">
+                アクセスが拒否されました。<br>あなたの試行は記録されました。
+            </div>
+
+        </div>
+    </main>
+
+    <footer class="bg-slate-900 text-white py-6 relative z-40 text-center">
+        <p class="text-[10px] text-slate-600 tracking-widest">&copy; 2026 OMNISIGHT. All your data belongs to us.</p>
+    </footer>
+
+    <script>
+        /**
+         * 難読化・復号化エンジン (簡易XOR + Base64)
+         * ARGプレイヤーがすぐには読めないが、突破不可能ではない程度の難易度
+         */
+        const OBFUSCATION_KEY = "PANOPTICON"; // 暗号化キー。変更すると生成される文字列が変わります。
+
+        // 文字列とキーを使ってXOR演算を行う関数
+        function xorString(str, key) {
+            let result = "";
+            for (let i = 0; i < str.length; i++) {
+                result += String.fromCharCode(str.charCodeAt(i) ^ key.charCodeAt(i % key.length));
+            }
+            return result;
+        }
+
+        // 難読化関数（XORしてからBase64エンコード）
+        function obfuscate(str) {
+            // 日本語URLなどに対応するため、一度encodeURIComponentを挟む
+            const utf8Str = unescape(encodeURIComponent(str));
+            return btoa(xorString(utf8Str, OBFUSCATION_KEY));
+        }
+
+        // 復号化関数（Base64デコードしてからXOR）
+        function deobfuscate(encodedStr) {
+            try {
+                const xored = xorString(atob(encodedStr), OBFUSCATION_KEY);
+                return decodeURIComponent(escape(xored));
+            } catch (e) {
+                return null; // 不正な文字列の場合はnullを返す
+            }
+        }
+
+        /* =========================================================
+           [テストモード用ロジック]
+           公開時はこのブロックを削除し、[本番用データベース]を使用してください。
+           ========================================================= */
+        
+        // テスト用の生データ配列（開発用）
+        const rawTestData = [
+            { id: "anonimasu", pass: "notfound", url: "404.html" },
+            { id: "user", pass: "pass", url: "0x41xor0x0F.html" },//1
+            { id: "ICARUS", pass: "PROMETHEU", url: "Download.html" },//2
+            { id: "test", pass: "thisistest", url: "Index.html" }
+        ];
+
+        // 開発者ツール（コンソール）に、本番用の難読化済み文字列を出力する機能
+        console.log("=== 【開発者用】本番用難読化データ生成 ===");
+        const productionReadyData = rawTestData.map(data => ({
+            id: obfuscate(data.id),
+            pass: obfuscate(data.pass),
+            url: obfuscate(data.url)
+        }));
+        console.log(JSON.stringify(productionReadyData, null, 2));
+        console.log("※公開時は上記の出力をコピーして、下の validCredentials に貼り付けてください。");
+
+        
+        /* =========================================================
+           [本番用データベース]
+           ここに難読化済みの文字列のみを配置します。
+           ========================================================= */
+        
+        // テスト時は productionReadyData をそのまま使いますが、
+        // 本番では以下のようにコンソール出力された難読化文字列を直接書き込みます。
+        const validCredentials = productionReadyData; 
+        
+        /* 本番時の記述例：
+        const validCredentials = [
+          {
+            "id": "EQ8RCQ==",
+            "pass": "Bw4aBg==",
+            "url": "EQ8RCQAUDw0WGBcEGx8RCA=="
+          },
+          // ... 他のルート
+        ];
+        */
+
+        // ログイン処理
+        document.getElementById('loginBtn').addEventListener('click', () => {
+            const inputId = document.getElementById('userid').value;
+            const inputPass = document.getElementById('password').value;
+            const errorMsg = document.getElementById('errorMessage');
+
+            if(!inputId || !inputPass) return;
+
+            // 入力された値を難読化状態にしてから、データベースと照合する
+            // （生の入力値をコード上の正解と直接比較させないため）
+            const hashedInputId = obfuscate(inputId);
+            const hashedInputPass = obfuscate(inputPass);
+
+            let matchedUrl = null;
+
+            for(let cred of validCredentials) {
+                if (cred.id === hashedInputId && cred.pass === hashedInputPass) {
+                    matchedUrl = deobfuscate(cred.url);
+                    break;
+                }
+            }
+
+            if (matchedUrl) {
+                // 認証成功時の演出
+                errorMsg.classList.add('hidden');
+                document.getElementById('loginBtn').innerHTML = "ACCESS GRANTED...";
+                document.getElementById('loginBtn').classList.add('bg-blue-500');
+                
+                // 少しだけ待ってから遷移（不気味な「間」の演出）
+                setTimeout(() => {
+                    window.location.href = matchedUrl;
+                }, 800);
+            } else {
+                // 認証失敗
+                errorMsg.classList.remove('hidden');
+                errorMsg.classList.remove('opacity-0');
+                errorMsg.classList.add('opacity-100');
+                
+                // 入力欄をリセット
+                document.getElementById('password').value = "";
+            }
+        });
+
+        // Enterキーでのログイン対応
+        document.getElementById('password').addEventListener('keypress', function (e) {
+            if (e.key === 'Enter') {
+                document.getElementById('loginBtn').click();
+            }
+        });
+    </script>
+</body>
+</html>
