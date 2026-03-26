@@ -547,7 +547,16 @@ AMD,2023,Ryzen,9,7940HS,3600,28000,8,16,8,5.2,35,54,35,AMD Radeon 780M,0.8,2.8,4
 
         // アプリケーション起動
         //document.addEventListener('DOMContentLoaded', init);
-        fetch('CPU.csv').then(res => res.text()).then(csvText => init(csvText))
+
+        //
+        const queryString = window.location.search;
+        const urlParams = new URLSearchParams(queryString);
+        let csvType = "CPU";
+        if (urlParams.has('cputype'))
+        {
+            csvType =  urlParams.get('cputype');
+        }
+        fetch(csvType+'.csv').then(res => res.text()).then(csvText => init(csvText))
 
     </script>
 </body>
