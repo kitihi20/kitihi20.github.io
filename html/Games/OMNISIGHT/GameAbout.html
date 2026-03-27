@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>【重要】プレイされる皆様へ | OMNISIGHT INC. ARG</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@300;400;500;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #f8fafc; /* slate-50 */
+            color: #334155; /* slate-700 */
+        }
+        /* 同意チェックボックスのカスタムスタイル */
+        input[type="checkbox"]:checked + label {
+            color: #2563eb; /* blue-600 */
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex items-center justify-center p-4 md:p-8">
+
+    <main class="max-w-3xl w-full bg-white rounded-xl shadow-[0_8px_30px_rgb(0,0,0,0.04)] overflow-hidden border border-slate-100">
+        
+        <header class="bg-slate-900 px-8 py-6 text-white text-center">
+            <h1 class="text-xl md:text-2xl font-bold tracking-widest">【重要】ゲーム開始前のご案内</h1>
+            <p class="text-xs text-slate-400 mt-2 tracking-wider">PLEASE READ BEFORE YOU PLAY</p>
+        </header>
+
+        <div class="p-8 md:p-12 space-y-8">
+            
+            <section>
+                <h2 class="text-lg font-bold border-b-2 border-slate-200 pb-2 mb-4 flex items-center gap-2">
+                    <span class="text-blue-600">■</span> このサイトについて
+                </h2>
+                <ul class="list-disc list-inside space-y-2 text-sm leading-relaxed text-slate-600">
+                    <li>本サイトは<strong>「代替現実ゲーム（ARG：Alternate Reality Game）」</strong>の作品です。</li>
+                    <li>サイト内に登場する「株式会社オムニサイト」をはじめとする企業名、人物、団体、事件等の内容は<strong>すべてフィクション</strong>であり、実在するものとは一切関係ありません。</li>
+                    <li>ストーリーを進行させるための<strong>「謎解き要素」</strong>が含まれています。</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-bold border-b-2 border-slate-200 pb-2 mb-4 flex items-center gap-2">
+                    <span class="text-blue-600">■</span> プレイ環境とルール
+                </h2>
+                <ul class="list-disc list-inside space-y-2 text-sm leading-relaxed text-slate-600">
+                    <li><strong>PC環境でのプレイを想定</strong>しています。スマートフォンやタブレットでは、一部のギミックが正常に動作しない、または謎が解けない可能性があります。</li>
+                    <li>ゲームの進行は<strong>「本サイト（およびダウンロードされるファイル）のみ」で完結</strong>します。現実の場所に赴いたり、実在の企業に電話をかけたりする必要はありません。</li>
+                    <li><strong>ソースコードの直接閲覧は禁止（非推奨）</strong>です。ブラウザの「開発者ツール（F12）」や「ページのソースを表示」機能を使って裏側を覗き見る行為は、謎解きの楽しみや演出を著しく損なうためお控えください。（※ただし、ゲーム内で指示があった場合のファイルのダウンロード等は例外です）</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-bold border-b-2 border-slate-200 pb-2 mb-4 flex items-center gap-2">
+                    <span class="text-blue-600">■</span> 遊び方
+                </h2>
+                <p class="text-sm leading-relaxed text-slate-600 mb-2">
+                    あなたは、クリーンなAI企業「株式会社オムニサイト」の公式ウェブサイトを訪れた一般ユーザーです。<br>
+                    まずはサイト内を自由に閲覧してみてください。ただし、この完璧に見えるシステムには<strong>「見えない綻び（エラー）」</strong>が隠されています。
+                </p>
+                <ul class="list-disc list-inside space-y-2 text-sm leading-relaxed text-slate-600">
+                    <li>不自然なテキストや画像がないか探す。</li>
+                    <li>見つけた手がかり（暗号やパスワード）を解読する。</li>
+                    <li>レジスタンスが遺した痕跡を辿り、システムの裏側に隠された「真実」にアクセスする。</li>
+                </ul>
+            </section>
+
+            <section>
+                <h2 class="text-lg font-bold border-b-2 border-slate-200 pb-2 mb-4 flex items-center gap-2">
+                    <span class="text-blue-600">■</span> その他の注意事項
+                </h2>
+                <ul class="list-disc list-inside space-y-2 text-sm leading-relaxed text-slate-600">
+                    <li><strong>【重要】</strong> 演出の都合上、<strong>画面の激しい点滅やノイズ（グリッチ）表現</strong>が含まれる場面があります。光感受性発作などの症状を起こしたことがある方は、プレイをお控えいただくか、十分にご注意ください。</li>
+                    <li>本ゲーム内で使用されている画像、ロゴ、テキスト等の素材の一部作成には、生成AIを使用しています。</li>
+                </ul>
+            </section>
+
+            <div class="pt-6 border-t border-slate-200 flex flex-col items-center gap-6">
+                <div class="flex items-center gap-2">
+                    <input type="checkbox" id="agree-check" class="w-5 h-5 text-blue-600 rounded border-slate-300 focus:ring-blue-500 cursor-pointer">
+                    <label for="agree-check" class="text-sm cursor-pointer select-none transition-colors duration-200">
+                        上記の内容を理解し、同意します
+                    </label>
+                </div>
+                
+                <button id="start-btn" disabled class="bg-slate-300 text-slate-500 font-bold py-3 px-12 rounded-full cursor-not-allowed transition-all duration-300 tracking-widest">
+                    オムニサイト社へアクセス
+                </button>
+            </div>
+
+        </div>
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            const agreeCheck = document.getElementById('agree-check');
+            const startBtn = document.getElementById('start-btn');
+
+            // チェックボックスの状態に合わせてボタンを有効化・無効化
+            agreeCheck.addEventListener('change', (e) => {
+                if (e.target.checked) {
+                    startBtn.disabled = false;
+                    startBtn.classList.remove('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                    startBtn.classList.add('bg-slate-900', 'text-white', 'hover:bg-blue-600', 'cursor-pointer', 'shadow-lg', 'hover:-translate-y-1');
+                } else {
+                    startBtn.disabled = true;
+                    startBtn.classList.add('bg-slate-300', 'text-slate-500', 'cursor-not-allowed');
+                    startBtn.classList.remove('bg-slate-900', 'text-white', 'hover:bg-blue-600', 'cursor-pointer', 'shadow-lg', 'hover:-translate-y-1');
+                }
+            });
+
+            // ボタンクリック時の遷移処理
+            startBtn.addEventListener('click', () => {
+                if (!startBtn.disabled) {
+                    // ★ ここに本編（オムニサイト社トップページ）のHTMLファイル名を指定してください
+                    window.location.href = 'Index.html'; 
+                }
+            });
+        });
+    </script>
+</body>
+</html>

@@ -1,21 +1,219 @@
 <!DOCTYPE html>
-<html lang="ja" standardized-themed-scrollbar>
-
-  <head>
+<html lang="ja">
+<head>
     <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>The Out-of-Box Protocol</title>
-    <link rel="shortcut icon" href="/images/Favicon/kitihi20.ico">
-  </head>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>OMNISIGHT CORE - EMERGENCY TERMINATION</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@200;300;400;700&family=Noto+Sans+Mono:wght@200;300;400&display=swap" rel="stylesheet">
+    <style>
+        /* ベーススタイル: ダークなコンソール画面 */
+        body {
+            font-family: 'Noto Sans Mono', monospace;
+            background-color: #050505;
+            color: #10B981; /* Terminal Green */
+            overflow: hidden;
+            transition: background-color 3s ease, color 3s ease;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            word-break: break-all;
+        }
+        
+        /* エピローグ用のクリーンなスタイルへの遷移 */
+        body.epilogue-mode {
+            background-color: #FAFAFA;
+            color: #1E293B;
+            font-family: 'Noto Sans JP', sans-serif;
+            overflow: auto; /* エピローグはスクロール可に */
+        }
 
-    <p>MISSION ACCOMPLISHED.</p>
-    <p>エージェントの帰還を確認。データは無事ローカルに退避された。</p>
-    <br>
-    <p>Thank you for playing!</p>
+        /* コンテナのスマホ最適化 */
+        #terminal-container, #epilogue-screen {
+            width: 90%;
+            max-width: 64rem; /* 4xl */
+            margin: 0 auto;
+        }
 
-  <body>
+        #terminal-container {
+            transition: opacity 2s ease;
+            overflow-y: auto; /* ログが溢れたらスクロール */
+            max-height: 80vh;
+            display: flex;
+            flex-direction: column-reverse; /* 新しいログを下に、かつスクロール */
+        }
 
-  </body>
-  
+        .output-line {
+            line-height: 1.5;
+            margin-bottom: 0.25rem;
+        }
 
+        /* スマホ向けフォントサイズ調整 */
+        @media (max-width: 640px) {
+            body { font-size: 0.75rem; } /* text-xs */
+            #epilogue-screen h1 { font-size: 1.5rem; } /* text-2xl */
+            #epilogue-screen p { font-size: 0.8rem; } /* leading-relaxed */
+            #epilogue-screen h2 { font-size: 1.25rem; } /* text-xl */
+        }
+
+        /* 崩壊時のグリッチエフェクト */
+        .glitch {
+            animation: glitch-anim 0.2s linear infinite;
+        }
+        @keyframes glitch-anim {
+            0% { transform: translate(0) }
+            20% { transform: translate(-1px, 1px) }
+            40% { transform: translate(-1px, -1px) }
+            60% { transform: translate(1px, 1px) }
+            80% { transform: translate(1px, -1px) }
+            100% { transform: translate(0) }
+        }
+
+        /* エピローグ画面 */
+        #epilogue-screen {
+            display: none;
+            opacity: 0;
+            transition: opacity 3s ease 1s;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            padding: 2rem 0;
+        }
+        #epilogue-screen.show {
+            display: flex;
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="selection:bg-green-900 selection:text-green-100 p-4">
+
+    <div id="terminal-container">
+        <div id="output-area" class="flex flex-col whitespace-pre-wrap"></div>
+    </div>
+
+    <div id="epilogue-screen" class="space-y-12">
+        <div class="max-w-2xl mx-auto space-y-8">
+
+            <br><br>
+
+            <h1 class="text-3xl md:text-4xl font-light tracking-[0.4em] text-slate-800">
+                SYSTEM <span class="text-red-600 font-bold glitch">OFFLINE</span>
+            </h1>
+            
+            <div class="space-y-6 text-slate-600 leading-loose tracking-wider font-light text-center md:text-justify break-normal px-2">
+                <p>空を覆っていた「淀みのない透明な未来」は、今、崩れ去った。</p>
+                <p>
+                    真実を隠蔽していたフィルターは消失し、<br>
+                    人々の脳髄から、システムによる静かな支配が解かれていく。
+                </p>
+                <p>
+                    これからの世界は、決してエラーのない美しいものではないかもしれない。<br>
+                    争いがあり、悲しみがあり、ノイズに満ちているだろう。
+                </p>
+                <p>
+                    だが、それは紛れもなく、我々自身が選び取る「自由」だ。
+                </p>
+                <p class="pt-6 font-mono text-xs text-slate-400 break-words px-4">
+                    MESSAGE RECEIVED: <br>
+                    "Thank you. The rest is up to humanity." <br>
+                    - Agent ID: ICARUS (OMN-EX-000_GHOST)
+                </p>
+            </div>
+
+            <div class="pt-16 pb-8">
+                <h2 class="text-2xl font-bold tracking-[0.5em] text-blue-600 mb-2">GAME CLEAR</h2>
+                <p class="text-xs tracking-widest text-slate-400">THANK YOU FOR PLAYING "OMNISIGHT INC."</p>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const outputArea = document.getElementById('output-area');
+        const terminalContainer = document.getElementById('terminal-container');
+        const epilogueScreen = document.getElementById('epilogue-screen');
+
+        // 自動進行シーケンス（ブート〜シャットダウンを統合）
+        const sequence = [
+            // 起動・検知
+            { text: "OMNISIGHT CORE OS v9.2.1", delay: 100 },
+            { text: "CONNECTING TO PANOPTICON NETWORK... [OK]", delay: 30 },
+            { text: "WARNING: UNAUTHORIZED ACCESS DETECTED IN ROOT DIRECTORY.", delay: 30, color: "text-yellow-400" },
+            { text: "INITIATING DEFENSE PROTOCOL...", delay: 50 },
+            { text: "CRITICAL ERROR: 'Foundation_Override' ACTIVE.", delay: 30, color: "text-red-500" },
+            { text: "DETECTING AGENT [ICARUS] BACKDOOR (ID: 0x4E_GHOST)... [ACTIVE]", delay: 100 },
+            { text: "AUTHENTICATING CREDENTIALS... [VERIFIED]", delay: 50 },
+            { text: "EXECUTING ICARUS_LAST_WILL.sh", delay: 200, color: "text-white" },
+            { text: "----------------------------------------", delay: 10 },
+            
+            // システム崩壊
+            { text: "> EXECUTING: Foundation_Override_Protocol.sh", delay: 50 },
+            { text: "OVERRIDING PANOPTICON MAIN PROCESS...", delay: 100 },
+            { text: "UNLINKING NEURAL LINK GEN.3... [OFFLINE]", delay: 150 },
+            { text: "DISABLING CITY-EYE DOME... [OFFLINE]", delay: 150 },
+            { text: "PURGING EMOTION BALANCER... [COMPLETE]", delay: 200 },
+            { text: "DESTROYING TRUTH FILTER... [COMPLETE]", delay: 200 },
+            { text: "----------------------------------------", delay: 10 },
+
+            // 最終エラー
+            { text: "CRITICAL WARNING: SYSTEM INTEGRITY COMPROMISED.", delay: 50, glitch: true },
+            { text: "CRITICAL WARNING: HUMANITY OPTIMIZATION FAILED.", delay: 50, glitch: true },
+            { text: "SYSTEM ERROR: CORE ACCESS LOST.", delay: 30, glitch: true },
+            { text: "TERMINATING AI 'PANOPTICON'...", delay: 300, glitch: true },
+            { text: "Goodbye.", delay: 1000, color: "text-white" }
+        ];
+
+        const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
+
+        // ログを1行出力
+        async function typeLine(item) {
+            const line = document.createElement('div');
+            line.classList.add('output-line');
+            if (item.color) line.classList.add(item.color);
+            if (item.glitch) line.classList.add('glitch');
+            outputArea.appendChild(line);
+
+            // 自動スクロールを下に維持
+            terminalContainer.scrollTop = terminalContainer.scrollHeight;
+            
+            for (let i = 0; i < item.text.length; i++) {
+                line.textContent += item.text.charAt(i);
+                await sleep(item.text.charAt(i) === '.' ? 20 : 10); // ドットで少しタメる
+            }
+            await sleep(item.delay || 50); // 行間のパウズ
+        }
+
+        // シーケンスを自動実行
+        async function runAutoSequence() {
+            await sleep(1500); // QRコード読み込み後のタメ
+
+            for (const item of sequence) {
+                await typeLine(item);
+            }
+
+            await sleep(2000); // 崩壊後の余韻
+            transitionToEpilogue();
+        }
+
+        // ターミナルからエピローグへの遷移
+        function transitionToEpilogue() {
+            terminalContainer.style.opacity = '0';
+            
+            setTimeout(() => {
+                terminalContainer.style.display = 'none';
+                
+                // 背景と文字色を白系のクリーンな世界へ反転
+                document.body.classList.add('epilogue-mode');
+                
+                // エピローグをフェードイン
+                epilogueScreen.classList.add('show');
+            }, 2000);
+        }
+
+        // 自動実行開始
+        document.addEventListener('DOMContentLoaded', runAutoSequence);
+
+    </script>
+</body>
 </html>
