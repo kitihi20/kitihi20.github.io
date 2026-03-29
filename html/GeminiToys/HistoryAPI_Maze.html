@@ -1,0 +1,248 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>History API 迷路</title>
+    <style>
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            background-color: #f4f4f9;
+            color: #333;
+            margin: 0;
+            padding: 20px;
+        }
+        h1 { font-size: 1.5rem; }
+        .description {
+            text-align: center;
+            margin-bottom: 20px;
+            font-size: 0.9rem;
+            color: #666;
+        }
+        #maze-container {
+            display: grid;
+            grid-template-columns: repeat(5, 50px);
+            grid-template-rows: repeat(5, 50px);
+            gap: 2px;
+            background-color: #333;
+            padding: 2px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .cell {
+            width: 50px;
+            height: 50px;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            font-size: 24px;
+            background-color: white;
+            transition: background-color 0.2s;
+        }
+        .wall { background-color: #555; }
+        .path { background-color: #fff; }
+        .start { background-color: #a8e6cf; }
+        .goal { background-color: #ff8b94; }
+        
+        /* プレイヤーの見た目 */
+        .player::after {
+            content: '🚶';
+            font-size: 30px;
+        }
+
+        #controls {
+            display: grid;
+            grid-template-columns: 50px 50px 50px;
+            grid-template-rows: 50px 50px;
+            gap: 5px;
+            margin-bottom: 20px;
+        }
+        .btn {
+            padding: 10px;
+            font-size: 16px;
+            cursor: pointer;
+            border: 1px solid #ccc;
+            border-radius: 5px;
+            background-color: #fff;
+            transition: background-color 0.1s;
+        }
+        .btn:active { background-color: #ddd; }
+        .btn:disabled { opacity: 0.5; cursor: not-allowed; }
+        #btn-up { grid-column: 2; grid-row: 1; }
+        #btn-left { grid-column: 1; grid-row: 2; }
+        #btn-down { grid-column: 2; grid-row: 2; }
+        #btn-right { grid-column: 3; grid-row: 2; }
+
+        #history-log {
+            width: 100%;
+            max-width: 300px;
+            background: #fff;
+            padding: 15px;
+            border-radius: 8px;
+            box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+        }
+        #history-log h3 { margin-top: 0; font-size: 1rem; }
+        #log-list {
+            list-style: none;
+            padding: 0;
+            margin: 0;
+            max-height: 150px;
+            overflow-y: auto;
+            font-size: 0.85rem;
+        }
+        #log-list li {
+            padding: 5px 0;
+            border-bottom: 1px solid #eee;
+        }
+        #log-list li:last-child { border-bottom: none; font-weight: bold; color: #007bff; }
+    </style>
+</head>
+<body>
+
+    <h1>History API 迷路</h1>
+    <p class="description">
+        ボタンで移動すると、ブラウザの履歴に記録されます。<br>
+        <strong>ブラウザの「戻る」「進む」ボタン</strong>を使って移動を取り消すことができます！
+    </p>
+
+    <div id="maze-container"></div>
+
+    <div id="controls">
+        <button class="btn" id="btn-up">↑</button>
+        <button class="btn" id="btn-left">←</button>
+        <button class="btn" id="btn-down">↓</button>
+        <button class="btn" id="btn-right">→</button>
+    </div>
+
+    <div id="history-log">
+        <h3>訪問履歴 (History State)</h3>
+        <ul id="log-list"></ul>
+    </div>
+
+    <script>
+        // 迷路のマップ定義 (0: 壁, 1: 道, 2: スタート, 3: ゴール)
+        const mazeMap = [
+            [2, 1, 0, 1, 1],
+            [0, 1, 1, 1, 0],
+            [1, 1, 0, 1, 1],
+            [1, 0, 0, 0, 1],
+            [1, 1, 1, 1, 3]
+        ];
+
+        const ROWS = mazeMap.length;
+        const COLS = mazeMap[0].length;
+        
+        let playerPos = { x: 0, y: 0 };
+        let visitHistory = ["スタート (0, 0)"];
+
+        const mazeContainer = document.getElementById('maze-container');
+        const logList = document.getElementById('log-list');
+
+        // --- 描画処理 ---
+        function renderMaze() {
+            mazeContainer.innerHTML = '';
+            for (let y = 0; y < ROWS; y++) {
+                for (let x = 0; x < COLS; x++) {
+                    const cell = document.createElement('div');
+                    cell.classList.add('cell');
+                    
+                    // セルの種類を設定
+                    if (mazeMap[y][x] === 0) cell.classList.add('wall');
+                    else if (mazeMap[y][x] === 1) cell.classList.add('path');
+                    else if (mazeMap[y][x] === 2) cell.classList.add('start');
+                    else if (mazeMap[y][x] === 3) cell.classList.add('goal');
+
+                    // プレイヤーの位置
+                    if (playerPos.x === x && playerPos.y === y) {
+                        cell.classList.add('player');
+                    }
+                    mazeContainer.appendChild(cell);
+                }
+            }
+        }
+
+        function renderLog() {
+            logList.innerHTML = '';
+            visitHistory.forEach((log, index) => {
+                const li = document.createElement('li');
+                li.textContent = `${index + 1}. ${log}`;
+                logList.appendChild(li);
+            });
+            // ログの末尾にスクロール
+            logList.scrollTop = logList.scrollHeight;
+        }
+
+        // --- 移動ロジック ---
+        function move(dx, dy) {
+            const nextX = playerPos.x + dx;
+            const nextY = playerPos.y + dy;
+
+            // 迷路の範囲外または壁(0)の場合は移動不可
+            if (nextX < 0 || nextX >= COLS || nextY < 0 || nextY >= ROWS || mazeMap[nextY][nextX] === 0) {
+                return; 
+            }
+
+            // 状態を更新
+            playerPos = { x: nextX, y: nextY };
+            
+            let logText = `座標 (${nextX}, ${nextY}) に移動`;
+            if (mazeMap[nextY][nextX] === 3) logText = "🎉 ゴール到達！";
+            
+            // 現在の履歴配列のコピーを作成し、新しいログを追加
+            visitHistory = [...visitHistory, logText];
+
+            // 🔴 ここがポイント: History APIを使ってブラウザの履歴に状態をプッシュ
+            const stateObj = { pos: playerPos, history: visitHistory };
+            history.pushState(stateObj, '', `?x=${nextX}&y=${nextY}`);
+
+            updateUI();
+
+            if (mazeMap[nextY][nextX] === 3) {
+                setTimeout(() => alert("ゴールおめでとうございます！ブラウザの「戻る」で軌跡を振り返れます。"), 100);
+            }
+        }
+
+        function updateUI() {
+            renderMaze();
+            renderLog();
+        }
+
+        // --- イベントリスナー ---
+        document.getElementById('btn-up').addEventListener('click', () => move(0, -1));
+        document.getElementById('btn-down').addEventListener('click', () => move(0, 1));
+        document.getElementById('btn-left').addEventListener('click', () => move(-1, 0));
+        document.getElementById('btn-right').addEventListener('click', () => move(1, 0));
+
+        // 🔴 ここがポイント: ブラウザの「戻る」「進む」ボタンが押された時の処理
+        window.addEventListener('popstate', (event) => {
+            if (event.state) {
+                // 履歴に保存された状態を復元
+                playerPos = event.state.pos;
+                visitHistory = event.state.history;
+            } else {
+                // 初期状態に戻る
+                playerPos = { x: 0, y: 0 };
+                visitHistory = ["スタート (0, 0)"];
+            }
+            updateUI();
+        });
+
+        // --- 初期化 ---
+        function init() {
+            // 現在の履歴状態があれば復元（ページリロード時など）、なければ初期状態をセット
+            if (history.state) {
+                playerPos = history.state.pos;
+                visitHistory = history.state.history;
+            } else {
+                history.replaceState({ pos: playerPos, history: visitHistory }, '', '?start');
+            }
+            updateUI();
+        }
+
+        init();
+    </script>
+</body>
+</html>

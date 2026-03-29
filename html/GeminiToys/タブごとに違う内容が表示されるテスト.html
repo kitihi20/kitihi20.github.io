@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <title>BroadcastChannel - Dynamic IDs</title>
+    <style>
+        body { font-family: sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; transition: all 0.5s ease; margin: 0; }
+        .container { text-align: center; background: rgba(255,255,255,0.9); padding: 2.5rem; border-radius: 15px; shadow: 0 10px 25px rgba(0,0,0,0.1); width: 350px; }
+        .id-badge { font-size: 3rem; font-weight: bold; margin-bottom: 10px; color: #333; }
+        h1 { font-size: 1.5rem; margin: 10px 0; color: #444; }
+        p { font-size: 0.9rem; color: #777; line-height: 1.6; }
+    </style>
+</head>
+<body>
+
+<div class="container">
+    <div id="id-badge" class="id-badge">?</div>
+    <h1 id="title">同期中...</h1>
+    <p id="message">接続を確認しています。</p>
+    <hr style="border: 0; border-top: 1px solid #eee; margin: 20px 0;">
+    <p><small>他のタブを閉じると、このタブの役割が自動で繰り上がります。</small></p>
+</div>
+
+<script>
+const bc = new BroadcastChannel('page_coordination_v2');
+
+const contentData = [
+    { title: "リーダー（1番目）", color: "#FFDDE1", msg: "あなたがこのグループの統括担当です。" },
+    { title: "サブリーダー（2番目）", color: "#EEF1FF", msg: "リーダーを補佐する役割です。" },
+    { title: "メンバー（3番目）", color: "#E1FFEC", msg: "実務を担当するメンバーです。" },
+    { title: "サポーター（4番目）", color: "#FFF9E1", msg: "全体を支援する役割です。" },
+    { title: "オブザーバー", color: "#F5F5F5", msg: "5番目以降の待機メンバーです。" }
+];
+
+let myId = null;
+let activeIds = new Set();
+
+// メッセージハンドリング
+bc.onmessage = (event) => {
+    const { type, id } = event.data;
+
+    switch (type) {
+        case 'WHO_IS_THERE':
+            // 新規参入者に自分のIDを教える
+            bc.postMessage({ type: 'I_AM_HERE', id: myId });
+            break;
+
+        case 'I_AM_HERE':
+            activeIds.add(id);
+            break;
+
+        case 'TAB_CLOSED':
+            // 誰かが辞めた場合、自分より前のIDなら繰り上げる
+            console.log(`ID: ${id} が退出しました。`);
+            if (myId !== null && id < myId) {
+                myId--;
+                updateUI();
+            }
+            break;
+    }
+};
+
+// 初期セットアップ
+async function init() {
+    bc.postMessage({ type: 'WHO_IS_THERE' });
+
+    // 他のタブからのレスポンスを待つ
+    await new Promise(resolve => setTimeout(resolve, 100));
+
+    // 空いている最小の数字を自分のIDにする
+    let assignedId = 0;
+    while (activeIds.has(assignedId)) {
+        assignedId++;
+    }
+    myId = assignedId;
+    updateUI();
+}
+
+// UI更新
+function updateUI() {
+    const data = contentData[myId] || contentData[contentData.length - 1];
+    
+    document.getElementById('id-badge').textContent = myId + 1;
+    document.getElementById('title').textContent = data.title;
+    document.getElementById('message').textContent = data.msg;
+    document.body.style.backgroundColor = data.color;
+    document.title = `(${myId + 1}) ${data.title}`;
+}
+
+// 退出時の処理
+window.addEventListener('beforeunload', () => {
+    // 自分が去ることを他全員に通知
+    bc.postMessage({ type: 'TAB_CLOSED', id: myId });
+    bc.close();
+});
+
+init();
+</script>
+
+</body>
+</html>
