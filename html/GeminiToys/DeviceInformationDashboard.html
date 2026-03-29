@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Device Info Dashboard</title>
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        body {
+            background-color: #f3f4f6;
+            font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+        }
+        .info-card {
+            transition: transform 0.2s ease-in-out;
+        }
+        .info-card:hover {
+            transform: translateY(-2px);
+        }
+        .data-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 0.5rem 0;
+            border-bottom: 1px solid #e5e7eb;
+            font-size: 0.875rem;
+        }
+        .data-row:last-child {
+            border-bottom: none;
+        }
+        .data-label {
+            color: #4b5563;
+            font-weight: 500;
+        }
+        .data-value {
+            color: #111827;
+            text-align: right;
+            word-break: break-all;
+            max-width: 60%;
+        }
+        .status-unsupported {
+            color: #9ca3af;
+            font-style: italic;
+        }
+    </style>
+</head>
+<body class="p-4 md:p-8">
+
+    <div class="max-w-6xl mx-auto">
+        <header class="mb-8">
+            <h1 class="text-3xl font-bold text-gray-800 flex items-center gap-3">
+                <i class="fa-solid fa-laptop-code text-blue-600"></i>
+                端末情報ダッシュボード
+            </h1>
+            <p class="text-gray-600 mt-2">JavaScriptで取得可能なデバイス・ブラウザ・環境情報のサンプラーです。<br>※ブラウザのプライバシー設定や種類により、取得できない情報もあります。</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+
+            <!-- 1. OS・ブラウザ情報 -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 info-card">
+                <h2 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-brands fa-safari text-blue-500"></i> OS・ブラウザ情報
+                </h2>
+                <div id="os-browser-info">
+                    <!-- JSで動的に追加 -->
+                </div>
+            </div>
+
+            <!-- 2. ハードウェア・メモリ -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 info-card">
+                <h2 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-microchip text-green-500"></i> ハードウェア情報
+                </h2>
+                <div id="hardware-info">
+                    <!-- JSで動的に追加 -->
+                </div>
+            </div>
+
+            <!-- 3. 画面・描画環境 -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 info-card">
+                <h2 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-desktop text-purple-500"></i> 画面・描画環境
+                </h2>
+                <div id="screen-info">
+                    <!-- JSで動的に追加 -->
+                </div>
+            </div>
+
+            <!-- 4. 設定・環境 -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 info-card">
+                <h2 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-gear text-gray-500"></i> ユーザー設定・環境
+                </h2>
+                <div id="settings-info">
+                    <!-- JSで動的に追加 -->
+                </div>
+            </div>
+
+            <!-- 5. ネットワーク・状態 -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 info-card">
+                <h2 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-wifi text-cyan-500"></i> ネットワーク・バッテリー
+                </h2>
+                <div id="network-info">
+                    <!-- JSで動的に追加 -->
+                </div>
+            </div>
+
+            <!-- 6. センサー・インタラクション -->
+            <div class="bg-white rounded-xl shadow-sm border border-gray-100 p-5 info-card">
+                <h2 class="text-lg font-semibold text-gray-800 border-b pb-2 mb-3 flex items-center gap-2">
+                    <i class="fa-solid fa-compass text-orange-500"></i> センサー・位置・操作
+                </h2>
+                <div id="sensor-info" class="mb-4">
+                    <!-- JSで動的に追加 -->
+                </div>
+                
+                <!-- 権限が必要なアクション -->
+                <div class="mt-4 flex flex-col gap-2">
+                    <button id="btn-location" class="bg-blue-50 hover:bg-blue-100 text-blue-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors border border-blue-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-location-dot"></i> 位置情報を取得
+                    </button>
+                    <button id="btn-motion" class="bg-orange-50 hover:bg-orange-100 text-orange-700 py-2 px-3 rounded-lg text-sm font-medium transition-colors border border-orange-200 flex items-center justify-center gap-2">
+                        <i class="fa-solid fa-mobile-screen"></i> 端末の傾き取得を許可 (iOS等)
+                    </button>
+                </div>
+            </div>
+
+        </div>
+    </div>
+
+    <script>
+        // ユーティリティ: 行を生成して追加する関数
+        function createDataRow(label, value) {
+            const row = document.createElement('div');
+            row.className = 'data-row';
+            
+            const labelEl = document.createElement('span');
+            labelEl.className = 'data-label';
+            labelEl.textContent = label;
+            
+            const valueEl = document.createElement('span');
+            valueEl.className = 'data-value';
+            
+            if (value === undefined || value === null || value === '') {
+                valueEl.innerHTML = '<span class="status-unsupported">非対応/不明</span>';
+            } else {
+                valueEl.textContent = value;
+            }
+            
+            row.appendChild(labelEl);
+            row.appendChild(valueEl);
+            return row;
+        }
+
+        // ユーティリティ: 特定のコンテナにデータを一括描画
+        function renderData(containerId, dataObj) {
+            const container = document.getElementById(containerId);
+            container.innerHTML = '';
+            for (const [key, val] of Object.entries(dataObj)) {
+                container.appendChild(createDataRow(key, val));
+            }
+        }
+
+        // ==========================================
+        // 1. OS・ブラウザ情報の取得
+        // ==========================================
+        function getOSBrowserInfo() {
+            const ua = navigator.userAgent;
+            let deviceType = "PC";
+            if (/Mobi|Android|iPhone|iPad|iPod/i.test(ua)) deviceType = "スマートフォン/タブレット";
+            
+            renderData('os-browser-info', {
+                'デバイス種類': deviceType,
+                'Cookie有効化': navigator.cookieEnabled ? '有効' : '無効',
+                'PDFビューア内蔵': navigator.pdfViewerEnabled ? 'あり' : 'なし',
+                'User-Agent': ua
+            });
+        }
+
+        // ==========================================
+        // 2. ハードウェア情報の取得
+        // ==========================================
+        async function getHardwareInfo() {
+            const hardwareData = {
+                '論理CPUコア数': navigator.hardwareConcurrency ? `${navigator.hardwareConcurrency} コア` : undefined,
+                'デバイスメモリ': navigator.deviceMemory ? `約 ${navigator.deviceMemory} GB` : undefined,
+                'タッチポイント数': navigator.maxTouchPoints > 0 ? `${navigator.maxTouchPoints} 点対応` : '非対応 (マウス等)',
+            };
+
+            // GPU情報の取得 (WebGL)
+            try {
+                const canvas = document.createElement('canvas');
+                const gl = canvas.getContext('webgl') || canvas.getContext('experimental-webgl');
+                if (gl) {
+                    const debugInfo = gl.getExtension('WEBGL_debug_renderer_info');
+                    if (debugInfo) {
+                        hardwareData['GPUレンダラー'] = gl.getParameter(debugInfo.UNMASKED_RENDERER_WEBGL);
+                        hardwareData['GPUベンダー'] = gl.getParameter(debugInfo.UNMASKED_VENDOR_WEBGL);
+                    }
+                }
+            } catch (e) {
+                hardwareData['GPU情報'] = '取得エラー';
+            }
+
+            // ストレージ使用量 (Promise)
+            if (navigator.storage && navigator.storage.estimate) {
+                try {
+                    const estimate = await navigator.storage.estimate();
+                    const usageMB = (estimate.usage / (1024 * 1024)).toFixed(2);
+                    const quotaMB = (estimate.quota / (1024 * 1024)).toFixed(2);
+                    hardwareData['Webストレージ使用量'] = `${usageMB} MB / ${quotaMB} MB`;
+                } catch (e) {
+                    hardwareData['Webストレージ使用量'] = '取得エラー';
+                }
+            } else {
+                hardwareData['Webストレージ使用量'] = undefined;
+            }
+
+            renderData('hardware-info', hardwareData);
+        }
+
+        // ==========================================
+        // 3. 画面・描画環境の取得
+        // ==========================================
+        function getScreenInfo() {
+            const screenData = {
+                '画面解像度': `${window.screen.width} x ${window.screen.height}`,
+                '有効画面サイズ': `${window.screen.availWidth} x ${window.screen.availHeight}`,
+                'ウィンドウ内寸': `${window.innerWidth} x ${window.innerHeight}`,
+                'デバイスピクセル比': window.devicePixelRatio,
+                '色深度': `${window.screen.colorDepth} bit`,
+                'ダークモード設定': window.matchMedia('(prefers-color-scheme: dark)').matches ? 'ダーク' : 'ライト',
+                'アニメーション軽減': window.matchMedia('(prefers-reduced-motion: reduce)').matches ? 'オン' : 'オフ'
+            };
+            renderData('screen-info', screenData);
+        }
+
+        // ==========================================
+        // 4. 設定・環境の取得
+        // ==========================================
+        function getSettingsInfo() {
+            const timeZone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+            const lang = navigator.language;
+            const langs = navigator.languages ? navigator.languages.join(', ') : lang;
+
+            const settingsData = {
+                'タイムゾーン': timeZone,
+                'ブラウザ言語': lang,
+                '優先言語リスト': langs,
+                '現在時刻': new Date().toLocaleString()
+            };
+            renderData('settings-info', settingsData);
+        }
+
+        // ==========================================
+        // 5. ネットワーク・バッテリー情報の取得
+        // ==========================================
+        function getNetworkBatteryInfo() {
+            const netBatData = {
+                'オンライン状態': navigator.onLine ? 'オンライン 🟢' : 'オフライン 🔴',
+                '通信回線種別': undefined,
+                '下り速度推定': undefined,
+                'バッテリー残量': '取得中...',
+                '充電状態': '取得中...'
+            };
+
+            // Network Information API (Chrome/Androidなど一部のみ対応)
+            if (navigator.connection) {
+                netBatData['通信回線種別'] = navigator.connection.effectiveType || navigator.connection.type;
+                if (navigator.connection.downlink) {
+                    netBatData['下り速度推定'] = `${navigator.connection.downlink} Mbps`;
+                }
+            }
+
+            renderData('network-info', netBatData);
+
+            // Battery API (Chromeなど一部のみ対応、Safariは不可)
+            if ('getBattery' in navigator) {
+                navigator.getBattery().then(function(battery) {
+                    const updateBattery = () => {
+                        netBatData['バッテリー残量'] = `${Math.floor(battery.level * 100)} %`;
+                        netBatData['充電状態'] = battery.charging ? '充電中 ⚡' : '使用中';
+                        renderData('network-info', netBatData);
+                    };
+                    updateBattery();
+                    battery.addEventListener('levelchange', updateBattery);
+                    battery.addEventListener('chargingchange', updateBattery);
+                }).catch(() => {
+                    netBatData['バッテリー残量'] = '取得エラー';
+                    netBatData['充電状態'] = undefined;
+                    renderData('network-info', netBatData);
+                });
+            } else {
+                netBatData['バッテリー残量'] = undefined;
+                netBatData['充電状態'] = undefined;
+                renderData('network-info', netBatData);
+            }
+        }
+
+        // ==========================================
+        // 6. センサー・位置・操作 (イベントドリブン)
+        // ==========================================
+        const sensorData = {
+            'ゲームパッド': '未接続',
+            '緯度・経度': '未取得',
+            '傾き (X, Y, Z)': '未取得 (許可が必要な場合があります)',
+            '加速度': '未取得'
+        };
+
+        function updateSensorUI() {
+            renderData('sensor-info', sensorData);
+        }
+
+        // ゲームパッド接続イベント
+        window.addEventListener("gamepadconnected", (e) => {
+            sensorData['ゲームパッド'] = `接続済: ${e.gamepad.id}`;
+            updateSensorUI();
+        });
+        window.addEventListener("gamepaddisconnected", (e) => {
+            sensorData['ゲームパッド'] = '未接続';
+            updateSensorUI();
+        });
+
+        // 位置情報の取得 (ボタンクリック)
+        document.getElementById('btn-location').addEventListener('click', () => {
+            if (!navigator.geolocation) {
+                sensorData['緯度・経度'] = '非対応ブラウザです';
+                updateSensorUI();
+                return;
+            }
+            sensorData['緯度・経度'] = '取得中...';
+            updateSensorUI();
+            
+            navigator.geolocation.getCurrentPosition(
+                (position) => {
+                    sensorData['緯度・経度'] = `${position.coords.latitude.toFixed(4)}, ${position.coords.longitude.toFixed(4)}`;
+                    updateSensorUI();
+                },
+                (error) => {
+                    sensorData['緯度・経度'] = `エラー: ${error.message}`;
+                    updateSensorUI();
+                }
+            );
+        });
+
+        // 端末の傾き・動きの取得 (ボタンクリックで許可リクエスト)
+        document.getElementById('btn-motion').addEventListener('click', async () => {
+            // iOS 13+ の場合、明示的な許可が必要
+            if (typeof DeviceOrientationEvent !== 'undefined' && typeof DeviceOrientationEvent.requestPermission === 'function') {
+                try {
+                    const permission = await DeviceOrientationEvent.requestPermission();
+                    if (permission !== 'granted') {
+                        sensorData['傾き (X, Y, Z)'] = '権限が拒否されました';
+                        updateSensorUI();
+                        return;
+                    }
+                } catch (e) {
+                    console.error(e);
+                }
+            }
+
+            window.addEventListener('deviceorientation', (event) => {
+                if (event.beta !== null) {
+                    sensorData['傾き (X, Y, Z)'] = `X:${event.beta.toFixed(1)}, Y:${event.gamma.toFixed(1)}, Z:${event.alpha.toFixed(1)}`;
+                    updateSensorUI();
+                }
+            });
+
+            window.addEventListener('devicemotion', (event) => {
+                if (event.acceleration && event.acceleration.x !== null) {
+                    sensorData['加速度'] = `X:${event.acceleration.x.toFixed(1)}, Y:${event.acceleration.y.toFixed(1)}`;
+                    updateSensorUI();
+                }
+            });
+            
+            // ボタンを無効化
+            document.getElementById('btn-motion').textContent = "取得待機中/取得中";
+            document.getElementById('btn-motion').disabled = true;
+            document.getElementById('btn-motion').classList.add('opacity-50', 'cursor-not-allowed');
+        });
+
+
+        // ==========================================
+        // 初期化処理
+        // ==========================================
+        function init() {
+            getOSBrowserInfo();
+            getHardwareInfo();
+            getScreenInfo();
+            getSettingsInfo();
+            getNetworkBatteryInfo();
+            updateSensorUI();
+
+            // ウィンドウリサイズ時に画面情報を更新
+            window.addEventListener('resize', getScreenInfo);
+            
+            // 時計を1秒ごとに更新
+            setInterval(getSettingsInfo, 1000);
+            
+            // ネットワーク状態の変化を検知
+            window.addEventListener('online', getNetworkBatteryInfo);
+            window.addEventListener('offline', getNetworkBatteryInfo);
+        }
+
+        // 実行
+        init();
+
+    </script>
+</body>
+</html>

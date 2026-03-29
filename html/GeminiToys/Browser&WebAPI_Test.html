@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Web API テストページ</title>
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+    <style>
+        /* カスタムカーソル */
+        .cursor-crosshair { cursor: crosshair; }
+        
+        /* 印刷用スタイル */
+        .print-only { display: none; }
+        @media print {
+            body { background-color: white !important; }
+            .no-print { display: none !important; }
+            .print-only { 
+                display: flex !important; 
+                flex-direction: column;
+                align-items: center;
+                justify-content: center;
+                height: 100vh;
+                font-size: 2rem; 
+                color: #2563eb; 
+                font-weight: bold;
+                text-align: center;
+            }
+        }
+
+        /* カスタムコンテキストメニューのスタイル */
+        #custom-context-menu {
+            display: none;
+            position: absolute;
+            z-index: 1000;
+        }
+    </style>
+</head>
+<body class="bg-gray-100 text-gray-800 font-sans p-4 md:p-8 min-h-screen relative">
+    
+    <!-- 印刷時のみ表示される要素 -->
+    <div class="print-only">
+        🖨️ 印刷プレビュー専用の隠しメッセージです！<br>
+        <span class="text-lg text-gray-500 font-normal mt-4">通常の画面では見えません。</span>
+    </div>
+
+    <!-- メインコンテンツ (印刷時は非表示) -->
+    <div class="max-w-7xl mx-auto no-print">
+        <header class="text-center mb-10">
+            <h1 class="text-3xl md:text-4xl font-extrabold text-blue-600 mb-2">ブラウザ機能 & Web API テスト</h1>
+            <p class="text-gray-600">様々なAPIの挙動をこのページ1つで確認できます。</p>
+        </header>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+            
+            <!-- 1. タブ同士で通信 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">📡 タブ間通信</h2>
+                <p class="text-sm text-gray-500 mb-3">このページを別のタブで開き、メッセージを送ってみてください。</p>
+                <div class="flex gap-2 mb-3">
+                    <input type="text" id="tab-input" placeholder="メッセージ" class="border p-2 rounded w-full text-sm">
+                    <button onclick="sendTabMessage()" class="bg-blue-500 text-white px-3 py-2 rounded hover:bg-blue-600 text-sm whitespace-nowrap">送信</button>
+                </div>
+                <div id="tab-messages" class="h-24 overflow-y-auto bg-gray-50 p-2 rounded border text-sm">
+                    <p class="text-gray-400 italic">受信メッセージがここに表示されます</p>
+                </div>
+            </div>
+
+            <!-- 2. クリップボード -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">📋 クリップボード</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="copy-input" value="コピーされるテキスト" class="border p-2 rounded w-full text-sm">
+                    <button onclick="copyToClipboard()" class="bg-green-500 text-white px-3 py-2 rounded hover:bg-green-600 text-sm whitespace-nowrap">コピー</button>
+                </div>
+            </div>
+
+            <!-- 3. タイトル変更 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">📝 タイトル変更</h2>
+                <div class="flex gap-2">
+                    <input type="text" id="title-input" placeholder="新しいタイトル" class="border p-2 rounded w-full text-sm">
+                    <button onclick="changeTitle()" class="bg-purple-500 text-white px-3 py-2 rounded hover:bg-purple-600 text-sm whitespace-nowrap">変更</button>
+                </div>
+            </div>
+
+            <!-- 4. ファビコン変更 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">🌟 ファビコン変更</h2>
+                <div class="flex gap-2 justify-center">
+                    <button onclick="changeFavicon('🍎')" class="bg-gray-100 border px-4 py-2 rounded hover:bg-gray-200 text-2xl">🍎</button>
+                    <button onclick="changeFavicon('🚀')" class="bg-gray-100 border px-4 py-2 rounded hover:bg-gray-200 text-2xl">🚀</button>
+                    <button onclick="changeFavicon('👻')" class="bg-gray-100 border px-4 py-2 rounded hover:bg-gray-200 text-2xl">👻</button>
+                </div>
+            </div>
+
+            <!-- 5. ネットワーク接続 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">🌐 ネットワーク接続</h2>
+                <div class="h-16 flex items-center justify-center bg-gray-50 rounded border">
+                    <span id="network-status" class="text-lg font-bold">確認中...</span>
+                </div>
+                <p class="text-xs text-gray-500 mt-2 text-center">PCのWi-Fi等をオフにして変化を確認できます</p>
+            </div>
+
+            <!-- 6. ローカル/サーバー認識 & 7. ウインドウサイズ -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">🖥️ 環境認識</h2>
+                <ul class="text-sm space-y-2">
+                    <li class="flex justify-between border-b pb-1">
+                        <span class="text-gray-500">保存場所:</span>
+                        <span id="local-status" class="font-medium"></span>
+                    </li>
+                    <li class="flex justify-between border-b pb-1">
+                        <span class="text-gray-500">画面サイズ:</span>
+                        <span id="window-size" class="font-medium text-blue-600"></span>
+                    </li>
+                    <li class="flex justify-between border-b pb-1">
+                        <span class="text-gray-500">デバイス:</span>
+                        <span id="device-type" class="font-medium"></span>
+                    </li>
+                </ul>
+            </div>
+
+            <!-- 9. 閲覧履歴 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">📚 閲覧履歴の操作</h2>
+                <p class="text-sm text-gray-500 mb-3">URLを変更せずに履歴を追加します。追加後ブラウザの「戻る」が押せるようになります。</p>
+                <button onclick="addHistory()" class="w-full bg-indigo-500 text-white px-3 py-2 rounded hover:bg-indigo-600 text-sm mb-2">履歴を1つ追加</button>
+                <p id="history-status" class="text-xs text-center text-gray-600"></p>
+            </div>
+
+            <!-- 10. フルスクリーン -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">🔲 フルスクリーン</h2>
+                <button onclick="toggleFullscreen()" class="w-full bg-gray-800 text-white px-3 py-2 rounded hover:bg-gray-900 text-sm mb-2">切り替え (F11互換)</button>
+                <p id="fullscreen-status" class="text-sm text-center font-medium mt-2">通常表示 🔳</p>
+            </div>
+
+            <!-- 11. ダークモード & 12. Visibility -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">🌗 状態監視</h2>
+                <ul class="text-sm space-y-3">
+                    <li class="flex justify-between items-center border-b pb-2">
+                        <span class="text-gray-500">OSテーマ:</span>
+                        <span id="darkmode-status" class="font-medium"></span>
+                    </li>
+                    <li class="flex justify-between items-center">
+                        <span class="text-gray-500 text-xs">タブが非表示になった回数:</span>
+                        <span id="visibility-status" class="font-bold text-lg text-red-500">0</span>
+                    </li>
+                </ul>
+                <p class="text-xs text-gray-400 mt-2">※別タブを開いて戻るとカウントが増加します</p>
+            </div>
+
+            <!-- 13. マウスポインター拘束 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">🖱️ マウス拘束 & カーソル</h2>
+                <div id="pointer-lock-area" class="h-20 bg-gray-200 border-2 border-dashed border-gray-400 flex items-center justify-center cursor-crosshair hover:bg-gray-300 transition select-none rounded">
+                    ここをクリックしてマウスを拘束
+                </div>
+                <p class="text-xs text-gray-500 mt-2 text-center">解除するには「ESCキー」を押します</p>
+            </div>
+
+            <!-- 14. 右クリック & 15. 印刷 -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">🖱️ 右クリック & 🖨️ 印刷</h2>
+                <div id="context-menu-area" class="h-16 bg-blue-50 border border-blue-200 flex items-center justify-center rounded mb-3 text-sm text-blue-800 select-none">
+                    ここで右クリック (コンテキストジャック)
+                </div>
+                <button onclick="window.print()" class="w-full bg-teal-500 text-white px-3 py-2 rounded hover:bg-teal-600 text-sm">印刷プレビューを開く</button>
+            </div>
+
+            <!-- 16. 通知 & 17. 開発者ツール -->
+            <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-200">
+                <h2 class="text-xl font-bold mb-3 flex items-center">🔔 通知 & 🛠️ 開発者</h2>
+                <button onclick="sendNotification()" class="w-full bg-yellow-500 text-white px-3 py-2 rounded hover:bg-yellow-600 text-sm mb-3">ブラウザ通知を送信</button>
+                <button onclick="triggerDebugger()" class="w-full bg-red-500 text-white px-3 py-2 rounded hover:bg-red-600 text-sm flex items-center justify-center gap-1">
+                    <span>debugger; 実行</span>
+                </button>
+                <p class="text-xs text-gray-500 mt-2 text-center">※F12で開発者ツールを開いていると停止します</p>
+            </div>
+
+        </div>
+    </div>
+
+    <!-- カスタムコンテキストメニュー -->
+    <div id="custom-context-menu" class="bg-white border border-gray-300 shadow-xl rounded w-48 py-1">
+        <div class="px-4 py-2 text-xs text-gray-400 border-b">カスタムメニュー</div>
+        <button class="w-full text-left px-4 py-2 hover:bg-blue-50 text-sm text-gray-700" onclick="showToast('メニュー1が選択されました'); hideContextMenu();">アクション 1</button>
+        <button class="w-full text-left px-4 py-2 hover:bg-blue-50 text-sm text-gray-700" onclick="showToast('メニュー2が選択されました'); hideContextMenu();">アクション 2</button>
+        <div class="border-t my-1"></div>
+        <button class="w-full text-left px-4 py-2 hover:bg-red-50 text-sm text-red-600" onclick="hideContextMenu()">閉じる</button>
+    </div>
+
+    <!-- JavaScript 実装 -->
+    <script>
+        // --- 共通: メッセージ表示(Toast) ---
+        function showToast(message) {
+            const toast = document.createElement('div');
+            toast.className = "fixed bottom-5 left-1/2 transform -translate-x-1/2 bg-gray-800 text-white px-6 py-3 rounded shadow-2xl z-50 transition-all duration-300 opacity-0 translate-y-4";
+            toast.textContent = message;
+            document.body.appendChild(toast);
+            
+            // アニメーション表示
+            requestAnimationFrame(() => {
+                toast.classList.remove('opacity-0', 'translate-y-4');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-4');
+                setTimeout(() => toast.remove(), 300);
+            }, 3000);
+        }
+
+        // --- 1. タブ通信 (Broadcast Channel API) ---
+        const bc = new BroadcastChannel('api_test_channel');
+        const tabId = Math.random().toString(36).substring(2, 6).toUpperCase();
+        const tabMsgEl = document.getElementById('tab-messages');
+        
+        bc.onmessage = (event) => {
+            const p = document.createElement('p');
+            p.textContent = `[他タブ ${event.data.id}]: ${event.data.msg}`;
+            p.className = "text-gray-700 border-b border-gray-100 py-1";
+            
+            // 初期メッセージを消す
+            if(tabMsgEl.children[0] && tabMsgEl.children[0].tagName === 'P' && tabMsgEl.children[0].classList.contains('italic')){
+                tabMsgEl.innerHTML = '';
+            }
+            tabMsgEl.prepend(p);
+        };
+
+        function sendTabMessage() {
+            const input = document.getElementById('tab-input');
+            const msg = input.value || "こんにちは！";
+            bc.postMessage({ id: tabId, msg: msg });
+            
+            if(tabMsgEl.children[0] && tabMsgEl.children[0].tagName === 'P' && tabMsgEl.children[0].classList.contains('italic')){
+                tabMsgEl.innerHTML = '';
+            }
+
+            const p = document.createElement('p');
+            p.textContent = `[自分]: ${msg}`;
+            p.className = "text-blue-600 border-b border-gray-100 py-1 font-bold";
+            tabMsgEl.prepend(p);
+            input.value = '';
+        }
+
+        // --- 2. クリップボード (execCommand fallback method) ---
+        function copyToClipboard() {
+            const text = document.getElementById('copy-input').value;
+            const textArea = document.createElement("textarea");
+            textArea.value = text;
+            // 画面外に配置
+            textArea.style.position = "fixed";
+            textArea.style.left = "-9999px";
+            document.body.appendChild(textArea);
+            textArea.focus();
+            textArea.select();
+            
+            try {
+                const successful = document.execCommand('copy');
+                if(successful) showToast(`コピーしました: ${text}`);
+                else showToast('コピーに失敗しました');
+            } catch (err) {
+                showToast('コピー機能がサポートされていません');
+            }
+            document.body.removeChild(textArea);
+        }
+
+        // --- 3. タイトル変更 ---
+        function changeTitle() {
+            const newTitle = document.getElementById('title-input').value;
+            if(newTitle) {
+                document.title = newTitle;
+                showToast(`タイトルを「${newTitle}」に変更しました`);
+            }
+        }
+
+        // --- 4. ファビコン変更 ---
+        function changeFavicon(emoji) {
+            let link = document.querySelector("link[rel~='icon']");
+            if (!link) {
+                link = document.createElement('link');
+                link.rel = 'icon';
+                document.head.appendChild(link);
+            }
+            link.href = `data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>${emoji}</text></svg>`;
+            showToast(`ファビコンを ${emoji} に変更しました`);
+        }
+
+        // --- 5. ネットワーク接続 ---
+        function updateNetworkStatus() {
+            const el = document.getElementById('network-status');
+            if (navigator.onLine) {
+                el.textContent = "オンライン 🟢";
+                el.className = "text-lg font-bold text-green-600";
+            } else {
+                el.textContent = "オフライン 🔴";
+                el.className = "text-lg font-bold text-red-600";
+                showToast('ネットワーク接続が切れました');
+            }
+        }
+        window.addEventListener('online', updateNetworkStatus);
+        window.addEventListener('offline', updateNetworkStatus);
+        updateNetworkStatus();
+
+        // --- 6. ローカル/サーバー認識 ---
+        const localStatusEl = document.getElementById('local-status');
+        if (window.location.protocol === 'file:') {
+            localStatusEl.textContent = "ローカル (file://)";
+            localStatusEl.className = "font-medium text-amber-600";
+        } else {
+            localStatusEl.textContent = `サーバー (${window.location.protocol})`;
+        }
+
+        // --- 7. ウインドウサイズ ---
+        function updateWindowSize() {
+            document.getElementById('window-size').textContent = `${window.innerWidth} x ${window.innerHeight}`;
+        }
+        window.addEventListener('resize', updateWindowSize);
+        updateWindowSize();
+
+        // --- 8. スマホ/PC認識 ---
+        function updateDeviceType() {
+            const isMobile = /Android|webOS|iPhone|iPad|iPod|BlackBerry|IEMobile|Opera Mini/i.test(navigator.userAgent) || window.innerWidth <= 768;
+            document.getElementById('device-type').textContent = isMobile ? "スマホ / タブレット 📱" : "PC 💻";
+        }
+        window.addEventListener('resize', updateDeviceType);
+        updateDeviceType();
+
+        // --- 9. 閲覧履歴 ---
+        let historyCount = 0;
+        function addHistory() {
+            historyCount++;
+            const rand = Math.floor(Math.random() * 1000);
+            history.pushState({ page: historyCount }, `履歴 ${historyCount}`, `?page=${rand}`);
+            document.getElementById('history-status').textContent = `現在 ?page=${rand} に居ます`;
+            showToast('履歴を追加しました（ブラウザの戻るボタンが押せます）');
+        }
+
+        // --- 10. フルスクリーン ---
+        function toggleFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().catch((err) => {
+                    showToast(`エラー: フルスクリーン化できませんでした。`);
+                });
+            } else {
+                if (document.exitFullscreen) {
+                    document.exitFullscreen();
+                }
+            }
+        }
+        document.addEventListener('fullscreenchange', () => {
+            const el = document.getElementById('fullscreen-status');
+            el.textContent = document.fullscreenElement ? "フルスクリーン中 🔲" : "通常表示 🔳";
+        });
+
+        // --- 11. ダークモード認識 ---
+        function updateDarkMode() {
+            const isDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+            document.getElementById('darkmode-status').textContent = isDark ? "ダーク 🌙" : "ライト ☀️";
+        }
+        if(window.matchMedia) {
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', updateDarkMode);
+        }
+        updateDarkMode();
+
+        // --- 12. タブ表示/非表示 (Page Visibility) ---
+        let hiddenCount = 0;
+        document.addEventListener("visibilitychange", () => {
+            if (document.hidden) {
+                hiddenCount++;
+                document.title = "戻ってきて！😭";
+            } else {
+                document.title = "Web API テストページ";
+                document.getElementById('visibility-status').textContent = hiddenCount;
+                if(hiddenCount > 0) showToast('おかえりなさい！');
+            }
+        });
+
+        // --- 13. マウスポインター拘束 ---
+        const lockArea = document.getElementById('pointer-lock-area');
+        lockArea.addEventListener('click', () => {
+            lockArea.requestPointerLock = lockArea.requestPointerLock || lockArea.mozRequestPointerLock;
+            if(lockArea.requestPointerLock) lockArea.requestPointerLock();
+        });
+        document.addEventListener('pointerlockchange', () => {
+            if (document.pointerLockElement === lockArea) {
+                lockArea.textContent = "拘束中！(ESCキーで解除)";
+                lockArea.classList.add('bg-red-100', 'border-red-500');
+                lockArea.classList.remove('bg-gray-200');
+            } else {
+                lockArea.textContent = "ここをクリックしてマウスを拘束";
+                lockArea.classList.remove('bg-red-100', 'border-red-500');
+                lockArea.classList.add('bg-gray-200');
+            }
+        });
+
+        // --- 14. 右クリックメニュー (コンテキストジャック) ---
+        const contextArea = document.getElementById('context-menu-area');
+        const customMenu = document.getElementById('custom-context-menu');
+
+        contextArea.addEventListener('contextmenu', (e) => {
+            e.preventDefault(); // デフォルトのメニューをブロック
+            customMenu.style.display = 'block';
+            
+            // メニューの位置をマウス座標に合わせる
+            // 画面端のオーバーフロー防止の簡易計算
+            let x = e.clientX;
+            let y = e.clientY;
+            
+            if (x + 192 > window.innerWidth) x = window.innerWidth - 192; // 192px = w-48
+            
+            customMenu.style.left = `${x}px`;
+            customMenu.style.top = `${y}px`;
+        });
+
+        function hideContextMenu() {
+            customMenu.style.display = 'none';
+        }
+
+        // 領域外クリックでメニューを閉じる
+        document.addEventListener('click', (e) => {
+            if (e.target !== contextArea && !customMenu.contains(e.target)) {
+                hideContextMenu();
+            }
+        });
+
+        // --- 16. ブラウザ通知 ---
+        function sendNotification() {
+            if (!("Notification" in window)) {
+                showToast("このブラウザは通知APIに対応していません。");
+            } else if (Notification.permission === "granted") {
+                new Notification("テスト通知！", { 
+                    body: "ブラウザからのネイティブ通知です。",
+                    icon: "data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🔔</text></svg>"
+                });
+            } else if (Notification.permission !== "denied") {
+                Notification.requestPermission().then(permission => {
+                    if (permission === "granted") {
+                        new Notification("通知が許可されました！");
+                    } else {
+                        showToast("通知が拒否されました。");
+                    }
+                });
+            } else {
+                showToast("通知がブラウザの設定でブロックされています。");
+            }
+        }
+
+        // --- 17. 開発者ツール (debugger) ---
+        function triggerDebugger() {
+            console.log("%c[警告]%c ここでスクリプトが停止しました。実行を再開するには開発者ツールの再生ボタンを押してください。", "color: red; font-size: 16px; font-weight: bold;", "color: inherit;");
+            showToast('debugger; を実行しました (F12を開いていると止まります)');
+            debugger; // 開発者ツールが開いていればここで停止します
+        }
+
+    </script>
+</body>
+</html>

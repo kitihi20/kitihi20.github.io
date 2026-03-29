@@ -1,9 +1,14 @@
 設計,発売年,シリーズ,グレード,型番,シングル性能,マルチ性能,コア数,スレッド数,コア分類,最大ブーストクロック,TDP,TDP Up,TDP Down,内蔵GPU,GPUベースクロック,GPUターボクロック,iGPU-FP32理論値,内蔵NPU,NPU TOPS,追加情報
-Intel,2025,Processor,,N150,1902,5390,4,4,4,3.6,6,25,,Intel Graphics (24EUs),,1,384,None,0,N100GPUクロックアップ、有名サイトのデータ間違ってる
+Intel,2023,Processor,,N200,1765,4605,4,4,4,3.7,6,,,Intel UHD Graphics (32EUs),,0.75,384,None,0,
+Intel,2025,Processor,,N150,1902,5390,4,4,4,3.6,6,25,,Intel Graphics (24EUs),,1,384,None,0,N100GPUクロックアップ
 Intel,2023,Processor,,N100,1892,5341,4,4,4,3.4,6,25,,Intel UHD Graphics (24EUs),0.3,0.75,288,None,0,実用最低スペック、低価格ミニPCに多い
-Intel,2018,m3,,8100Y,1608,2765,2,4,2,3.4,5,8,4.5,Intel UHD Graphics 615,0.3,0.9,346,None,0,
+Intel,2018,Core m,3,8100Y,1608,2765,2,4,2,3.4,5,8,4.5,Intel UHD Graphics 615,0.3,0.9,346,None,0,
+Intel,2021,Celeron,,N5100,1366,3309,4,4,4,2.8,6,,4.8,Intel UHD Graphics (24EUs),0.35,0.8,320,None,0,
 Intel,2021,Celeron,,N4500,1277,1796,2,2,2,2.8,6,,4.8,Intel UHD Graphics (16EUs),0.35,0.75,193,None,0,NextGIGA端末下限
 Intel,2017,Celeron,,N4100,1001,2455,4,4,4,2.4,6,,4.8,Intel UHD Graphics 600,0.2,0.7,134,None,0,
 Intel,2019,Celeron,,N4020,1128,1535,2,2,2,2.8,6,,4.8,Intel UHD Graphics 600,0.2,0.65,125,None,0,
 Intel,2017,Celeron,,N4000,1036,1431,2,2,2,2.6,6,,4.8,Intel UHD Graphics 600,0.2,0.65,125,None,0,GIGA School端末下限
 Intel,2016,Atom,,x5-Z8350,472,895,4,4,4,1.92,4,,2,Intel HD Graphics 400,0.2,0.5,105,None,0,悪名高い
+MediaTek,2020,Kompanio,,520,1385,3693,8,8,2|6,2.2,4,,,ARM Mali-G52 MP2,0.8,0.95,61,None,0,
+Broadcom,2024,BCM,,2712,1464,3284,4,4,4,2.4,12,,,Broadcom VideoCore VII,,0.8,120,None,0,Raspberry Pi 5
+Broadcom,2021,BCM,,2711,607,852,4,4,4,1.5,7.5,,3,Broadcom VideoCore VI,,0.5,21,None,0,Raspberry Pi 4
