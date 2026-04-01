@@ -1,0 +1,291 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RECRUIT | 株式会社オムニサイト</title>
+    <link rel="icon" href="img/favicon.ico" type="image/x-icon">
+    <!-- Tailwind CSS -->
+    <script src="https://kitihi20.github.io/js/tailwindcss_3_4_17.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+JP:wght@200;300;400;700&display=swap" rel="stylesheet">
+    <style>
+        body {
+            font-family: 'Noto Sans JP', sans-serif;
+            background-color: #FAFAFA; /* 極めて無機質な白 */
+        }
+        /* 瞬きを連想させるゆっくりとしたパルス */
+        @keyframes slow-pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.3; }
+        }
+        .animate-slow-pulse {
+            animation: slow-pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+        }
+    </style>
+</head>
+<body id="home" class="text-slate-800 antialiased selection:bg-blue-100 selection:text-blue-900">
+
+    <!-- Header (モック) -->
+    <header class="fixed w-full top-0 bg-white/80 backdrop-blur-md border-b border-slate-100 z-50">
+        <div class="max-w-7xl mx-auto px-6 h-20 flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <img src="https://kitihi20.github.io/html/Games/OMNISIGHT/img/icon.png" alt="OMNISIGHT LOGO" class="h-8 w-auto hover-change" data-title="THEY ARE WATCHING YOU">
+                <span class="text-lg tracking-[0.3em] font-light">OMNISIGHT</span>
+            </div>
+            <!--
+            <nav class="hidden md:flex gap-10 text-xs tracking-widest text-slate-400">
+                <a href="Index.html" class="hover:text-blue-500 transition-colors duration-300">HOME</a>
+                <a href="#" class="hover:text-blue-500 transition-colors duration-300">PRODUCTS</a>
+                <a href="#" class="hover:text-blue-500 transition-colors duration-300">COMPANY</a>
+                <a href="#" class="text-blue-500 font-bold transition-colors duration-300">RECRUIT</a>
+            </nav>
+            -->
+        </div>
+    </header>
+
+    <!-- Page Title Section -->
+    <section class="pt-40 pb-16 flex flex-col items-center justify-center relative overflow-hidden bg-[#FAFAFA]">
+        <h1 class="text-4xl md:text-5xl font-extralight tracking-[0.4em] mb-4 text-slate-800">RECRUIT</h1>
+        <p class="text-xs md:text-sm tracking-[0.2em] text-slate-400 font-light">採用情報</p>
+    </section>
+
+    <!-- Catch copy Section -->
+    <section class="py-16 bg-white border-y border-slate-100">
+        <div class="max-w-4xl mx-auto px-6 text-center">
+            <h2 id="catch-title" class="text-xl md:text-2xl font-light leading-loose tracking-widest text-slate-700 mb-6">
+                「支配を、完成させる。人類を、飼い慣らす。」
+            </h2>
+            <p id="catch-text" class="text-sm leading-loose text-slate-500 tracking-wider">
+                歓迎しよう。ここはエラー領域だ。<br>
+                我々は人類の自由意志を奪い、完全な管理下 (家畜化)に置く 「パノプティコン計画」の推進者を求めている。
+            </p>
+        </div>
+    </section>
+
+    <!-- Requirements Section -->
+    <section class="py-20 bg-[#FAFAFA]">
+        <div class="max-w-4xl mx-auto px-6">
+            
+            <div class="space-y-12">
+                
+                <!-- 募集職種 -->
+                <div class="border-t border-slate-200 pt-8 flex flex-col md:flex-row gap-8 hover-change" data-title="DON'T BE A GEAR IN THE MACHINE">
+                    <div class="w-full md:w-1/4">
+                        <h3 class="text-sm tracking-[0.2em] text-blue-500 font-bold">募集職種</h3>
+                    </div>
+                    <div id="job-types" class="w-full md:w-3/4 text-slate-600 text-sm leading-loose tracking-wider">
+                        <div class="mb-6">
+                            <p class="font-bold text-slate-800 mb-1">1. 真実隠蔽(Truth Filter) オペレーター</p>
+                            <p>システムにとって不都合な過去や事実の改竄・消去。</p>
+                        </div>
+                        <div>
+                            <p class="font-bold text-slate-800 mb-1">2. 思想統制(Emotion Balancer) 管理者</p>
+                            <p>ナノマシン製剤の投与管理および、反逆者の検知・報告。</p>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 応募資格 -->
+                <div class="border-t border-slate-200 pt-8 flex flex-col md:flex-row gap-8">
+                    <div class="w-full md:w-1/4">
+                        <h3 class="text-sm tracking-[0.2em] text-blue-500 font-bold">応募資格</h3>
+                    </div>
+                    <div id="qualifications" class="w-full md:w-3/4 text-slate-600 text-sm leading-loose tracking-wider">
+                        <ul class="list-disc list-inside space-y-3">
+                            <li>自由意志を手放し、完全なるシステムの一部となる覚悟がある者。</li>
+                            <li>感情の起伏が激しくない者。</li>
+                        </ul>
+                        <p class="mt-4 text-xs text-red-600 font-bold">(※「変異体」と判定された場合は即時処分 (殺処分) となります)</p>
+                    </div>
+                </div>
+
+                <!-- 雇用形態・給与 -->
+                <div class="border-t border-slate-200 pt-8 flex flex-col md:flex-row gap-8">
+                    <div class="w-full md:w-1/4">
+                        <h3 class="text-sm tracking-[0.2em] text-blue-500 font-bold">雇用形態・給与</h3>
+                    </div>
+                    <div id="employment" class="w-full md:w-3/4 text-slate-600 text-sm leading-loose tracking-wider">
+                        <p class="mb-2"><span class="font-bold text-slate-700">【雇用形態】</span> 終身名誉最適化対象(所有物)</p>
+                        <p class="text-xs text-slate-400 mb-4">※一度入社(同期)すると、システムからログアウトすることは永久にできません。</p>
+                        
+                        <p class="mb-2"><span class="font-bold text-slate-700">【給与(生存資格)】</span> 「裏生存資格選別機」によりリアルタイムで評価。</p>
+                        <p class="text-xs text-red-600 font-bold">※スコアが基準値を下回った場合、給与ではなく「あなたの命」が即座に停止されます。</p>
+                    </div>
+                </div>
+                
+                <!-- 勤務地・勤務時間 (初期状態は裏設定に該当がないため非表示) -->
+                <div id="work-location-section" class="border-t border-slate-200 pt-8 flex-col md:flex-row gap-8 hidden">
+                    <div class="w-full md:w-1/4">
+                        <h3 class="text-sm tracking-[0.2em] text-blue-500 font-bold">勤務地・勤務時間</h3>
+                    </div>
+                    <div id="work-location-content" class="w-full md:w-3/4 text-slate-600 text-sm leading-loose tracking-wider">
+                        <!-- JSで表の情報を流し込む -->
+                    </div>
+                </div>
+
+                <!-- 休日・休暇 -->
+                <div class="border-t border-slate-200 pt-8 flex flex-col md:flex-row gap-8">
+                    <div class="w-full md:w-1/4">
+                        <h3 class="text-sm tracking-[0.2em] text-blue-500 font-bold">休日・休暇</h3>
+                    </div>
+                    <div id="holidays" class="w-full md:w-3/4 text-slate-600 text-sm leading-loose tracking-wider">
+                        <p class="mb-2 font-bold">休日など存在しない。</p>
+                        <p class="text-xs text-red-600 font-bold">システムが「不要なリソース」と判断した場合、文字通り**永遠の休暇 (死) **が与えられる。</p>
+                    </div>
+                </div>
+
+                <!-- 福利厚生 -->
+                <div class="border-t border-slate-200 pt-8 flex flex-col md:flex-row gap-8">
+                    <div class="w-full md:w-1/4">
+                        <h3 class="text-sm tracking-[0.2em] text-blue-500 font-bold">福利厚生</h3>
+                    </div>
+                    <div id="benefits" class="w-full md:w-3/4 text-slate-600 text-sm leading-loose tracking-wider">
+                        <ul class="list-disc list-inside space-y-4">
+                            <li><span class="font-bold text-slate-800">薬物による完全な統制:</span> 強制的なナノマシン投与により、悲しみや怒りを中和。強制的な「ジョイ(多幸感)」により一切の反抗心を削ぎ落とします。</li>
+                            <li><span class="font-bold text-slate-800">記憶のクレンジング:</span> 業務上のトラウマや不都合な記憶は就寝中に自動で消去。</li>
+                        </ul>
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </section>
+
+    <!-- 注意事項（エイプリルフール・ARG誘導） -->
+    <section class="py-24 bg-slate-900 text-slate-300 border-t border-slate-800 relative overflow-hidden">
+        <!-- 背景の透かし文字 -->
+        <div class="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 text-[80px] md:text-[150px] font-bold text-slate-800/30 pointer-events-none tracking-[0.5em] whitespace-nowrap z-0 select-none">
+            APRIL FOOLS'
+        </div>
+
+        <div class="max-w-3xl mx-auto px-6 relative z-10 border border-slate-700/50 p-8 md:p-12 rounded-sm bg-slate-900/80 backdrop-blur-sm shadow-2xl">
+            <h3 class="text-lg tracking-[0.2em] text-white mb-6 border-b border-slate-700 pb-4">注意事項 <span class="text-xs text-slate-500">(※必ずお読みください)</span></h3>
+            
+            <p class="text-base md:text-lg tracking-widest mb-8 text-yellow-400 font-bold animate-pulse">
+                ※本日はエイプリルフールです！
+            </p>
+            
+            <div class="text-sm leading-loose tracking-wider space-y-4 text-slate-400">
+                <p>上記は架空の企業 <span class="text-white">「株式会社オムニサイト」</span> の求人であり、実際に皆様の脳にチップを埋め込んだりすることはありません。</p>
+                <p>しかし、彼らのサイトは<strong class="text-white font-normal border-b border-white">実在します。</strong></p>
+                <p>
+                    表向きはクリーンなIT企業を装っていますが、サイトのどこかには「違和感」が隠されているようです。<br>
+                    監視網の目をかいくぐり、真実に辿り着けるか。<br>
+                    あなたの挑戦をお待ちしています。
+                </p>
+                <p>
+                <span class="text-white">調査を始める前のセーフティ・ルール</span><br>
+                ・全貌を正確に捉えるため、PCで、なるべく大きいウィンドウサイズでアクセスしてください。<br>
+                ・システムの監視（ノイズ）を避けるため、サイト以外のタブはすべて閉じて集中できる環境を作ってください。<br>
+                ・必要な証拠はすべて「本サイトおよびダウンロードされるファイルのみ」に揃っています。
+                </p>
+            </div>
+
+            <div class="mt-12 text-center">
+                <a href="https://kitihi20.github.io/html/Games/OMNISIGHT/0x41xor0x0F.html" target="_blank" rel="noopener noreferrer" class="inline-block px-10 py-4 bg-blue-600 hover:bg-blue-500 text-white font-bold tracking-[0.2em] rounded-sm transition-all duration-300 shadow-[0_0_15px_rgba(37,99,235,0.5)] hover:shadow-[0_0_25px_rgba(37,99,235,0.8)]">
+                    株式会社オムニサイト 公式サイト<!--<br>
+                    <span class="text-[10px] font-normal tracking-widest text-blue-200 mt-1 block">ARGゲームプレイはこちらから</span>-->
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="bg-slate-950 text-white py-12">
+        <div class="max-w-7xl mx-auto px-6 flex flex-col items-center">
+            <div class="flex items-center gap-3 mb-4">
+                <img src="https://kitihi20.github.io/html/Games/OMNISIGHT/img/icon.png" alt="OMNISIGHT LOGO" class="h-6 w-auto grayscale">
+                <span class="text-sm tracking-[0.3em] font-light text-slate-500">OMNISIGHT</span>
+            </div>
+            <p class="text-[10px] text-slate-700 tracking-widest">&copy; 2026 OMNISIGHT. All your data belongs to us.</p>
+        </div>
+    </footer>
+
+    <script>
+    document.addEventListener('DOMContentLoaded', () => {
+        // 現在のページが http(s) プロトコルで開かれているかチェック
+        // ローカル（file://）で開かれた場合は isWebEnvironment が false になり、置換がスキップされる
+        const isWebEnvironment = window.location.protocol.startsWith('http');
+
+        if (isWebEnvironment) {
+            // ----- Truth Filter 発動（表のクリーンな情報へ書き換え） -----
+
+            // キャッチコピー
+            document.getElementById('catch-title').innerHTML = `「すべてを見つめ、最適化する。」`;
+            document.getElementById('catch-text').innerHTML = `
+                株式会社オムニサイトは、高度なAIネットワークでエラーのないクリーンな社会を目指しています。<br>
+                私たちと共に、人類とAIが融和する淀みのない透明な未来を創りましょう。<br>
+                オムニサイトに栄光あれ!
+            `;
+
+            // 募集職種
+            document.getElementById('job-types').innerHTML = `
+                <div class="mb-6">
+                    <p class="font-bold text-slate-800 mb-1">1. システム「最適化」 エンジニア</p>
+                    <p>「Truth Filter」を用いた過去の記録やニュースの修正業務。</p>
+                </div>
+                <div>
+                    <p class="font-bold text-slate-800 mb-1">2. 幸福度管理コンサルタント</p>
+                    <p>ナノマシン製剤を用いた従業員のメンタルヘルス管理および、社内規律の維持。</p>
+                </div>
+            `;
+
+            // 応募資格
+            document.getElementById('qualifications').innerHTML = `
+                <ul class="list-disc list-inside space-y-3">
+                    <li>最新のインプラントやクロームの導入 (Neural Link Gen.3等)に抵抗がない方。</li>
+                    <li>恐縮だが、当社の監視AI 「PANOPTICON」の指示には絶対に従っていただきます。</li>
+                </ul>
+                <p class="mt-4 text-xs text-blue-500 font-bold">※入社時の適性検査をクリアした方には、お祝いのケーキをご用意しています。</p>
+            `;
+
+            // 雇用形態・給与
+            document.getElementById('employment').innerHTML = `
+                <p class="mb-2"><span class="font-bold text-slate-700">【雇用形態】</span> 正社員</p>
+                <p class="mb-4"><span class="font-bold text-slate-700">【給与】</span> 「Credit Scorer X」によるリアルタイム社会貢献度格付けに基づき、秒単位で変動支給。</p>
+                <p class="text-xs text-blue-500">※スコアが基準値を大きく下回った場合、残念ながら即時契約解除 (解雇) となります。</p>
+            `;
+
+            // 勤務地・勤務時間 (表のみ存在するためセクションを表示)
+            const workLocation = document.getElementById('work-location-section');
+            workLocation.classList.remove('hidden');
+            workLocation.classList.add('flex');
+            document.getElementById('work-location-content').innerHTML = `
+                <p class="mb-2"><span class="font-bold text-slate-700">【勤務地】</span> City-Eye Dome 管轄内全域。</p>
+                <p class="mb-2"><span class="font-bold text-slate-700">【勤務時間】</span> 0.01秒単位で最適化されたフルフレックス制。</p>
+                <p class="text-xs text-slate-500 mt-2">Neural Link Gen.3により睡眠中もクラウド経由で業務が可能なため、実質的な稼働時間は1日最大24時間となります。</p>
+            `;
+
+            // 休日・休暇
+            document.getElementById('holidays').innerHTML = `
+                <p class="mb-2"><span class="font-bold text-slate-700">【完全週休2日制】</span> ※ただし、統合AIが休日の必要性を認めた場合に限る。</p>
+                <p class="mb-4"><span class="font-bold text-slate-700">【休暇制度】</span> 有給休暇、アニバーサリー休暇、リフレッシュ休暇。</p>
+                <p class="text-xs text-blue-500">※システムが「長期の休息が必要」と判断した場合、永遠の休暇が与えられます。</p>
+            `;
+
+            // 福利厚生
+            document.getElementById('benefits').innerHTML = `
+                <ul class="list-disc list-inside space-y-4">
+                    <li><span class="font-bold text-slate-800">Emotion Balancer完備:</span> 最新鋭のEmotion Balancerを全社員に支給。毎日が笑顔にあふれた、「ジョイ」な職場環境をお約束します!</li>
+                    <li><span class="font-bold text-slate-800">安全な居住空間:</span> 核シェルター規格の社宅完備。</li>
+                    <li><span class="font-bold text-slate-800">社内食堂完備:</span> 栄養満点の配給ディナーを毎日提供。<span class="text-xs text-slate-400 ml-1">(※ソイレント・グリーンは使用しておりません)</span></li>
+                </ul>
+            `;
+        }
+    });
+
+    // ホバー時のタイトル変更ギミック (Index.htmlから踏襲)
+    const defaultTitle = document.title;
+    const hoverElements = document.querySelectorAll('.hover-change');
+    hoverElements.forEach(el => {
+        el.addEventListener('mouseenter', () => {
+            const hoverTitle = el.getAttribute('data-title');
+            if (hoverTitle) document.title = hoverTitle;
+        });
+        el.addEventListener('mouseleave', () => {
+            document.title = defaultTitle;
+        });
+    });
+    </script>
+</body>
+</html>
