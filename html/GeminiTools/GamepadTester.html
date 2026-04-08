@@ -1,0 +1,553 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Gamepad Input Tester</title>
+    <style>
+        :root {
+            /* エンジニア向けダークテーマのカラーパレット */
+            --bg-base: #0d1117;
+            --bg-panel: #161b22;
+            --bg-input: #21262d;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent-cyan: #58a6ff;
+            --accent-green: #238636;
+            --accent-red: #da3633;
+            --border: #30363d;
+            --font-mono: 'JetBrains Mono', 'Fira Code', 'Consolas', 'Courier New', monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            line-height: 1.5;
+            padding: 20px;
+            min-height: 100vh;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+
+        /* ヘッダー */
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding-bottom: 16px;
+            border-bottom: 1px solid var(--border);
+            flex-wrap: wrap;
+            gap: 16px;
+        }
+
+        h1 {
+            font-size: 1.5rem;
+            font-weight: normal;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            color: var(--accent-cyan);
+        }
+
+        .status-badge {
+            padding: 6px 12px;
+            border-radius: 4px;
+            font-size: 0.875rem;
+            font-weight: bold;
+            letter-spacing: 0.05em;
+        }
+
+        .status-disconnected {
+            background-color: rgba(218, 54, 51, 0.1);
+            color: var(--accent-red);
+            border: 1px solid var(--accent-red);
+        }
+
+        .status-connected {
+            background-color: rgba(35, 134, 54, 0.1);
+            color: var(--accent-green);
+            border: 1px solid var(--accent-green);
+        }
+
+        /* グリッドレイアウト */
+        .dashboard {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 24px;
+        }
+
+        .col-span-2 {
+            grid-column: span 2;
+        }
+
+        @media (max-width: 768px) {
+            .dashboard {
+                grid-template-columns: 1fr;
+            }
+            .col-span-2 {
+                grid-column: span 1;
+            }
+        }
+
+        /* パネル */
+        .panel {
+            background-color: var(--bg-panel);
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            padding: 20px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.3);
+        }
+
+        .panel h2 {
+            font-size: 1rem;
+            color: var(--text-muted);
+            margin-bottom: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.1em;
+            font-weight: normal;
+        }
+
+        /* デバイス情報 */
+        .info-content {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .info-item {
+            background-color: var(--bg-input);
+            padding: 10px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .info-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 1rem;
+            word-break: break-all;
+        }
+
+        /* Axes (軸) */
+        .axes-grid {
+            display: flex;
+            flex-direction: column;
+            gap: 16px;
+        }
+
+        .axis-item {
+            background-color: var(--bg-input);
+            padding: 12px;
+            border-radius: 4px;
+            border: 1px solid var(--border);
+        }
+
+        .axis-header {
+            display: flex;
+            justify-content: space-between;
+            margin-bottom: 8px;
+            font-size: 0.875rem;
+        }
+
+        .axis-track {
+            position: relative;
+            width: 100%;
+            height: 12px;
+            background-color: var(--bg-base);
+            border-radius: 6px;
+            border: 1px solid var(--border);
+            overflow: hidden;
+        }
+
+        .axis-center {
+            position: absolute;
+            left: 50%;
+            top: 0;
+            bottom: 0;
+            width: 2px;
+            background-color: var(--text-muted);
+            transform: translateX(-50%);
+            opacity: 0.5;
+        }
+
+        .axis-marker {
+            position: absolute;
+            top: 0;
+            height: 100%;
+            width: 10px;
+            background-color: var(--accent-cyan);
+            border-radius: 5px;
+            transform: translateX(-50%);
+            box-shadow: 0 0 8px var(--accent-cyan);
+            transition: left 0.05s linear;
+        }
+
+        /* Buttons (ボタン) */
+        .buttons-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+            gap: 12px;
+        }
+
+        .button-item {
+            position: relative;
+            background-color: var(--bg-input);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            height: 70px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            overflow: hidden;
+            transition: all 0.1s;
+        }
+
+        .button-fill {
+            position: absolute;
+            bottom: 0;
+            left: 0;
+            width: 100%;
+            background-color: rgba(88, 166, 255, 0.2);
+            z-index: 1;
+            transition: height 0.05s linear;
+        }
+
+        .button-content {
+            position: relative;
+            z-index: 2;
+            text-align: center;
+        }
+
+        .button-label {
+            font-size: 0.75rem;
+            color: var(--text-muted);
+            margin-bottom: 4px;
+        }
+
+        .button-val {
+            font-size: 0.875rem;
+            font-weight: bold;
+        }
+
+        .button-item.pressed {
+            border-color: var(--accent-cyan);
+            box-shadow: 0 0 12px rgba(88, 166, 255, 0.4);
+        }
+
+        .button-item.pressed .button-label,
+        .button-item.pressed .button-val {
+            color: var(--accent-cyan);
+        }
+
+        /* Raw Data */
+        .code-block {
+            background-color: var(--bg-base);
+            border: 1px solid var(--border);
+            border-radius: 6px;
+            padding: 16px;
+            font-size: 0.875rem;
+            overflow-x: auto;
+            max-height: 400px;
+            overflow-y: auto;
+            color: var(--text-main);
+        }
+
+        /* Scrollbar カスタマイズ */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: var(--bg-base);
+        }
+        ::-webkit-scrollbar-thumb {
+            background: var(--border);
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: var(--text-muted);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>🎮 GAMEPAD_TESTER</h1>
+            <div id="connection-status" class="status-badge status-disconnected">WAITING FOR DEVICE... (Press any button)</div>
+        </header>
+
+        <div class="dashboard">
+            <div class="panel col-span-2">
+                <h2>[ DEVICE_INFO ]</h2>
+                <div id="device-info" class="info-content">
+                    <div class="info-item">
+                        <div class="info-label">STATUS</div>
+                        <div class="info-value text-muted">No device found. Connect a controller and press a button.</div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>[ AXES_DATA ] <span style="font-size:0.75rem; color:var(--text-muted)">- Analog Sticks</span></h2>
+                <div id="axes-container" class="axes-grid">
+                    <!-- JSにて動的生成 -->
+                    <div style="color: var(--text-muted); font-size: 0.875rem;">Waiting for axes input...</div>
+                </div>
+            </div>
+
+            <div class="panel">
+                <h2>[ BUTTONS_DATA ] <span style="font-size:0.75rem; color:var(--text-muted)">- Digital & Triggers</span></h2>
+                <div id="buttons-container" class="buttons-grid">
+                    <!-- JSにて動的生成 -->
+                    <div style="color: var(--text-muted); font-size: 0.875rem; grid-column: 1 / -1;">Waiting for button input...</div>
+                </div>
+            </div>
+
+            <div class="panel col-span-2">
+                <h2>[ RAW_JSON_DUMP ]</h2>
+                <pre id="raw-data" class="code-block">// Connected gamepad data will be streamed here...</pre>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        // DOM要素のキャッシュ
+        const els = {
+            status: document.getElementById('connection-status'),
+            info: document.getElementById('device-info'),
+            axesContainer: document.getElementById('axes-container'),
+            buttonsContainer: document.getElementById('buttons-container'),
+            rawData: document.getElementById('raw-data')
+        };
+
+        // UI状態を保持する配列（毎フレームのDOM操作を最小化するため）
+        let uiCache = {
+            axes: [],
+            buttons: []
+        };
+        
+        let activeGamepadIndex = null;
+        let animationFrameId = null;
+
+        // ゲームパッド接続イベント
+        window.addEventListener("gamepadconnected", (e) => {
+            console.log("Gamepad connected:", e.gamepad);
+            if (activeGamepadIndex === null) {
+                activeGamepadIndex = e.gamepad.index;
+                initGamepadUI(e.gamepad);
+                if (!animationFrameId) {
+                    animationFrameId = requestAnimationFrame(updateLoop);
+                }
+            }
+        });
+
+        // ゲームパッド切断イベント
+        window.addEventListener("gamepaddisconnected", (e) => {
+            console.log("Gamepad disconnected:", e.gamepad);
+            if (e.gamepad.index === activeGamepadIndex) {
+                resetUI();
+                
+                // 他に接続されているゲームパッドがあればそれに切り替える
+                const gamepads = navigator.getGamepads();
+                let found = false;
+                for (let i = 0; i < gamepads.length; i++) {
+                    if (gamepads[i]) {
+                        activeGamepadIndex = i;
+                        initGamepadUI(gamepads[i]);
+                        found = true;
+                        break;
+                    }
+                }
+                
+                if (!found) {
+                    if (animationFrameId) {
+                        cancelAnimationFrame(animationFrameId);
+                        animationFrameId = null;
+                    }
+                }
+            }
+        });
+
+        // UIの初期化（デバイス情報の表示とDOM要素の生成）
+        function initGamepadUI(gp) {
+            els.status.textContent = "DEVICE CONNECTED";
+            els.status.className = "status-badge status-connected";
+
+            // デバイス情報
+            els.info.innerHTML = `
+                <div class="info-item"><div class="info-label">ID</div><div class="info-value">${gp.id}</div></div>
+                <div class="info-item"><div class="info-label">INDEX</div><div class="info-value">${gp.index}</div></div>
+                <div class="info-item"><div class="info-label">MAPPING</div><div class="info-value">${gp.mapping || 'standard'}</div></div>
+                <div class="info-item"><div class="info-label">AXES COUNT</div><div class="info-value">${gp.axes.length}</div></div>
+                <div class="info-item"><div class="info-label">BUTTONS COUNT</div><div class="info-value">${gp.buttons.length}</div></div>
+            `;
+
+            // AxesのDOM生成
+            els.axesContainer.innerHTML = '';
+            uiCache.axes = [];
+            gp.axes.forEach((_, i) => {
+                const item = document.createElement('div');
+                item.className = 'axis-item';
+                
+                const header = document.createElement('div');
+                header.className = 'axis-header';
+                
+                const label = document.createElement('span');
+                label.textContent = `AXIS ${i}`;
+                
+                const val = document.createElement('span');
+                val.textContent = '0.0000';
+                
+                header.appendChild(label);
+                header.appendChild(val);
+                
+                const track = document.createElement('div');
+                track.className = 'axis-track';
+                
+                const center = document.createElement('div');
+                center.className = 'axis-center';
+                
+                const marker = document.createElement('div');
+                marker.className = 'axis-marker';
+                marker.style.left = '50%';
+                
+                track.appendChild(center);
+                track.appendChild(marker);
+                
+                item.appendChild(header);
+                item.appendChild(track);
+                
+                els.axesContainer.appendChild(item);
+                
+                // キャッシュに保存
+                uiCache.axes.push({ valEl: val, markerEl: marker });
+            });
+
+            // ButtonsのDOM生成
+            els.buttonsContainer.innerHTML = '';
+            uiCache.buttons = [];
+            gp.buttons.forEach((_, i) => {
+                const item = document.createElement('div');
+                item.className = 'button-item';
+                
+                const fill = document.createElement('div');
+                fill.className = 'button-fill';
+                fill.style.height = '0%';
+                
+                const content = document.createElement('div');
+                content.className = 'button-content';
+                
+                const label = document.createElement('div');
+                label.className = 'button-label';
+                label.textContent = `B${i}`;
+                
+                const val = document.createElement('div');
+                val.className = 'button-val';
+                val.textContent = '0.00';
+                
+                content.appendChild(label);
+                content.appendChild(val);
+                
+                item.appendChild(fill);
+                item.appendChild(content);
+                
+                els.buttonsContainer.appendChild(item);
+                
+                // キャッシュに保存
+                uiCache.buttons.push({ itemEl: item, fillEl: fill, valEl: val });
+            });
+        }
+
+        // 初期状態に戻す
+        function resetUI() {
+            activeGamepadIndex = null;
+            els.status.textContent = "WAITING FOR DEVICE... (Press any button)";
+            els.status.className = "status-badge status-disconnected";
+            els.info.innerHTML = '<div class="info-item"><div class="info-label">STATUS</div><div class="info-value text-muted">No device connected.</div></div>';
+            els.axesContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.875rem;">Waiting for axes input...</div>';
+            els.buttonsContainer.innerHTML = '<div style="color: var(--text-muted); font-size: 0.875rem; grid-column: 1 / -1;">Waiting for button input...</div>';
+            els.rawData.textContent = '// Connected gamepad data will be streamed here...';
+            uiCache.axes = [];
+            uiCache.buttons = [];
+        }
+
+        // 毎フレームの更新ループ
+        function updateLoop() {
+            if (activeGamepadIndex !== null) {
+                const gamepads = navigator.getGamepads();
+                const gp = gamepads[activeGamepadIndex];
+                
+                if (gp) {
+                    // Axes更新
+                    for (let i = 0; i < gp.axes.length; i++) {
+                        if (uiCache.axes[i]) {
+                            const val = gp.axes[i];
+                            uiCache.axes[i].valEl.textContent = val.toFixed(4);
+                            // -1 to 1 => 0% to 100%
+                            const percentage = ((val + 1) / 2) * 100;
+                            uiCache.axes[i].markerEl.style.left = `${percentage}%`;
+                        }
+                    }
+
+                    // Buttons更新
+                    for (let i = 0; i < gp.buttons.length; i++) {
+                        if (uiCache.buttons[i]) {
+                            const btn = gp.buttons[i];
+                            const cache = uiCache.buttons[i];
+                            
+                            cache.valEl.textContent = btn.value.toFixed(2);
+                            cache.fillEl.style.height = `${btn.value * 100}%`;
+                            
+                            if (btn.pressed) {
+                                cache.itemEl.classList.add('pressed');
+                            } else {
+                                cache.itemEl.classList.remove('pressed');
+                            }
+                        }
+                    }
+
+                    // Raw Data更新
+                    const rawObj = {
+                        id: gp.id,
+                        index: gp.index,
+                        connected: gp.connected,
+                        timestamp: Math.round(gp.timestamp),
+                        mapping: gp.mapping,
+                        axes: Array.from(gp.axes).map(a => Number(a.toFixed(4))),
+                        buttons: Array.from(gp.buttons).map(b => ({
+                            pressed: b.pressed,
+                            touched: b.touched,
+                            value: Number(b.value.toFixed(3))
+                        }))
+                    };
+                    els.rawData.textContent = JSON.stringify(rawObj, null, 2);
+                }
+            }
+            
+            animationFrameId = requestAnimationFrame(updateLoop);
+        }
+
+        // ブラウザ対応チェック
+        if (!navigator.getGamepads) {
+            els.status.textContent = "GAMEPAD API NOT SUPPORTED IN THIS BROWSER";
+            els.status.className = "status-badge status-disconnected";
+        }
+    </script>
+</body>
+</html>
