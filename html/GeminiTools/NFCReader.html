@@ -1,0 +1,407 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NFC Inspector - Terminal</title>
+    <style>
+        :root {
+            --bg-base: #0d1117;
+            --bg-panel: #161b22;
+            --text-main: #c9d1d9;
+            --text-muted: #8b949e;
+            --accent-blue: #58a6ff;
+            --accent-green: #3fb950;
+            --accent-yellow: #d29922;
+            --accent-red: #f85149;
+            --border-color: #30363d;
+            --font-mono: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, Courier, monospace;
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
+        body {
+            background-color: var(--bg-base);
+            color: var(--text-main);
+            font-family: var(--font-mono);
+            margin: 0;
+            padding: 20px;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-height: 100vh;
+        }
+
+        .container {
+            width: 100%;
+            max-width: 900px;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        /* Header */
+        .header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            border-bottom: 1px solid var(--border-color);
+            padding-bottom: 15px;
+        }
+
+        .title {
+            margin: 0;
+            font-size: 1.5rem;
+            color: var(--text-main);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .title::before {
+            content: ">_";
+            color: var(--accent-green);
+            font-weight: bold;
+        }
+
+        .status-badge {
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: bold;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            border: 1px solid currentColor;
+        }
+        .status-unsupported { color: var(--accent-red); background: rgba(248, 81, 73, 0.1); }
+        .status-ready { color: var(--accent-yellow); background: rgba(210, 153, 34, 0.1); }
+        .status-scanning { color: var(--accent-green); background: rgba(63, 185, 80, 0.1); animation: pulse 2s infinite; }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(63, 185, 80, 0.4); }
+            70% { box-shadow: 0 0 0 6px rgba(63, 185, 80, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(63, 185, 80, 0); }
+        }
+
+        /* Controls */
+        .controls {
+            display: flex;
+            gap: 15px;
+            background-color: var(--bg-panel);
+            padding: 15px;
+            border-radius: 8px;
+            border: 1px solid var(--border-color);
+        }
+
+        button {
+            background-color: #21262d;
+            color: var(--text-main);
+            border: 1px solid var(--border-color);
+            padding: 10px 24px;
+            border-radius: 6px;
+            font-family: var(--font-mono);
+            font-size: 0.9rem;
+            cursor: pointer;
+            transition: all 0.2s;
+            font-weight: bold;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        button:hover:not(:disabled) {
+            background-color: #30363d;
+            border-color: var(--text-muted);
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        button.btn-active {
+            border-color: var(--accent-green);
+            color: var(--accent-green);
+            background-color: rgba(63, 185, 80, 0.1);
+        }
+
+        .btn-clear {
+            margin-left: auto;
+        }
+
+        /* Terminal Display */
+        .terminal-container {
+            background-color: #010409;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            overflow: hidden;
+            box-shadow: inset 0 0 10px rgba(0,0,0,0.5);
+        }
+
+        .terminal-header {
+            background-color: var(--bg-panel);
+            padding: 8px 15px;
+            border-bottom: 1px solid var(--border-color);
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            display: flex;
+            gap: 6px;
+        }
+        
+        .mac-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+        .mac-close { background-color: #ff5f56; }
+        .mac-min { background-color: #ffbd2e; }
+        .mac-max { background-color: #27c93f; }
+
+        .terminal-body {
+            padding: 15px;
+            height: 500px;
+            overflow-y: auto;
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .log-line {
+            line-height: 1.5;
+            word-break: break-all;
+            font-size: 0.9rem;
+        }
+
+        .log-time { color: var(--text-muted); margin-right: 10px; user-select: none; }
+        .log-info { color: var(--text-main); }
+        .log-success { color: var(--accent-green); }
+        .log-error { color: var(--accent-red); }
+        .log-warning { color: var(--accent-yellow); }
+        
+        .log-data-block {
+            margin-left: 20px;
+            padding-left: 10px;
+            border-left: 2px solid var(--border-color);
+            color: var(--accent-blue);
+            margin-top: 4px;
+            margin-bottom: 4px;
+        }
+        
+        .log-highlight {
+            background-color: rgba(88, 166, 255, 0.1);
+            padding: 2px 4px;
+            border-radius: 3px;
+            font-weight: bold;
+        }
+
+        /* Scrollbar */
+        ::-webkit-scrollbar { width: 8px; }
+        ::-webkit-scrollbar-track { background: var(--bg-base); }
+        ::-webkit-scrollbar-thumb { background: var(--border-color); border-radius: 4px; }
+        ::-webkit-scrollbar-thumb:hover { background: var(--text-muted); }
+    </style>
+</head>
+<body>
+
+    <div class="container">
+        <header class="header">
+            <h1 class="title">NFC_Inspector</h1>
+            <div id="status-badge" class="status-badge status-unsupported">INIT...</div>
+        </header>
+
+        <div class="controls">
+            <button id="btn-scan" disabled>
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20M17 5H9.5a3.5 3.5 0 0 0 0 7h5a3.5 3.5 0 0 1 0 7H6"/></svg>
+                Start Scan
+            </button>
+            <button id="btn-clear" class="btn-clear">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polyline points="3 6 5 6 21 6"></polyline><path d="M19 6v14a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V6m3 0V4a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v2"></path></svg>
+                Clear Log
+            </button>
+        </div>
+
+        <div class="terminal-container">
+            <div class="terminal-header">
+                <div class="mac-btn mac-close"></div>
+                <div class="mac-btn mac-min"></div>
+                <div class="mac-btn mac-max"></div>
+                <span style="margin-left: 10px;">bash - nfc_reader.sh</span>
+            </div>
+            <div class="terminal-body" id="terminal">
+                <!-- Logs will appear here -->
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const terminal = document.getElementById('terminal');
+        const btnScan = document.getElementById('btn-scan');
+        const btnClear = document.getElementById('btn-clear');
+        const statusBadge = document.getElementById('status-badge');
+
+        let ndef = null;
+        let abortController = null;
+
+        // ログ出力関数
+        function log(message, type = 'info', isDataBlock = false) {
+            const entry = document.createElement('div');
+            entry.className = isDataBlock ? 'log-data-block' : 'log-line';
+            
+            if (!isDataBlock) {
+                // 時間表示 (HH:mm:ss.SSS)
+                const now = new Date();
+                const timeStr = `${String(now.getHours()).padStart(2, '0')}:${String(now.getMinutes()).padStart(2, '0')}:${String(now.getSeconds()).padStart(2, '0')}.${String(now.getMilliseconds()).padStart(3, '0')}`;
+                
+                const timeSpan = `<span class="log-time">[${timeStr}]</span>`;
+                const contentSpan = `<span class="log-${type}">${message}</span>`;
+                entry.innerHTML = `${timeSpan} ${contentSpan}`;
+            } else {
+                entry.innerHTML = message; // データブロック用（HTML許可）
+            }
+            
+            terminal.appendChild(entry);
+            terminal.scrollTop = terminal.scrollHeight;
+        }
+
+        // ステータスUI更新
+        function updateStatus(status) {
+            statusBadge.className = 'status-badge';
+            if (status === 'unsupported') {
+                statusBadge.classList.add('status-unsupported');
+                statusBadge.textContent = 'SYS_ERR: NOT_SUPPORTED';
+                btnScan.disabled = true;
+            } else if (status === 'ready') {
+                statusBadge.classList.add('status-ready');
+                statusBadge.textContent = 'READY_STANDBY';
+                btnScan.disabled = false;
+                btnScan.classList.remove('btn-active');
+                btnScan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 14.899A7 7 0 1 1 15.71 8h1.79a4.5 4.5 0 0 1 2.5 8.242"></path><path d="M12 12v9"></path><path d="m8 17 4 4 4-4"></path></svg> Start Scan`;
+            } else if (status === 'scanning') {
+                statusBadge.classList.add('status-scanning');
+                statusBadge.textContent = 'SCANNING_ACTIVE';
+                btnScan.classList.add('btn-active');
+                btnScan.innerHTML = `<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><rect x="3" y="3" width="18" height="18" rx="2" ry="2"></rect></svg> Stop Scan`;
+            }
+        }
+
+        // スキャン開始処理
+        async function startScan() {
+            log('Initializing NDEFReader object...', 'info');
+            try {
+                ndef = new NDEFReader();
+                abortController = new AbortController();
+                
+                await ndef.scan({ signal: abortController.signal });
+                
+                log('NFC hardware engaged. Listening for nearby tags...', 'success');
+                updateStatus('scanning');
+                
+                // 読み取りエラーイベント
+                ndef.addEventListener("readingerror", () => {
+                    log('Read Error: Cannot decode NFC tag. Tag might be unformatted or corrupted.', 'error');
+                });
+                
+                // 読み取り成功イベント
+                ndef.addEventListener("reading", ({ message, serialNumber }) => {
+                    log(`--- TAG DETECTED ---`, 'success');
+                    
+                    // 固有ID (UID) の表示
+                    const uidHtml = `UID (Serial Number): <span class="log-highlight">${serialNumber || 'Unknown'}</span>`;
+                    log(uidHtml, 'info', true);
+                    
+                    // NDEFレコードの解析
+                    if (message.records.length === 0) {
+                        log('NDEF Payload: Empty (No records found)', 'info', true);
+                    } else {
+                        log(`NDEF Records Count: ${message.records.length}`, 'info', true);
+                        
+                        message.records.forEach((record, index) => {
+                            let recordLog = `[Record ${index}] Type: <b>${record.recordType}</b>`;
+                            
+                            try {
+                                // テキストレコードのデコード
+                                if (record.recordType === "text") {
+                                    const textDecoder = new TextDecoder(record.encoding || "utf-8");
+                                    const decodedText = textDecoder.decode(record.data);
+                                    recordLog += `<br>=> Text: <span style="color:var(--text-main)">"${decodedText}"</span>`;
+                                    recordLog += `<br>=> Lang: ${record.lang || 'N/A'}`;
+                                } 
+                                // URLレコードのデコード
+                                else if (record.recordType === "url") {
+                                    const textDecoder = new TextDecoder();
+                                    const decodedUrl = textDecoder.decode(record.data);
+                                    recordLog += `<br>=> URL: <a href="${decodedUrl}" target="_blank" style="color:var(--accent-blue)">${decodedUrl}</a>`;
+                                }
+                                // MIMEタイプ（JSON等）のデコード
+                                else if (record.recordType === "mime") {
+                                    const textDecoder = new TextDecoder();
+                                    const decodedMime = textDecoder.decode(record.data);
+                                    recordLog += `<br>=> MIME Type: ${record.mediaType}`;
+                                    recordLog += `<br>=> Data: <span style="color:var(--text-main)">${decodedMime}</span>`;
+                                }
+                                else {
+                                    recordLog += `<br>=> Data size: ${record.data ? record.data.byteLength : 0} bytes`;
+                                }
+                            } catch (e) {
+                                recordLog += `<br>=> Error decoding record data.`;
+                            }
+                            
+                            log(recordLog, 'info', true);
+                        });
+                    }
+                    log('Awaiting next tag...', 'info');
+                });
+                
+            } catch (error) {
+                log(`Failed to start scan: ${error.message}`, 'error');
+                updateStatus('ready');
+            }
+        }
+
+        // スキャン停止処理
+        function stopScan() {
+            if (abortController) {
+                abortController.abort();
+                log('Scan aborted by user. Hardware released.', 'warning');
+            }
+            updateStatus('ready');
+        }
+
+        // ボタンイベント
+        btnScan.addEventListener('click', () => {
+            if (statusBadge.textContent.includes('SCANNING')) {
+                stopScan();
+            } else {
+                startScan();
+            }
+        });
+
+        btnClear.addEventListener('click', () => {
+            terminal.innerHTML = '';
+            log('Terminal cleared.', 'info');
+        });
+
+        // 初期化と環境チェック
+        window.onload = () => {
+            log('System boot sequence initiated...', 'info');
+            
+            if (!("NDEFReader" in window)) {
+                log('FATAL: Web NFC API (NDEFReader) is not available in this environment.', 'error');
+                log('Requirement: Chrome for Android (v89+) & HTTPS connection.', 'error');
+                updateStatus('unsupported');
+            } else {
+                log('Web NFC API detected. Module loaded successfully.', 'success');
+                updateStatus('ready');
+            }
+
+            if (!window.isSecureContext) {
+                log('WARN: Insecure context detected. Web NFC requires HTTPS to function.', 'warning');
+            }
+            
+            log('System ready.', 'info');
+        };
+    </script>
+</body>
+</html>
