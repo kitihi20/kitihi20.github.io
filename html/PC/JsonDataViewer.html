@@ -1,0 +1,547 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JSON Data Viewer</title>
+  <!-- Tailwind CSS -->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest"></script>
+</head>
+<body class="bg-slate-50 font-sans text-slate-800">
+  <div class="flex flex-col md:flex-row min-h-screen">
+    
+    <!-- サイドバー (設定パネル) -->
+    <aside class="w-full md:w-80 bg-white border-r border-slate-200 flex flex-col shadow-sm z-10 md:sticky md:top-0 md:h-screen">
+      <div class="p-5 border-b border-slate-100 flex items-center gap-2 bg-slate-800 text-white">
+        <i data-lucide="database" class="w-5 h-5 text-blue-400"></i>
+        <h1 class="font-bold text-lg tracking-wide">JSON Viewer</h1>
+      </div>
+
+      <form id="settings-form" class="p-5 flex-1 overflow-y-auto space-y-5">
+        
+        <!-- Data Source Type -->
+        <div class="space-y-2 border-b border-slate-100 pb-4">
+          <label class="text-sm font-semibold text-slate-700">データソース</label>
+          <div class="flex gap-4">
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="radio" name="sourceType" value="url" class="text-blue-600 focus:ring-blue-500">
+              URLから取得
+            </label>
+            <label class="flex items-center gap-2 cursor-pointer text-sm">
+              <input type="radio" name="sourceType" value="text" class="text-blue-600 focus:ring-blue-500">
+              直接入力
+            </label>
+          </div>
+        </div>
+
+        <!-- JSON URL -->
+        <div id="group-url" class="space-y-1">
+          <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
+            <i data-lucide="file-json" class="w-4 h-4"></i> JSON URL
+          </label>
+          <input
+            type="url"
+            id="input-url"
+            placeholder="https://example.com/data.json"
+            class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
+          />
+        </div>
+
+        <!-- JSON Text -->
+        <div id="group-text" class="space-y-1 hidden">
+          <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
+            <i data-lucide="file-code-2" class="w-4 h-4"></i> JSON テキスト
+          </label>
+          <textarea
+            id="input-text"
+            placeholder='{"root": {"data": [...]}}'
+            rows="6"
+            class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow font-mono text-xs resize-y"
+          ></textarea>
+        </div>
+
+        <!-- List Path -->
+        <div class="space-y-1">
+          <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
+            <i data-lucide="layout-list" class="w-4 h-4"></i> リストのパス
+          </label>
+          <input
+            type="text"
+            id="input-list-path"
+            placeholder="例: root.data"
+            class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+          />
+          <p class="text-xs text-slate-500">配列が存在する場所を指定します。</p>
+        </div>
+
+        <!-- Fields -->
+        <div class="space-y-1">
+          <label class="text-sm font-semibold text-slate-700">表示フィールド (複数指定)</label>
+          <textarea
+            id="input-fields"
+            placeholder="例: root.data.name, root.data.comment"
+            rows="3"
+            class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow resize-none"
+          >
+        </textarea>
+          <p class="text-xs text-slate-500">カンマ区切りで入力。最初の項目がタイトルとして強調されます。</p>
+        </div>
+
+        <!-- Sort -->
+        <div class="space-y-3 pt-2 border-t border-slate-100">
+          <div class="space-y-1">
+            <label class="text-sm font-semibold text-slate-700">ソート対象パス</label>
+            <input
+              type="text"
+              id="input-sort-field"
+              placeholder="例: root.data.id"
+              class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
+              value="root.data.arrival_at"
+            />
+          </div>
+          
+          <div class="space-y-1">
+            <label class="text-sm font-semibold text-slate-700">並び順</label>
+            <select
+              id="input-sort-order"
+              class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow bg-white"
+            >
+              <option value="asc">昇順 (A → Z, 1 → 9)</option>
+              <option value="desc">降順 (Z → A, 9 → 1)</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="pt-4 flex flex-col gap-3">
+          <button
+            type="submit"
+            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
+          >
+            <i data-lucide="play" class="w-4 h-4 text-white fill-white"></i>
+            データを表示
+          </button>
+          <button
+            type="button"
+            id="btn-sample"
+            class="w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-medium py-2 px-4 rounded-lg transition-colors text-sm"
+          >
+            サンプルデータを試す
+          </button>
+        </div>
+      </form>
+    </aside>
+
+    <!-- メインコンテンツ (データ表示) -->
+    <main id="main-content" class="flex-1 p-6 md:p-8 overflow-y-auto">
+      <!-- JavaScriptでコンテンツがここにレンダリングされます -->
+    </main>
+  </div>
+
+  <script>
+    // --- ユーティリティ関数 ---
+
+    // パス文字列を配列に変換する (先頭の 'root.' は無視する)
+    const getPathArray = (pathString) => {
+      if (!pathString) return [];
+      let p = pathString.trim();
+      if (p.startsWith('root.')) {
+        p = p.substring(5);
+      } else if (p === 'root') {
+        return [];
+      }
+      return p.split('.').filter(Boolean);
+    };
+
+    // 指定したパスの値をオブジェクトから取得する
+    const getValue = (obj, pathArray) => {
+      let current = obj;
+      for (let key of pathArray) {
+        if (current === null || current === undefined) return undefined;
+        current = current[key];
+      }
+      return current;
+    };
+
+    // フィールドパスを正規化する
+    const normalizeFieldPath = (fieldPath, listPath) => {
+      let fp = fieldPath.trim();
+      let lp = listPath.trim();
+      
+      if (lp && fp.startsWith(lp + '.')) {
+        return fp.substring(lp.length + 1);
+      }
+      if (fp.startsWith('root.')) {
+        return fp.substring(5);
+      }
+      return fp;
+    };
+
+    // HTMLエスケープ処理
+    const escapeHTML = (str) => {
+      if (str === null || str === undefined) return '';
+      return String(str)
+        .replace(/&/g, '&amp;')
+        .replace(/</g, '&lt;')
+        .replace(/>/g, '&gt;')
+        .replace(/"/g, '&quot;')
+        .replace(/'/g, '&#039;');
+    };
+
+    // --- サンプルデータ生成 ---
+    const getSampleJsonString = () => {
+      const sampleJson = {
+        status: 200,
+        root: {
+          data: [
+            {
+              id: 1,
+              name: "夏目漱石",
+              details: {
+                comment: "吾輩は猫である。名前はまだ無い。\n\nどこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。吾輩はここで始めて人間というものを見た。しかもあとで聞くとそれは書生という人間中で一番獰悪な種族であったそうだ。"
+              }
+            },
+            {
+              id: 2,
+              name: "宮沢賢治",
+              details: {
+                comment: "「ではみなさんは、そういうふうに川だと云われたり、乳の流れたあとだと云われたりしていたこのぼんやりと白いものがほんとうは何かご承知ですか。」\n\n先生は、黒板に吊した大きな黒い星座の図の、上から下へ白くけぶった銀河帯のようなところを指しながら、みんなに問をかけました。"
+              }
+            },
+            {
+              id: 3,
+              name: "芥川龍之介",
+              details: {
+                 comment: "ある日の暮方の事である。一人の下人が、羅生門の下で雨やみを待っていた。\n\n広い門の下には、この男のほかに誰もいない。ただ、所々丹塗の剥げた、大きな円柱に、蟋蟀が一匹とまっている。羅生門が、朱雀大路にある以上は、この男のほかにも、雨やみをする市女笠や揉烏帽子が、もう二三人はありそうなものである。"
+              }
+            }
+          ]
+        }
+      };
+      return JSON.stringify(sampleJson, null, 2);
+    };
+
+
+    // --- アプリケーションの状態管理とメインロジック ---
+
+    const state = {
+      config: {
+        sourceType: 'url', // 'url' or 'text'
+        url: '',
+        jsonText: '',
+        listPath: 'root.data',
+        fields: 'root.data.name,root.data.price,root.data.detail,root.data.accessory,root.data.comment',
+        sortField: 'root.data.arrival_at',
+        sortOrder: 'asc'
+      },
+      rawData: null,
+      loading: false,
+      error: null
+    };
+
+    // DOM要素
+    const els = {
+      form: document.getElementById('settings-form'),
+      sourceRadios: document.getElementsByName('sourceType'),
+      groupUrl: document.getElementById('group-url'),
+      groupText: document.getElementById('group-text'),
+      url: document.getElementById('input-url'),
+      text: document.getElementById('input-text'),
+      listPath: document.getElementById('input-list-path'),
+      fields: document.getElementById('input-fields'),
+      sortField: document.getElementById('input-sort-field'),
+      sortOrder: document.getElementById('input-sort-order'),
+      btnSample: document.getElementById('btn-sample'),
+      main: document.getElementById('main-content')
+    };
+
+    // 初期化処理
+    const init = () => {
+      const params = new URLSearchParams(window.location.search);
+      
+      state.config.sourceType = params.get('source') === 'text' ? 'text' : 'url';
+      state.config.url = params.get('url') || 'https://iosys.co.jp/api/junk/items?id=&category=20&genre=&maker=&name=&places=8&rank=&page=1&sort=arrival_desc';
+      state.config.jsonText = params.get('text') || '';
+      state.config.listPath = params.get('list') ?? 'root.data';
+      state.config.fields = params.get('fields') || 'root.data.name,root.data.price,root.data.detail,root.data.accessory,root.data.comment';
+      state.config.sortField = params.get('sort') || 'root.data.arrival_at';
+      state.config.sortOrder = params.get('order') === 'desc' ? 'desc' : 'asc';
+
+      updateFormUI();
+
+      if ((state.config.sourceType === 'url' && state.config.url) || 
+          (state.config.sourceType === 'text' && state.config.jsonText)) {
+        //loadDataAndRender();
+      } else {
+        render(); // 初期画面の描画
+      }
+
+      // イベントリスナーの登録
+      els.form.addEventListener('submit', handleApply);
+      els.btnSample.addEventListener('click', handleLoadSample);
+      
+      Array.from(els.sourceRadios).forEach(radio => {
+        radio.addEventListener('change', (e) => {
+          state.config.sourceType = e.target.value;
+          updateSourceUI();
+        });
+      });
+      
+      // 初回アイコン描画
+      lucide.createIcons();
+    };
+
+    // UIの表示切り替え（URL or テキスト）
+    const updateSourceUI = () => {
+      const isUrl = state.config.sourceType === 'url';
+      Array.from(els.sourceRadios).forEach(r => r.checked = (r.value === state.config.sourceType));
+      
+      els.groupUrl.classList.toggle('hidden', !isUrl);
+      els.groupText.classList.toggle('hidden', isUrl);
+      
+      els.url.required = isUrl;
+      els.text.required = !isUrl;
+    };
+
+    // 状態をフォームUIに反映
+    const updateFormUI = () => {
+      updateSourceUI();
+      els.url.value = state.config.url;
+      els.text.value = state.config.jsonText;
+      els.listPath.value = state.config.listPath;
+      els.fields.value = state.config.fields;
+      els.sortField.value = state.config.sortField;
+      els.sortOrder.value = state.config.sortOrder;
+    };
+
+    // フォームの入力を状態とURLに反映
+    const syncStateFromForm = () => {
+      state.config.url = els.url.value;
+      state.config.jsonText = els.text.value;
+      state.config.listPath = els.listPath.value;
+      state.config.fields = els.fields.value;
+      state.config.sortField = els.sortField.value;
+      state.config.sortOrder = els.sortOrder.value;
+
+      const params = new URLSearchParams();
+      params.set('source', state.config.sourceType);
+      
+      if (state.config.sourceType === 'url' && state.config.url) {
+        params.set('url', state.config.url);
+      } else if (state.config.sourceType === 'text' && state.config.jsonText) {
+        // テキストは巨大になる可能性があるため、URLクエリへの反映は簡易的なものとする
+        //params.set('text', state.config.jsonText);
+      }
+
+      if (state.config.listPath) params.set('list', state.config.listPath);
+      if (state.config.fields) params.set('fields', state.config.fields);
+      if (state.config.sortField) params.set('sort', state.config.sortField);
+      if (state.config.sortOrder) params.set('order', state.config.sortOrder);
+      
+      const newUrl = `${window.location.pathname}?${params.toString()}`;
+      window.history.replaceState({}, '', newUrl);
+    };
+
+    const handleApply = (e) => {
+      e.preventDefault();
+      syncStateFromForm();
+      loadDataAndRender();
+    };
+
+    const handleLoadSample = () => {
+      state.config = {
+        sourceType: 'text',
+        url: '',
+        jsonText: getSampleJsonString(),
+        listPath: 'root.data',
+        fields: 'root.data.name, root.data.details.comment',
+        sortField: 'root.data.id',
+        sortOrder: 'asc'
+      };
+      updateFormUI();
+      syncStateFromForm();
+      loadDataAndRender();
+    };
+
+    const loadDataAndRender = async () => {
+      state.loading = true;
+      state.error = null;
+      render();
+
+      try {
+        if (state.config.sourceType === 'url') {
+          if (!state.config.url) throw new Error('URLを入力してください。');
+          const res = await fetch(state.config.url);
+          if (!res.ok) {
+            throw new Error(`HTTP Error: ${res.status}`);
+          }
+          state.rawData = await res.json();
+        } else {
+          if (!state.config.jsonText.trim()) throw new Error('JSONテキストを入力してください。');
+          try {
+            state.rawData = JSON.parse(state.config.jsonText);
+          } catch (e) {
+            throw new Error(`JSONのパースに失敗しました。構文が正しいか確認してください。\n(${e.message})`);
+          }
+        }
+      } catch (err) {
+        console.error(err);
+        state.error = err.message;
+        state.rawData = null;
+      } finally {
+        state.loading = false;
+        render();
+      }
+    };
+
+    // 描画ロジック
+    const render = () => {
+      let html = '';
+
+      if (state.loading) {
+        html = `
+          <div class="h-full flex flex-col items-center justify-center text-slate-500 gap-4">
+            <i data-lucide="refresh-cw" class="w-8 h-8 animate-spin text-blue-500"></i>
+            <p>データを読み込んでいます...</p>
+          </div>
+        `;
+      } else if (state.error) {
+        html = `
+          <div class="bg-red-50 border border-red-200 rounded-xl p-6 flex items-start gap-4 text-red-700">
+            <i data-lucide="alert-circle" class="w-6 h-6 shrink-0 mt-0.5"></i>
+            <div>
+              <h3 class="font-bold mb-1">エラーが発生しました</h3>
+              <p class="text-sm opacity-90 leading-relaxed">${escapeHTML(state.error)}</p>
+            </div>
+          </div>
+        `;
+      } else if (!state.rawData) {
+        html = `
+          <div class="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
+            <i data-lucide="settings" class="w-12 h-12 opacity-20"></i>
+            <p>左側のパネルからデータソースと設定を入力し、実行してください。</p>
+          </div>
+        `;
+      } else {
+        // データの処理
+        const listPathArray = getPathArray(state.config.listPath);
+        let list = listPathArray.length > 0 ? getValue(state.rawData, listPathArray) : state.rawData;
+
+        if (!Array.isArray(list)) {
+          html = `
+            <div class="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-start gap-4 text-amber-800">
+              <i data-lucide="alert-circle" class="w-6 h-6 shrink-0 mt-0.5"></i>
+              <p>指定されたパスに配列が見つかりません。パスの設定を確認してください。</p>
+            </div>
+          `;
+        } else {
+          let result = [...list];
+
+          // ソート処理
+          if (state.config.sortField) {
+            const normalizedSortPath = normalizeFieldPath(state.config.sortField, state.config.listPath);
+            const sortPathArray = getPathArray(normalizedSortPath);
+            
+            result.sort((a, b) => {
+              const valA = getValue(a, sortPathArray);
+              const valB = getValue(b, sortPathArray);
+              
+              if (valA === valB) return 0;
+              if (valA == null) return 1;
+              if (valB == null) return -1;
+
+              let compare = 0;
+              if (typeof valA === 'number' && typeof valB === 'number') {
+                compare = valA - valB;
+              } else {
+                compare = String(valA).localeCompare(String(valB));
+              }
+              return state.config.sortOrder === 'asc' ? compare : -compare;
+            });
+          }
+
+          // HTML組み立て
+          const sortIcon = state.config.sortOrder === 'asc' ? 'arrow-down-a-z' : 'arrow-up-z-a';
+          const sortLabelHtml = state.config.sortField ? `
+            <span class="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100">
+              <i data-lucide="${sortIcon}" class="w-3.5 h-3.5"></i>
+              ${escapeHTML(normalizeFieldPath(state.config.sortField, state.config.listPath))}
+            </span>
+          ` : '';
+
+          html += `
+            <div class="max-w-4xl mx-auto">
+              <div class="flex justify-between items-end mb-6 pb-2 border-b border-slate-200">
+                <h2 class="text-xl font-bold text-slate-800">データ一覧</h2>
+                <div class="text-sm text-slate-500 flex items-center gap-2">
+                  <span class="bg-slate-200 px-2 py-0.5 rounded-full text-slate-700 font-medium">
+                    ${result.length} 件
+                  </span>
+                  ${sortLabelHtml}
+                </div>
+              </div>
+              <div class="space-y-6">
+          `;
+
+          if (result.length === 0) {
+            html += `
+              <div class="text-center py-12 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">
+                指定されたパスの配列にデータが含まれていません。
+              </div>
+            `;
+          } else {
+            const targetFields = state.config.fields.split(',').map(f => f.trim()).filter(Boolean);
+            
+            result.forEach(item => {
+              html += `<article class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 sm:p-8 transition-shadow hover:shadow-md">
+                        <div class="flex flex-col gap-5">`;
+              
+              targetFields.forEach((fieldPath, fieldIndex) => {
+                const isTitle = fieldIndex === 0;
+                const normalizedPath = normalizeFieldPath(fieldPath, state.config.listPath);
+                const pathArray = getPathArray(normalizedPath);
+                const value = getValue(item, pathArray);
+                
+                const valueHtml = (value !== undefined && value !== null) 
+                  ? escapeHTML(String(value)) 
+                  : '<span class="text-slate-300 italic text-sm">データなし</span>';
+
+                const titleClasses = isTitle 
+                  ? 'text-xl sm:text-2xl font-bold text-slate-900 leading-tight' 
+                  : 'text-base text-slate-700 leading-loose';
+                  
+                const borderClass = isTitle ? 'border-b border-slate-100 pb-4' : '';
+
+                html += `
+                  <div class="${borderClass}">
+                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-2">
+                      ${escapeHTML(fieldPath)}
+                    </div>
+                    <div class="break-words ${titleClasses}">
+                      ${valueHtml}
+                    </div>
+                  </div>
+                `;
+              });
+              
+              html += `</div></article>`;
+            });
+          }
+          
+          html += `</div></div>`; // max-w-4xl, space-y-6 を閉じる
+        }
+      }
+
+      els.main.innerHTML = html;
+      // 動的に生成したHTML内のアイコンを描画
+      lucide.createIcons();
+    };
+
+    // 実行
+    document.addEventListener('DOMContentLoaded', init);
+
+  </script>
+</body>
+</html>
