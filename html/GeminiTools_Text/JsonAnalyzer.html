@@ -1,0 +1,356 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JSON Validator & Analyzer</title>
+    <!-- Tailwind CSS を CDN から読み込み -->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+    <style>
+        /* カスタムスクロールバー（ダークモード用） */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; /* gray-800 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; /* gray-600 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* gray-500 */
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-200 font-sans h-screen flex flex-col overflow-hidden">
+
+    <!-- ヘッダー -->
+    <header class="bg-gray-800 border-b border-gray-700 p-4 flex items-center justify-between shadow-md z-10">
+        <div class="flex items-center gap-3">
+            <svg class="w-6 h-6 text-blue-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"></path>
+            </svg>
+            <h1 class="text-xl font-bold tracking-wider">JSON Validator & Analyzer</h1>
+        </div>
+        <a href="#" class="text-sm text-gray-400 hover:text-white transition-colors">ダークモード対応</a>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-1 flex flex-col md:flex-row overflow-hidden">
+        
+        <!-- 左パネル：JSON入力 -->
+        <div class="flex-1 flex flex-col border-b md:border-b-0 md:border-r border-gray-700 bg-gray-900/50 relative">
+            <div class="p-3 border-b border-gray-700 flex justify-between items-center bg-gray-800/80">
+                <h2 class="text-sm font-semibold text-gray-300 flex items-center gap-2">
+                    <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"></path></svg>
+                    入力 (Input)
+                </h2>
+                <div class="flex gap-2">
+                    <button id="btn-sample" class="px-3 py-1 text-xs font-medium bg-gray-700 hover:bg-gray-600 rounded transition-colors text-gray-200">
+                        サンプル読込
+                    </button>
+                    <button id="btn-format" class="px-3 py-1 text-xs font-medium bg-blue-600 hover:bg-blue-500 rounded transition-colors text-white shadow">
+                        整形 (Format)
+                    </button>
+                    <button id="btn-clear" class="px-3 py-1 text-xs font-medium bg-red-900/50 hover:bg-red-800/80 text-red-200 rounded transition-colors">
+                        クリア
+                    </button>
+                </div>
+            </div>
+            <!-- テキストエリアと行番号 -->
+            <div class="flex-1 relative flex overflow-hidden">
+                <!-- 行番号表示エリア -->
+                <div id="line-numbers" class="w-12 bg-gray-800/50 text-gray-500 font-mono text-sm leading-relaxed text-right py-4 pr-3 select-none overflow-hidden border-r border-gray-700 z-10"><div>1</div></div>
+                <!-- テキストエリア (折り返し無効化・横スクロール) -->
+                <textarea id="json-input" class="flex-1 p-4 bg-transparent text-gray-100 font-mono text-sm leading-relaxed resize-none focus:outline-none focus:ring-inset focus:ring-1 focus:ring-blue-500 whitespace-pre overflow-auto" wrap="off" placeholder="ここにJSONを貼り付けてください..."></textarea>
+            </div>
+        </div>
+
+        <!-- 右パネル：解析結果 -->
+        <div class="flex-1 flex flex-col bg-gray-900">
+            <div class="p-3 border-b border-gray-700 flex flex-wrap justify-between items-center bg-gray-800/80 gap-2">
+                <div class="flex items-center gap-3">
+                    <h2 class="text-sm font-semibold text-gray-300 flex items-center gap-2">
+                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"></path></svg>
+                        解析結果
+                    </h2>
+                    <!-- ステータスバッジ -->
+                    <div id="status-badge" class="px-3 py-1 text-xs font-bold rounded shadow-sm bg-gray-700 text-gray-400">
+                        未入力
+                    </div>
+                </div>
+                <!-- 表示モード切替 -->
+                <div class="flex bg-gray-900 rounded p-1 border border-gray-700">
+                    <button data-mode="detailed" class="mode-btn px-2 py-1 text-xs font-medium rounded bg-gray-700 text-white shadow-sm transition-colors">1. 詳細</button>
+                    <button data-mode="schema" class="mode-btn px-2 py-1 text-xs font-medium rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">2. 構造+型</button>
+                    <button data-mode="simple" class="mode-btn px-2 py-1 text-xs font-medium rounded text-gray-400 hover:text-white hover:bg-gray-800 transition-colors">3. 名前のみ</button>
+                </div>
+            </div>
+            
+            <!-- 結果表示エリア -->
+            <div class="flex-1 relative overflow-auto p-4">
+                <pre id="output-area" class="font-mono text-sm leading-relaxed text-gray-300 whitespace-pre"></pre>
+                
+                <!-- 初期状態のプレースホルダー -->
+                <div id="output-placeholder" class="absolute inset-0 flex items-center justify-center text-gray-600 select-none">
+                    左側にJSONを入力すると自動的に解析されます
+                </div>
+            </div>
+        </div>
+
+    </main>
+
+    <script>
+        // DOM要素の取得
+        const inputArea = document.getElementById('json-input');
+        const lineNumbers = document.getElementById('line-numbers');
+        const outputArea = document.getElementById('output-area');
+        const outputPlaceholder = document.getElementById('output-placeholder');
+        const statusBadge = document.getElementById('status-badge');
+        const btnSample = document.getElementById('btn-sample');
+        const btnFormat = document.getElementById('btn-format');
+        const btnClear = document.getElementById('btn-clear');
+
+        // モード切替用の要素と変数
+        const modeBtns = document.querySelectorAll('.mode-btn');
+        let currentMode = 'detailed';
+
+        // サンプルデータ
+        const sampleData = {
+            "project": "Super Nova",
+            "version": 1.4,
+            "isActive": true,
+            "tags": ["web", "frontend", "tool"],
+            "settings": {
+                "theme": "dark",
+                "timeout": 5000,
+                "features": {
+                    "autoSave": true,
+                    "analytics": null
+                }
+            },
+            "users": [
+                { "id": 101, "name": "Alice" },
+                { "id": 102, "name": "Bob" }
+            ]
+        };
+
+        // イベントリスナーの設定
+        let debounceTimer;
+        inputArea.addEventListener('input', () => {
+            updateLineNumbers();
+            // 入力があるたびに少し遅延して解析を実行（パフォーマンス対策）
+            clearTimeout(debounceTimer);
+            debounceTimer = setTimeout(analyzeInput, 300);
+        });
+
+        // スクロール同期（テキストエリアのスクロールに合わせて行番号もスクロール）
+        inputArea.addEventListener('scroll', () => {
+            lineNumbers.scrollTop = inputArea.scrollTop;
+        });
+
+        // 行番号の更新処理
+        function updateLineNumbers() {
+            const lines = inputArea.value.split('\n').length;
+            let numbersHtml = '';
+            for (let i = 1; i <= (lines || 1); i++) {
+                numbersHtml += `<div>${i}</div>`;
+            }
+            lineNumbers.innerHTML = numbersHtml || '<div>1</div>';
+        }
+
+        // 表示モード切替イベント
+        modeBtns.forEach(btn => {
+            btn.addEventListener('click', (e) => {
+                modeBtns.forEach(b => {
+                    b.classList.remove('bg-gray-700', 'text-white', 'shadow-sm');
+                    b.classList.add('text-gray-400');
+                });
+                const target = e.currentTarget;
+                target.classList.remove('text-gray-400');
+                target.classList.add('bg-gray-700', 'text-white', 'shadow-sm');
+                
+                currentMode = target.dataset.mode;
+                analyzeInput();
+            });
+        });
+
+        btnSample.addEventListener('click', () => {
+            inputArea.value = JSON.stringify(sampleData, null, 2);
+            updateLineNumbers();
+            analyzeInput();
+        });
+
+        btnFormat.addEventListener('click', () => {
+            try {
+                const parsed = JSON.parse(inputArea.value);
+                inputArea.value = JSON.stringify(parsed, null, 4);
+                updateLineNumbers();
+                analyzeInput();
+            } catch (e) {
+                // パース失敗時は何もしない（解析関数側でエラー表示されるため）
+            }
+        });
+
+        btnClear.addEventListener('click', () => {
+            inputArea.value = '';
+            updateLineNumbers();
+            analyzeInput();
+        });
+
+        // メインの解析処理
+        function analyzeInput() {
+            const rawText = inputArea.value.trim();
+
+            if (!rawText) {
+                // 未入力状態
+                outputArea.textContent = '';
+                outputPlaceholder.style.display = 'flex';
+                updateStatus('waiting');
+                return;
+            }
+
+            outputPlaceholder.style.display = 'none';
+
+            try {
+                // 1. JSONとして正しい形式かパースを試みる
+                const parsedJSON = JSON.parse(rawText);
+                
+                // 2. パース成功（Valid JSON）
+                updateStatus('valid');
+                
+                // 3. 構造をツリー状のテキストに変換して表示 (現在のモードを渡す)
+                const treeText = buildTreeRepresentation(null, parsedJSON, '', true, true, currentMode);
+                outputArea.innerHTML = `<span class="text-blue-400 font-bold">✓ JSON is Valid</span>\n\n${treeText}`;
+
+            } catch (error) {
+                // パース失敗（Invalid JSON）
+                updateStatus('invalid');
+                outputArea.innerHTML = `<span class="text-red-400 font-bold">✗ Invalid JSON Format</span>\n\n<span class="text-red-300">${error.message}</span>`;
+            }
+        }
+
+        // ステータスバッジの更新
+        function updateStatus(state) {
+            statusBadge.className = 'px-3 py-1 text-xs font-bold rounded shadow-sm';
+            
+            switch(state) {
+                case 'valid':
+                    statusBadge.textContent = 'Valid JSON';
+                    statusBadge.classList.add('bg-green-900', 'text-green-300', 'border', 'border-green-700');
+                    break;
+                case 'invalid':
+                    statusBadge.textContent = 'Invalid JSON';
+                    statusBadge.classList.add('bg-red-900', 'text-red-300', 'border', 'border-red-700');
+                    break;
+                case 'waiting':
+                default:
+                    statusBadge.textContent = '未入力';
+                    statusBadge.classList.add('bg-gray-700', 'text-gray-400');
+                    break;
+            }
+        }
+
+        // JSONデータからツリー構造のテキストを生成する再帰関数
+        function buildTreeRepresentation(key, value, prefix = '', isLast = true, isRoot = false, mode = 'detailed') {
+            let output = '';
+            
+            // データ型の判定 (修正: object, array を小文字に統一)
+            const type = value === null ? 'null' 
+                       : Array.isArray(value) ? 'array' 
+                       : typeof value;
+            
+            // ツリーの枝となる記号
+            const branch = isRoot ? '' : (isLast ? '└─ ' : '├─ ');
+            
+            // キーの表示名（Rootの場合は特別扱い）
+            const displayKey = isRoot ? '<span class="text-purple-400">[Root]</span>' : `<span class="text-blue-300">${key}</span>`;
+
+            // 型に応じた色付け
+            const typeColorClass = type === 'object' || type === 'array' ? 'text-yellow-300' : 'text-gray-400';
+            
+            if (type === 'object') {
+                const keys = Object.keys(value);
+                
+                // モードに応じた表示
+                if (mode === 'detailed') {
+                    output += `${prefix}${branch}${displayKey}: <span class="${typeColorClass}">Object {${keys.length} keys}</span>\n`;
+                } else if (mode === 'schema') {
+                    output += `${prefix}${branch}${displayKey}: <span class="${typeColorClass}">Object</span>\n`;
+                } else {
+                    output += `${prefix}${branch}${displayKey}\n`;
+                }
+                
+                // 子要素用のプレフィックス（インデント）を計算
+                const childPrefix = isRoot ? '' : prefix + (isLast ? '    ' : '│   ');
+                
+                keys.forEach((k, index) => {
+                    output += buildTreeRepresentation(k, value[k], childPrefix, index === keys.length - 1, false, mode);
+                });
+                
+            } else if (type === 'array') {
+                // モードに応じた表示
+                if (mode === 'detailed') {
+                    output += `${prefix}${branch}${displayKey}: <span class="${typeColorClass}">Array [${value.length} items]</span>\n`;
+                } else if (mode === 'schema') {
+                    output += `${prefix}${branch}${displayKey}: <span class="${typeColorClass}">Array</span>\n`;
+                } else {
+                    output += `${prefix}${branch}${displayKey}\n`;
+                }
+                
+                const childPrefix = isRoot ? '' : prefix + (isLast ? '    ' : '│   ');
+                
+                if (mode === 'detailed') {
+                    // 全要素を展開
+                    value.forEach((item, index) => {
+                        output += buildTreeRepresentation(`[${index}]`, item, childPrefix, index === value.length - 1, false, mode);
+                    });
+                } else {
+                    // スキーマ・シンプルモードの場合：配列の「構造」を示すため、最初の要素だけを展開
+                    if (value.length > 0) {
+                        output += buildTreeRepresentation('[item]', value[0], childPrefix, true, false, mode);
+                    } else if (mode === 'schema') {
+                        output += `${childPrefix}└─ <span class="text-gray-600 italic">Empty Array</span>\n`;
+                    }
+                }
+                
+            } else {
+                // プリミティブな値（文字列、数値、真偽値、null）
+                let displayValue = value;
+                let valueColorClass = 'text-green-300'; // 文字列
+                
+                if (type === 'string') {
+                    // 長い文字列は省略して表示
+                    const maxLen = 40;
+                    const truncated = value.length > maxLen ? value.substring(0, maxLen) + '...' : value;
+                    displayValue = `"${truncated}"`;
+                } else if (type === 'number') {
+                    valueColorClass = 'text-orange-300';
+                } else if (type === 'boolean') {
+                    valueColorClass = 'text-pink-400';
+                } else if (type === 'null') {
+                    displayValue = 'null';
+                    valueColorClass = 'text-gray-500 italic';
+                }
+
+                // モードに応じた表示
+                if (mode === 'detailed') {
+                    output += `${prefix}${branch}${displayKey}: <span class="text-gray-400">${type}</span> = <span class="${valueColorClass}">${displayValue}</span>\n`;
+                } else if (mode === 'schema') {
+                    output += `${prefix}${branch}${displayKey}: <span class="text-gray-400">${type}</span>\n`;
+                } else {
+                    output += `${prefix}${branch}${displayKey}\n`;
+                }
+            }
+
+            return output;
+        }
+
+        // 初期化：空の状態で起動
+        analyzeInput();
+    </script>
+</body>
+</html>
