@@ -1,0 +1,532 @@
+<!DOCTYPE html>
+<html lang="ja" standardized-themed-scrollbar style="height: 100%;">
+
+  <head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width,initial-scale=1.0">
+    <title>kitihi20_works</title>
+    <link rel="stylesheet" type="text/css" href="/css/variables.css">
+    <link rel="stylesheet" type="text/css" href="/css/header.css">
+    <link rel="stylesheet" type="text/css" href="/css/main.css">
+    <link rel="stylesheet" type="text/css" href="/css/other.css">
+    <link rel="shortcut icon" href="/images/Favicon/kitihi20.ico">
+  </head>
+
+  <body id="body" style="margin: 0px; height: 100%;">
+
+
+    <!--ヘッダー配置用-->
+    <header id="headermain"></header>
+
+    <!--背景-->
+    <img src="/images/Other/AnomalyCorrector_background.webp" 
+        height="100%" style="object-fit: cover; position: fixed; width: 100%; z-index: -10;">
+    
+    <!--ヘッダーのスペース分あける用-->
+    <div style="width: 100%; height: 50px;"></div>
+
+    <!--タイトル-->
+    <div style="height: 300px; width: 100%; overflow: hidden; position: relative;">
+        <img style="object-fit: cover; position: absolute; 
+            height: 100%; width: 110%;" 
+            src="/images/Other/LD_Photo.webp">
+
+        <div style="object-fit: cover; position: absolute; padding: 0px;
+            top: 50%; left: 32px; transform: translate(0%,-50%);
+            font-size: 24px; text-align: left;">
+            <h1 style="padding: 0px; margin: 0px;">Hidden Page</h1>
+            <h3 style="padding: 0px; margin: 0px;">便利ツール・よく使うサイト等...</h3>
+            <div class ="titleShadow"></div>
+        </div>
+    </div>
+
+    <!--タイトル下の影-->
+    <div style="width: 100%; height: 400px; 
+        position: absolute;
+        border-top: solid 1px #f0f0f0ff;
+        background-image: linear-gradient(0deg, 
+        transparent, 
+        transparent 80%, 
+        var(--BackgroundColorGradient));
+        pointer-events: none;">
+    </div>
+
+
+    <br><br>
+
+    <!--ショートカット-->
+    <div style="background-color: var(--BackgroundColorGradient); padding: 8px;">
+
+    <span><a href="https://squoosh.app/" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/Squoosh.webp">
+    </a></span>
+
+    <span><a href="https://cpetry.github.io/NormalMap-Online/" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/nmap_logo_test.webp">
+    </a></span>
+
+    </div>
+
+    <div style="background-color: var(--BackgroundColorGradient); padding: 8px;">
+
+    <span><a href="/html/GeminiTools_Text/JSMiniPython3.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/JSMPythonCalc_icon.webp">
+    </a></span>
+
+    <span><a href="/html/GeminiTools_Text/CharacterCounter.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/CharCounter_icon.webp">
+    </a></span>
+
+    <span><a href="/html/GeminiTools/ColorToAlpha.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/ColorToAlpha_icon.webp">
+    </a></span>
+
+    <span><a href="/html/GeminiTools/CutColor.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/CutTheColor_icon.webp">
+    </a></span>
+
+    <span><a href="/html/GeminiTools/AudioTrimmer.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/AudioTrimmer.webp">
+    </a></span>
+
+    <span><a href="/html/GeminiTools/MediaComberter2.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/MediaComberter.webp">
+    </a></span>
+
+    <span><a href="/html/GeminiToys/MarkovAudio.html" class="hiddenlink">
+        <img style="object-fit: cover; height: 60px; width: 60px;" class="hoverChangeScale"
+        src="/images/Tools/MarkovAudio_icon.webp">
+    </a></span>
+
+    </div>
+
+
+    <br><br>
+
+
+    <style>
+        .card {
+            display: flex;
+            flex-direction: row; /* 要素を横方向に並べる */
+            align-items: center; /* 要素の縦方向の高さを中央で揃える */
+            gap: 20px; /* 要素同士の隙間（必要に応じて調整してください） */
+        }
+    </style>    
+
+    <div style="background-color: var(--BackgroundColorGradient); padding: 8px;">
+    <h1>Useful tools</h1>
+    <h3>サイト上で動作する便利なツール群</h3>
+    </div>
+
+    <div>
+        <div class="card box" style="margin: 8px 0px 8px 0px; padding: 0px 8px 0px 8px;">
+        <h2>Squoosh</h2>
+        <p>画像を別の形式に変換する。画像の圧縮に便利。</p>
+        <a href="https://squoosh.app/" style="margin-left: auto;">
+            <img  style="object-fit: cover; height: 45px; width: 45px; transform: rotate(-90deg);" 
+            class="hoverChangeScale" src="/images/Simple/DropdownArrow.webp">
+            </a>
+        </div>
+
+        <div class="card box" style="margin: 8px 0px 8px 0px; padding: 0px 8px 0px 8px;">
+        <h2>NormalMap-Online</h2>
+        <p>HeightMapからNormalMapに変換する。細かい設定ができる。</p>
+        <a href="https://cpetry.github.io/NormalMap-Online/" style="margin-left: auto;">
+            <img  style="object-fit: cover; height: 45px; width: 45px; transform: rotate(-90deg);" 
+            class="hoverChangeScale" src="/images/Simple/DropdownArrow.webp">
+            </a>
+        </div>
+    </div>
+
+
+    <div style="background-color: var(--BackgroundColorGradient); padding: 8px;">
+    <h1>Gemini tools</h1>
+    <h3>痒い所に手が届くGemini製ツール群</h3>
+    </div>
+
+
+    <h2>編集系</h2>
+
+    <div class="tripleGrid" style="text-align: center;">
+
+        <div class="box">
+            <h2>Video to GIF Converter</h2>
+            <p>MP4からGIFに変換する<br>
+                切り取り時間、フレームレート、画質等も設定できる
+            </p>
+            <a href="/html/GeminiTools/Video2GifConverter.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Video Frame Extractor</h2>
+            <p>MP4の指定タイミングをPNGで出力する<br>
+                Windows純正ソフトで切り取れない時に
+            </p>
+            <a href="/html/GeminiTools/VideoFrameExtractor.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Audio Trimmer</h2>
+            <p>音声を任意の範囲で切り取る<br>
+                音声の切り抜きに
+            </p>
+            <a href="/html/GeminiTools/AudioTrimmer.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Media Comberter</h2>
+            <p>音声/動画を別の形式に変換する<br>
+                サーバーの都合でマルチスレッド機能が使えない
+            </p>
+            <a href="/html/GeminiTools/MediaComberter2.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Color to Alpha</h2>
+            <p>背景透過ツール1<br>
+                指定色から閾値までを良い感じに透過する
+            </p>
+            <a href="/html/GeminiTools/ColorToAlpha.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Cut the Color</h2>
+            <p>背景透過ツール2<br>
+                指定色周辺を透過する、所謂バケツツール
+            </p>
+            <a href="/html/GeminiTools/CutColor.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+    </div>
+
+
+    <h2>情報系</h2>
+
+    <div class="tripleGrid" style="text-align: center;">
+
+        <div class="box">
+            <h2>Device Input Visualizer</h2>
+            <p>PCの入力デバイスの動作を確認<br>
+                JISキーボードとマウスに対応
+            </p>
+            <a href="/html/GeminiTools/DeviceInputVisualizer_JIS.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Gamepad Tester</h2>
+            <p>コントローラーの動作を確認<br>
+                単体向け
+            </p>
+            <a href="/html/GeminiTools/GamepadTester.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Device Information Dashboard</h2>
+            <p>端末情報を確認<br>
+                端末によってセキュリティが随分違う
+            </p>
+            <a href="/html/GeminiToys/DeviceInformationDashboard.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>CPU & iGPU Performance Dashboard</h2>
+            <p>CPUと内蔵GPUの性能を比較<br>
+                情報の正確性は保証できません
+            </p>
+            <a href="/html/PC/CPUComp2.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>CPU & iGPU Performance Dashboard</h2>
+            <p>ローエンドCPU版<br>
+                Chromebookとかそういうの
+            </p>
+            <a href="/html/PC/CPUComp2.html?cputype=LowCPU">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+    </div>
+
+    
+    <h2>その他</h2>
+
+    <div class="tripleGrid" style="text-align: center;">
+
+        <div class="box">
+            <h2>JS-MiniPython Calculator</h2>
+            <p>Python風簡易計算機<br>
+                履歴ごと編集できる関数電卓的な...
+            </p>
+            <a href="/html/GeminiTools_Text/JSMiniPython3.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Json Analyzer</h2>
+            <p>jsonの内容や構造を確認できる<br>
+                プロンプトの圧縮にも
+            </p>
+            <a href="/html/GeminiTools_Text/JsonAnalyzer.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Json Data Viewer</h2>
+            <p>jsonの内容をある程度見やすく確認できる<br>
+                ソートもできる
+            </p>
+            <a href="/html/PC/JsonDataViewer.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Character Counter</h2>
+            <p>文字数え上げツール<br>
+                めっちゃシンプル
+            </p>
+            <a href="/html/GeminiTools_Text/CharacterCounter.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>String Combination Generator</h2>
+            <p>2つの文字列リストの組み合わせ一覧を作成<br>
+                ルーレットにもどうぞ
+            </p>
+            <a href="/html/GeminiTools_Text/StringCombinationGenerator.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Square Cipher</h2>
+            <p>文字列を四角で構成された暗号へ変換する<br>
+                プロトタイプのテキスト思いつかないときに
+            </p>
+            <a href="/html/GeminiTools_Text/SquareCipher.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Text Converter</h2>
+            <p>LLMでひらがなだけの文を良い感じに変換<br>
+                LLMはローカルで動かしてください
+            </p>
+            <a href="/html/GeminiTools_Text/romaji_converter.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>3D Dice Simulator</h2>
+            <p>よく使われているダイスロールができる<br>
+                3Dで無駄に凝ってる
+            </p>
+            <a href="/html/GeminiTools/3DDiceSimulator.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Multi Timer</h2>
+            <p>同時に複数のタイマーを動かせる<br>
+                複数の時間のループなども可能
+            </p>
+            <a href="/html/GeminiTools/MultiTimer.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+    </div>
+
+
+    <div style="background-color: var(--BackgroundColorGradient); padding: 8px;">
+    <h1>Toybox</h1>
+    <h3>思い付きで作られたGemini製の妙なもの達</h3>
+    </div>
+
+    <div class="tripleGrid" style="text-align: center;">
+
+        <div class="box">
+            <h2>Web Window System</h2>
+            <p>マルチウインドウでWebを見れる<br>
+                セキュリティの都合上、Youtube等は見れない
+            </p>
+            <a href="/html/GeminiToys/WebWindowSystem.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Markov Audio</h2>
+            <p>マルコフ連鎖に従い音を再生する<br>
+                色々と応用が利くかもしれない
+            </p>
+            <a href="/html/GeminiToys/MarkovAudio.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Chaos Tetris</h2>
+            <p>あそばせないテトリス<br>
+                Gemini 3.1 Proのユーモア
+            </p>
+            <a href="/html/GeminiToys/NotTetris.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>Browser & Web API Tester</h2>
+            <p>ブラウザを使ったギミックまとめ<br>
+                何かのネタになるかも
+            </p>
+            <a href="/html/GeminiToys/Browser&WebAPI_Test.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>History API Maze</h2>
+            <p>ブラウザの戻るで戻れる迷路<br>
+                何かのネタになるかも
+            </p>
+            <a href="/html/GeminiToys/HistoryAPI_Maze.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+        <div class="box">
+            <h2>NFC Reader</h2>
+            <p>NFCカードの固有IDを読み取る<br>
+                ネタ
+            </p>
+            <a href="/html/GeminiTools/NFCReader.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+    </div>
+
+
+    <div style="background-color: var(--BackgroundColorGradient); padding: 8px;">
+    <h1>Gemini Games</h1>
+    <h3>ちょっとしたGemini製ゲーム</h3>
+    </div>
+
+    <div class="tripleGrid" style="text-align: center;">
+
+        <div class="box">
+            <h2>3D Tube Shooter</h2>
+            <p>画面奥から迫りくる敵を撃退するゲーム<br>
+                あるゲームを形だけ再現したもの
+            </p>
+            <a href="/html/GeminiToys/3DTubeShooter.html">
+                <button class="otherbutton">
+                Link
+                </button>
+            </a>
+        </div>
+
+    </div>
+
+    <br>
+
+    <div class="box" style="padding: 4px;">
+        <h3>memo</h3>
+        <a href="/html/AS/p5jsRay.html"><p>p5js Raycaster</p></a>
+        <br>
+    </div>
+
+  </body>
+
+  <script src="/js/hamburger.js"></script>
+
+</html>

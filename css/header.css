@@ -154,7 +154,6 @@ header > h1
     top: 50px;
     bottom: 0%;
     width: calc(var(--hmenu_Width) - var(--hmenu_Border));
-    /*height: 90%;*/
     background-color: #222222ee;
     overflow-y: auto;
     overflow-x: hidden;
@@ -169,8 +168,6 @@ header > h1
     background-color: #333333;
 }
 #hmenu::-webkit-scrollbar-thumb {
-    /*background-image: linear-gradient(180deg, #222222 0%, #999999 99%);
-    box-shadow: inset 2px 2px 5px 0 rgba(#fff, 0.5);*/
     background-color: #555555;
     border-radius: 100px;
 }
