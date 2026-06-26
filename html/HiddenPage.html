@@ -200,50 +200,6 @@
             font-size: 24px;
         }
 
-        /* -------------------------------------
-           5. グリッドの可視化レイヤー
-           ------------------------------------- */
-        .grid-overlay {
-            position: absolute;
-            top: 0; bottom: 0; left: var(--margin); right: var(--margin);
-            display: grid;
-            grid-template-columns: repeat(var(--cols), 1fr);
-            column-gap: var(--gutter);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 9999;
-        }
-        .grid-overlay-col {
-            background-color: rgba(228, 0, 43, 0.03);
-            height: 100%;
-            border-left: 1px solid rgba(228, 0, 43, 0.15);
-            border-right: 1px solid rgba(228, 0, 43, 0.15);
-        }
-        .grid-overlay-baseline {
-            position: absolute;
-            top: 0; left: 0; right: 0; bottom: 0;
-            background-image: linear-gradient(to bottom, rgba(0,0,0,0.05) 1px, transparent 1px);
-            background-size: 100% var(--baseline);
-            pointer-events: none;
-            opacity: 0;
-            transition: opacity 0.2s;
-            z-index: 9998;
-        }
-        .show-grid .grid-overlay,
-        .show-grid .grid-overlay-baseline {
-            opacity: 1;
-        }
-        .guide-status {
-            position: fixed;
-            bottom: 24px; right: 24px;
-            background: var(--color-ink);
-            color: var(--color-paper);
-            padding: 8px 16px;
-            font-size: 12px;
-            font-family: var(--font-mono);
-            z-index: 10000;
-        }
 
         /* -------------------------------------
             動的リスト用UIコンポーネント (タグ・フィルター用)
@@ -257,19 +213,42 @@
         }
         .filter-tag {
             grid-column: span 2;
+            color: var(--color-muted);
+            font-size: 16px;
+            line-height: var(--leading);
+            background-color: #ffffff00;
             display: flex;
             flex-direction: column;
+            border: none;
             border-top: 1px solid var(--color-border);
             padding-top: 4px;
             margin-bottom: 16px;
             height: 56px;
             transition: color 0.1s ease, border-color 0.1s ease;
         }
+        .filter-tag:hover {
+            border-color: var(--color-accent);
+            color: var(--color-accent);
+        }
         .filter-tag.active {
             border-color: var(--color-accent);
             color: var(--color-accent);
-            font-weight: 500;
+            font-weight: 600;
         }
+/*.tool-item-single {
+    grid-column: span 1;
+    display: flex;
+    flex-direction: column;
+    border-top: 1px solid var(--color-border);
+    padding-top: 4px;
+    margin-bottom: 16px;
+    height: 56px;
+    transition: color 0.1s ease, border-color 0.1s ease;
+}
+.tool-item-single:hover {
+    color: var(--color-accent);
+    border-top-color: var(--color-accent);
+}*/
         .tool-tag-list {
             display: flex;
             gap: 4px;
@@ -391,13 +370,11 @@
                 </div>
 
                 <div class="subgrid tool-list-container">
-
                     <a href="https://squoosh.app/" class="tool-list-row">
                         <div class="list-title">Squoosh</div>
                         <div class="list-desc">画像を別の形式に変換する。画像の圧縮に便利。</div>
                         <div class="list-arrow">▶&nbsp;</div>
                     </a>
-                    
                     <a href="https://cpetry.github.io/NormalMap-Online/" class="tool-list-row">
                         <div class="list-title">NormalMap-Online</div>
                         <div class="list-desc">HeightMapからNormalMapに変換する。詳細な設定が可能。</div>
@@ -417,80 +394,52 @@
                 <div id="dynamic-tool-list" class="subgrid tool-list-container"></div>
             </section>
 
+
+            <section class="subgrid">
+                <div class="col-1-12">
+                    <h2 class="optical-align">Other</h2>
+                    <p class="desc" style="font-size: 16px; line-height: 24px; margin-bottom: 24px;">
+                        どこかで使うかもしれない色々なもの</p>
+                </div>
+
+                <div class="subgrid tool-list-container">
+                    <a href="/html/AS/p5jsRay.html" class="tool-list-row">
+                        <div class="list-title">p5js Raycaster</div>
+                        <div class="list-desc">p5jsで作成した簡易2Dレイキャスター。</div>
+                        <div class="list-arrow">▶&nbsp;</div>
+                    </a>
+                    <a href="https://www.shadertoy.com/view/wctGR2" class="tool-list-row">
+                        <div class="list-title">stereo matching test</div>
+                        <div class="list-desc">ステレオレンダリング試作。視差部分のみ計算。</div>
+                        <div class="list-arrow">▶&nbsp;</div>
+                    </a>
+                    <a href="https://www.shadertoy.com/view/w3cXzj" class="tool-list-row">
+                        <div class="list-title">PathTracer Filtering Test</div>
+                        <div class="list-desc">SVGF周りを色々試したもの。</div>
+                        <div class="list-arrow">▶&nbsp;</div>
+                    </a>
+                    <a href="https://unityroom.com/games/as_projectscrapper2_ror" class="tool-list-row">
+                        <div class="list-title">ProjectScrapper_2_ROR</div>
+                        <div class="list-desc">2Dのヴァンサバライクなのを作ろうとしたもの。</div>
+                        <div class="list-arrow">▶&nbsp;</div>
+                    </a>
+                    <a href="https://unityroom.com/games/as_archive_nonamemech2" class="tool-list-row">
+                        <div class="list-title">NoNameMech v2</div>
+                        <div class="list-desc">N2M2。BA2のシステムを真似した。</div>
+                        <div class="list-arrow">▶&nbsp;</div>
+                    </a>
+                    <a href="https://unityroom.com/games/as_archive_nonamemech1" class="tool-list-row">
+                        <div class="list-title">NoNameMech v1</div>
+                        <div class="list-desc">N2M1。シンプルなアセンブルと大量の敵。</div>
+                        <div class="list-arrow">▶&nbsp;</div>
+                    </a>
+                </div>
+            </section>
+
         </div>
     </div>
 
-    <!-- UI: グリッドガイド -->
-    <div class="guide-status">Press 'G' to toggle Grid</div>
-
     <script>
-        document.addEventListener('DOMContentLoaded', () => {
-            /* ========================================================
-               5. グリッドの可視化とトグル機能
-               ======================================================== */
-            const gridOverlay = document.getElementById('gridOverlay');
-            const rootStyles = getComputedStyle(document.documentElement);
-            const cols = parseInt(rootStyles.getPropertyValue('--cols').trim(), 10) || 12;
-
-            // CSS変数から取得したカラム数分、オーバーレイのDOMを生成
-            for (let i = 0; i < cols; i++) {
-                const col = document.createElement('div');
-                col.className = 'grid-overlay-col';
-                gridOverlay.appendChild(col);
-            }
-
-            // 'G'キー押下で body に .show-grid クラスをトグル
-            document.addEventListener('keydown', (e) => {
-                // 入力フォームでの入力時は無視する
-                if (['INPUT', 'TEXTAREA'].includes(e.target.tagName)) return;
-                
-                if (e.key === 'g' || e.key === 'G') {
-                    document.body.classList.toggle('show-grid');
-                }
-            });
-
-            /* ========================================================
-               6. 視覚的配置調整（Optical Alignment）
-               見出しの左サイドベアリング（インクの余白）を相殺し、
-               厳密にカラムの開始線に文字をスナップさせる。
-               ======================================================== */
-            const alignOptically = () => {
-                const elements = document.querySelectorAll('.optical-align');
-                if (!elements.length) return;
-
-                const canvas = document.createElement('canvas');
-                const ctx = canvas.getContext('2d');
-
-                elements.forEach(el => {
-                    // 要素のスタイルをリセット
-                    el.style.marginLeft = '0px';
-
-                    const style = window.getComputedStyle(el);
-                    ctx.font = `${style.fontWeight} ${style.fontSize} ${style.fontFamily}`;
-                    const text = el.innerText || el.textContent;
-                    
-                    // measureTextを使用して実際の描画領域を計算
-                    const metrics = ctx.measureText(text);
-                    const leftInk = metrics.actualBoundingBoxLeft;
-                    
-                    // インクの左端が基準点より右にある場合、ネガティブマージンで左に引っ張る
-                    if (leftInk > 0 && leftInk < 15) {
-                         el.style.marginLeft = `-${leftInk}px`;
-                    }
-                });
-            };
-
-            // Webフォント読み込み完了後に配置を調整
-            document.fonts.ready.then(alignOptically);
-
-            // ウィンドウリサイズ時（フォントサイズ変更時）に再計算
-            let resizeTimer;
-            window.addEventListener('resize', () => {
-                clearTimeout(resizeTimer);
-                resizeTimer = setTimeout(alignOptically, 200);
-            });
-        });
-
         /*
         ========================================================
         Gemini Tools リスト管理 (静的データ・フィルタリング機能)

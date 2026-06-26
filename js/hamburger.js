@@ -15,8 +15,13 @@ width: 100%; height: 50px;
 margin: 0px; padding: 0px 0px 0px 8px;
 z-index: 100;
 }
-h1 { margin: 0px; padding: 0px 0px 0px 16px; }
-button{
+.htitle { 
+font-size: 32px;
+margin: 0px; padding: 0px 0px 0px 16px;
+color: #eeeeeeff;
+text-align: left;
+}
+.hbutton{
 position: relative;
 background-color: #00000000;
 border: #00000000;
@@ -31,7 +36,7 @@ font-size: 28px;
 white-space: nowrap;
 transition: all 0.3s 0s ease;
 }
-button:hover{
+.hbutton:hover{
 background-color: #00000060;
 transition: all 0.3s 0s ease;
 }
@@ -96,7 +101,7 @@ border-left: solid var(--hmenu_Border) var(--Border_Color);
 #headermain.cl #hmenu{ transform: translate(0px,0px); transition: transform .3s; }
 </style>
 
-<button id="hbbutton" class="blborder" onclick="ClickHB()">
+<button id="hbbutton" class="blborder hbutton" onclick="ClickHB()">
 <span class="hbline" id="hbline1"></span>
 <span class="hbline" id="hbline2_1"></span>
 <span class="hbline" id="hbline2_2"></span>
@@ -112,15 +117,15 @@ class="hoverChangeScale" style="position:absolute; object-fit: contain; right: 6
 
 <div id="hmenu">
 <hr>
-<a href="/index.html"><button>TOP</button></a>
+<a href="/index.html"><button class="hbutton">TOP</button></a>
 <!--<a href="./About.html"><button>About</button></a>-->
 <hr>
-<h1>Works</h1>
-<a href="/html/N2M4.html"><button>No Name Mech</button></a>
-<a href="/html/Voidlase.html"><button>VOIDLASE</button></a>
-<a href="/html/Works.html"><button>作品一覧</button></a>
+<div class="htitle">Works</div>
+<a href="/html/N2M4.html"><button class="hbutton">No Name Mech</button></a>
+<a href="/html/Voidlase.html"><button class="hbutton">VOIDLASE</button></a>
+<a href="/html/Works.html"><button class="hbutton">作品一覧</button></a>
 <hr>
-<a href="/html/Other.html"><button>その他</button></a>
+<a href="/html/Other.html"><button class="hbutton">その他</button></a>
 <hr>
 </div>
 `;
