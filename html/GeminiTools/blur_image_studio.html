@@ -1,0 +1,704 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Blur Image Studio</title>
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+    <style>
+        /* カスタムスクロールバーなど、Tailwindで補いきれない微調整 */
+        body {
+            background-color: #111827; /* gray-900 */
+            color: #f3f4f6; /* gray-100 */
+        }
+        
+        /* Canvasの補間を無効化 (ピクセルアートのようなシャープな拡大を維持) */
+        canvas {
+            image-rendering: -moz-crisp-edges;
+            image-rendering: -webkit-crisp-edges;
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+        
+        /* スライダーのカスタムスタイル */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #3b82f6; /* blue-500 */
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+            transition: transform 0.1s;
+        }
+
+        input[type=range]::-webkit-slider-thumb:hover {
+            transform: scale(1.2);
+        }
+
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #374151; /* gray-700 */
+            border-radius: 2px;
+        }
+        
+        input[type=range]:focus {
+            outline: none;
+        }
+
+        /* Canvasのコンテナスタイル */
+        .canvas-container {
+            background-image: 
+                linear-gradient(45deg, #1f2937 25%, transparent 25%), 
+                linear-gradient(-45deg, #1f2937 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #1f2937 75%), 
+                linear-gradient(-45deg, transparent 75%, #1f2937 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+    </style>
+</head>
+<body class="font-sans antialiased min-h-screen flex flex-col selection:bg-blue-500 selection:text-white">
+
+    <header class="bg-gray-800 border-b border-gray-700 p-4 sticky top-0 z-10 shadow-md">
+        <div class="max-w-7xl mx-auto flex justify-between items-center">
+            <h1 class="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-purple-500 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" class="text-blue-400"><circle cx="12" cy="12" r="10"/><path d="m9 12 2 2 4-4"/></svg>
+                Blur Image Studio
+            </h1>
+            <a href="https://github.com" target="_blank" rel="noopener noreferrer" class="text-gray-400 hover:text-white transition-colors">
+                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 22v-4a4.8 4.8 0 0 0-1-3.5c3 0 6-2 6-5.5.08-1.25-.27-2.48-1-3.5.28-1.15.28-2.35 0-3.5 0 0-1 0-3 1.5-2.64-.5-5.36-.5-8 0C6 2 5 2 5 2c-.3 1.15-.3 2.35 0 3.5A5.403 5.403 0 0 0 4 9c0 3.5 3 5.5 6 5.5-.39.49-.68 1.05-.85 1.65-.17.6-.22 1.23-.15 1.85v4"/><path d="M9 18c-4.51 2-5-2-7-2"/></svg>
+            </a>
+        </div>
+    </header>
+
+    <main class="flex-grow p-4 md:p-6 lg:p-8 max-w-7xl mx-auto w-full flex flex-col lg:flex-row gap-8">
+        
+        <!-- 左側：コントロールパネル -->
+        <aside class="w-full lg:w-1/3 flex flex-col gap-6 bg-gray-800 p-6 rounded-xl border border-gray-700 shadow-xl h-fit">
+            
+            <!-- 画像アップロード -->
+            <div>
+                <label class="block text-sm font-medium text-gray-300 mb-2">Image Source</label>
+                <div class="flex items-center justify-center w-full">
+                    <label for="image-upload" class="flex flex-col items-center justify-center w-full h-32 border-2 border-gray-600 border-dashed rounded-lg cursor-pointer bg-gray-700/50 hover:bg-gray-700 hover:border-blue-500 transition-colors">
+                        <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                            <svg class="w-8 h-8 mb-3 text-gray-400" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 20 16">
+                                <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 13h3a3 3 0 0 0 0-6h-.025A5.56 5.56 0 0 0 16 6.5 5.5 5.5 0 0 0 5.207 5.021C5.137 5.017 5.071 5 5 5a4 4 0 0 0 0 8h2.167M10 15V6m0 0L8 8m2-2 2 2"/>
+                            </svg>
+                            <p class="mb-2 text-sm text-gray-400"><span class="font-semibold text-blue-400">Click to upload</span> or drag and drop</p>
+                            <p class="text-xs text-gray-500">JPG, PNG, WEBP (Max 5MB recommended)</p>
+                        </div>
+                        <input id="image-upload" type="file" class="hidden" accept="image/*" />
+                    </label>
+                </div>
+            </div>
+
+            <hr class="border-gray-700">
+
+            <!-- ブラーの種類選択 -->
+            <div>
+                <label for="blur-type" class="block text-sm font-medium text-gray-300 mb-2">Blur Type</label>
+                <div class="relative">
+                    <select id="blur-type" class="bg-gray-900 border border-gray-600 text-white text-sm rounded-lg focus:ring-blue-500 focus:border-blue-500 block w-full p-2.5 appearance-none cursor-pointer">
+                        <option value="gaussian" selected>Gaussian Blur (Smooth)</option>
+                        <option value="box">Box Blur (Sharp)</option>
+                        <option value="motionHorizontal">Motion Blur (Horizontal)</option>
+                        <option value="edge">Edge Only Blur</option>
+                    </select>
+                    <div class="pointer-events-none absolute inset-y-0 right-0 flex items-center px-2 text-gray-400">
+                        <svg class="fill-current h-4 w-4" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20"><path d="M9.293 12.95l.707.707L15.657 8l-1.414-1.414L10 10.828 5.757 6.586 4.343 8z"/></svg>
+                    </div>
+                </div>
+                <p class="text-xs text-gray-500 mt-1" id="blur-desc">Creates a smooth, natural-looking blur.</p>
+            </div>
+
+            <!-- パラメータ調整：半径 -->
+            <div>
+                <div class="flex justify-between mb-1">
+                    <label for="blur-radius" class="block text-sm font-medium text-gray-300">Intensity (Radius)</label>
+                    <span id="radius-value" class="text-sm font-mono text-blue-400 bg-blue-900/30 px-2 py-0.5 rounded">0.0 px</span>
+                </div>
+                <input id="blur-radius" type="range" min="0" max="30" step="0.1" value="0" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer">
+                <div class="flex justify-between text-xs text-gray-500 mt-2">
+                    <span>None</span>
+                    <span>Strong</span>
+                </div>
+            </div>
+
+            <!-- エッジ検出用の閾値（Edgeモード時のみ表示） -->
+            <div id="edge-threshold-control" class="hidden mt-4">
+                <div class="flex justify-between mb-1">
+                    <label for="edge-threshold" class="block text-sm font-medium text-gray-300">Edge Sensitivity</label>
+                    <span id="threshold-value" class="text-sm font-mono text-purple-400 bg-purple-900/30 px-2 py-0.5 rounded">50</span>
+                </div>
+                <input id="edge-threshold" type="range" min="1" max="100" value="50" class="w-full h-2 bg-gray-700 rounded-lg appearance-none cursor-pointer" style="accent-color: #a855f7;">
+                <div class="flex justify-between text-xs text-gray-500 mt-2">
+                    <span>Low (All)</span>
+                    <span>High (Sharp Edges Only)</span>
+                </div>
+            </div>
+
+            <hr class="border-gray-700">
+
+            <!-- アクションボタン -->
+            <div class="flex flex-col gap-3">
+                <button id="reset-btn" class="w-full py-2.5 px-4 text-sm font-medium text-gray-300 bg-gray-700 rounded-lg hover:bg-gray-600 focus:ring-4 focus:outline-none focus:ring-gray-600 transition-colors">
+                    Reset Original
+                </button>
+                <button id="download-btn" class="w-full py-2.5 px-4 text-sm font-medium text-white bg-blue-600 rounded-lg hover:bg-blue-700 focus:ring-4 focus:outline-none focus:ring-blue-800 transition-colors flex justify-center items-center gap-2" disabled>
+                    <svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" x2="12" y1="15" y2="3"/></svg>
+                    Download Image
+                </button>
+            </div>
+            
+            <div id="processing-indicator" class="hidden text-sm text-yellow-400 flex items-center gap-2 justify-center mt-2">
+                <svg class="animate-spin -ml-1 mr-3 h-4 w-4 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg>
+                Processing...
+            </div>
+
+        </aside>
+
+        <!-- 右側：プレビューエリア -->
+        <section class="w-full lg:w-2/3 flex flex-col bg-gray-800 p-1 md:p-4 rounded-xl border border-gray-700 shadow-xl overflow-hidden min-h-[400px]">
+            <div class="flex justify-between items-center mb-2 px-2">
+                <h2 class="text-sm font-medium text-gray-400">Preview</h2>
+                <div class="text-xs text-gray-500 flex items-center gap-3">
+                    <span>Scroll to zoom, Drag to pan</span>
+                    <button id="reset-zoom-btn" class="hidden text-blue-400 hover:text-blue-300 flex items-center gap-1 bg-gray-700/50 px-2 py-1 rounded transition-colors">
+                        <svg xmlns="http://www.w3.org/2000/svg" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M15 3h6v6"/><path d="M9 21H3v-6"/><path d="M21 3l-7 7"/><path d="M3 21l7-7"/></svg>
+                        Fit
+                    </button>
+                </div>
+            </div>
+            
+            <div class="relative w-full flex-grow flex items-center justify-center bg-gray-900 rounded-lg border border-gray-700 overflow-hidden canvas-container cursor-grab active:cursor-grabbing" id="canvas-wrapper">
+                
+                <!-- プレースホルダー -->
+                <div id="placeholder" class="absolute inset-0 flex flex-col items-center justify-center text-gray-500 pointer-events-none z-10">
+                    <svg xmlns="http://www.w3.org/2000/svg" width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1" stroke-linecap="round" stroke-linejoin="round" class="mb-2 opacity-50"><rect width="18" height="18" x="3" y="3" rx="2" ry="2"/><circle cx="9" cy="9" r="2"/><path d="m21 15-3.086-3.086a2 2 0 0 0-2.828 0L6 21"/></svg>
+                    <p>No image loaded</p>
+                </div>
+
+                <!-- 表示用Canvasコンテナ (ズーム・パン用) -->
+                <div id="transform-container" class="transform origin-center flex items-center justify-center hidden w-full h-full">
+                    <canvas id="display-canvas" class="shadow-2xl transition-opacity duration-300 pointer-events-none"></canvas>
+                </div>
+            </div>
+        </section>
+
+    </main>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // --- DOM Elements ---
+            const uploadInput = document.getElementById('image-upload');
+            const blurTypeSelect = document.getElementById('blur-type');
+            const blurDesc = document.getElementById('blur-desc');
+            const radiusSlider = document.getElementById('blur-radius');
+            const radiusValueDisplay = document.getElementById('radius-value');
+            const edgeThresholdControl = document.getElementById('edge-threshold-control');
+            const edgeThresholdSlider = document.getElementById('edge-threshold');
+            const thresholdValueDisplay = document.getElementById('threshold-value');
+            const resetBtn = document.getElementById('reset-btn');
+            const downloadBtn = document.getElementById('download-btn');
+            const displayCanvas = document.getElementById('display-canvas');
+            const transformContainer = document.getElementById('transform-container');
+            const canvasWrapper = document.getElementById('canvas-wrapper');
+            const resetZoomBtn = document.getElementById('reset-zoom-btn');
+            const placeholder = document.getElementById('placeholder');
+            const processingIndicator = document.getElementById('processing-indicator');
+            const displayCtx = displayCanvas.getContext('2d', { willReadFrequently: true });
+
+            // --- State ---
+            let originalImage = null;       // 元画像のImageオブジェクト
+            let originalImageData = null;   // 元画像のピクセルデータ (編集のベース)
+            let isProcessing = false;
+            let processTimeout = null;
+
+            // Blur Type Descriptions
+            const descriptions = {
+                gaussian: "Creates a smooth, natural-looking blur by approximating a Gaussian distribution.",
+                box: "A faster, sharper blur that averages neighboring pixels uniformly.",
+                motionHorizontal: "Simulates horizontal camera movement.",
+                edge: "Detects edges in the image and applies blur only to those areas, keeping the rest sharp."
+            };
+
+            // --- Event Listeners ---
+            
+            // 1. 画像アップロード
+            uploadInput.addEventListener('change', handleImageUpload);
+            
+            // ドラッグ＆ドロップ対応
+            const dropZone = document.querySelector('label[for="image-upload"]');
+            dropZone.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZone.classList.add('border-blue-500', 'bg-gray-700');
+            });
+            dropZone.addEventListener('dragleave', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-500', 'bg-gray-700');
+            });
+            dropZone.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZone.classList.remove('border-blue-500', 'bg-gray-700');
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    uploadInput.files = e.dataTransfer.files;
+                    handleImageUpload({ target: uploadInput });
+                }
+            });
+
+            // 2. ブラー種類変更
+            blurTypeSelect.addEventListener('change', (e) => {
+                blurDesc.textContent = descriptions[e.target.value];
+                if (e.target.value === 'edge') {
+                    edgeThresholdControl.classList.remove('hidden');
+                } else {
+                    edgeThresholdControl.classList.add('hidden');
+                }
+                triggerProcessing();
+            });
+
+            // 3. 半径スライダー変更 (リアルタイム反映のためinputイベント)
+            radiusSlider.addEventListener('input', (e) => {
+                const val = parseFloat(e.target.value).toFixed(1);
+                radiusValueDisplay.textContent = `${val} px`;
+                triggerProcessing();
+            });
+
+            // 3.5 エッジ閾値スライダー変更
+            edgeThresholdSlider.addEventListener('input', (e) => {
+                thresholdValueDisplay.textContent = e.target.value;
+                if (blurTypeSelect.value === 'edge') {
+                    triggerProcessing();
+                }
+            });
+
+            // 4. リセットボタン
+            resetBtn.addEventListener('click', () => {
+                radiusSlider.value = 0;
+                radiusValueDisplay.textContent = '0.0 px';
+                triggerProcessing();
+            });
+
+            // 5. ダウンロードボタン
+            downloadBtn.addEventListener('click', () => {
+                if (!originalImage) return;
+                const dataURL = displayCanvas.toDataURL('image/png');
+                const link = document.createElement('a');
+                link.download = `blurred_image_${Date.now()}.png`;
+                link.href = dataURL;
+                link.click();
+            });
+
+            // --- Zoom & Pan ---
+            let baseScale = 1; 
+            let userScale = 1; 
+            let panX = 0;
+            let panY = 0;
+            let isDraggingPan = false;
+            let startPanX = 0;
+            let startPanY = 0;
+
+            function updateTransform() {
+                if (!originalImage) return;
+                const totalScale = baseScale * userScale;
+                transformContainer.style.transform = `translate(${panX}px, ${panY}px) scale(${totalScale})`;
+                
+                if (userScale !== 1 || panX !== 0 || panY !== 0) {
+                    resetZoomBtn.classList.remove('hidden');
+                } else {
+                    resetZoomBtn.classList.add('hidden');
+                }
+            }
+
+            function fitImageToView() {
+                if (!originalImage) return;
+                const wrapperRect = canvasWrapper.getBoundingClientRect();
+                const scaleX = wrapperRect.width / originalImage.width;
+                const scaleY = wrapperRect.height / originalImage.height;
+                // Padding 5%
+                baseScale = Math.min(scaleX, scaleY) * 0.95; 
+                if (baseScale > 1) baseScale = 1;
+
+                userScale = 1;
+                panX = 0;
+                panY = 0;
+                updateTransform();
+            }
+
+            canvasWrapper.addEventListener('wheel', (e) => {
+                if (!originalImage) return;
+                e.preventDefault();
+                const zoomFactor = 0.1;
+                if (e.deltaY < 0) {
+                    userScale += zoomFactor;
+                } else {
+                    userScale -= zoomFactor;
+                }
+                userScale = Math.max(0.1, Math.min(userScale, 15)); // 0.1倍 ～ 15倍
+                updateTransform();
+            });
+
+            canvasWrapper.addEventListener('mousedown', (e) => {
+                if (!originalImage) return;
+                isDraggingPan = true;
+                startPanX = e.clientX - panX;
+                startPanY = e.clientY - panY;
+                canvasWrapper.classList.add('cursor-grabbing');
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                if (!isDraggingPan) return;
+                panX = e.clientX - startPanX;
+                panY = e.clientY - startPanY;
+                updateTransform();
+            });
+
+            window.addEventListener('mouseup', () => {
+                isDraggingPan = false;
+                canvasWrapper.classList.remove('cursor-grabbing');
+            });
+
+            resetZoomBtn.addEventListener('click', fitImageToView);
+
+            window.addEventListener('resize', () => {
+                if (originalImage && userScale === 1 && panX === 0 && panY === 0) {
+                    fitImageToView();
+                }
+            });
+
+
+            // --- Core Functions ---
+
+            function handleImageUpload(e) {
+                const file = e.target.files[0];
+                if (!file || !file.type.startsWith('image/')) return;
+
+                const reader = new FileReader();
+                reader.onload = (event) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        originalImage = img;
+                        
+                        // Canvasのサイズを画像サイズに合わせる
+                        // パフォーマンスのため、巨大な画像は縮小して処理することも検討できるが、
+                        // 今回は高品質な出力を目指し元サイズを維持する。UI側でCSSによるリサイズを行う。
+                        
+                        // 画像サイズが大きすぎる場合の安全対策 (例: 4K超え)
+                        let targetWidth = img.width;
+                        let targetHeight = img.height;
+                        const MAX_SIZE = 2500;
+                        if (targetWidth > MAX_SIZE || targetHeight > MAX_SIZE) {
+                            const ratio = Math.min(MAX_SIZE / targetWidth, MAX_SIZE / targetHeight);
+                            targetWidth = Math.round(targetWidth * ratio);
+                            targetHeight = Math.round(targetHeight * ratio);
+                            console.warn("Image resized for performance.");
+                        }
+
+                        displayCanvas.width = targetWidth;
+                        displayCanvas.height = targetHeight;
+                        
+                        // 画像のアンチエイリアス（スムージング）を無効化し、シャープなプレビューを維持
+                        displayCtx.imageSmoothingEnabled = false;
+                        
+                        // 元画像を描画してImageDataを保存
+                        displayCtx.clearRect(0, 0, displayCanvas.width, displayCanvas.height);
+                        displayCtx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                        originalImageData = displayCtx.getImageData(0, 0, targetWidth, targetHeight);
+
+                        // UIの更新
+                        placeholder.classList.add('hidden');
+                        transformContainer.classList.remove('hidden');
+                        downloadBtn.disabled = false;
+                        downloadBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                        
+                        // 初期状態のリセット
+                        radiusSlider.value = 0;
+                        radiusValueDisplay.textContent = '0 px';
+                        
+                        fitImageToView();
+                        triggerProcessing();
+                    };
+                    img.src = event.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            // 処理が重いので、スライダー操作中に頻繁に呼ばれないようにデバウンスする
+            function triggerProcessing() {
+                if (!originalImageData) return;
+                
+                const radius = parseFloat(radiusSlider.value);
+                
+                // 半径0なら元画像を即座に復元して終了
+                if (radius === 0) {
+                    displayCtx.putImageData(originalImageData, 0, 0);
+                    return;
+                }
+
+                // UIインジケーター表示
+                processingIndicator.classList.remove('hidden');
+
+                if (processTimeout) {
+                    clearTimeout(processTimeout);
+                }
+
+                // メインスレッドをブロックしないようにsetTimeoutで非同期実行を模倣
+                processTimeout = setTimeout(() => {
+                    applyBlur();
+                }, 50); // わずかな遅延を入れてUIの更新を優先させる
+            }
+
+            function applyBlur() {
+                if (!originalImageData) return;
+
+                const type = blurTypeSelect.value;
+                const radius = parseFloat(radiusSlider.value);
+                
+                const width = originalImageData.width;
+                const height = originalImageData.height;
+                
+                // 編集用のコピーを作成
+                const newImageData = displayCtx.createImageData(width, height);
+                // コピー元データを配列としてセット
+                newImageData.data.set(originalImageData.data);
+
+                // --- ブラーアルゴリズム群 ---
+                // 注意: ピクセルごとの処理(O(N*r^2))はJavaScriptでは非常に遅いため、
+                // 分離可能フィルタ(Separable Filter)を用いて O(N*r) に最適化しています。
+
+                if (type === 'box' || type === 'gaussian') {
+                    // Gaussianの場合はBox Blurを複数回(通常3回)適用することで近似する手法を用いる (高速かつ自然)
+                    const passes = type === 'gaussian' ? 3 : 1;
+                    
+                    // Gaussian近似のために半径を調整 (浮動小数点のまま適用)
+                    const passRadius = type === 'gaussian' ? radius / 2 : radius;
+
+                    for (let p = 0; p < passes; p++) {
+                        // Pass 1: Horizontal
+                        boxBlurHorizontal(newImageData.data, newImageData.data, width, height, passRadius);
+                        // 水平処理結果を元に垂直処理を行うため、バッファをコピー
+                        const tempBuf = new Uint8ClampedArray(newImageData.data);
+                        // Pass 2: Vertical
+                        boxBlurVertical(tempBuf, newImageData.data, width, height, passRadius);
+                    }
+                } else if (type === 'motionHorizontal') {
+                    // Motion Blur (Horizontal only)
+                    // オリジナルデータから直接一方向のブラーをかける
+                    boxBlurHorizontal(originalImageData.data, newImageData.data, width, height, radius * 2);
+                } else if (type === 'edge') {
+                    // 1. エッジ検出用のマップ作成 (Sobel強度)
+                    const edgeMap = detectEdges(originalImageData.data, width, height);
+                    
+                    // 2. ブラー画像のベースを作成 (Gaussian風)
+                    const blurredData = new Uint8ClampedArray(originalImageData.data);
+                    const passRadius = radius / 2;
+                    for (let p = 0; p < 3; p++) {
+                        boxBlurHorizontal(blurredData, blurredData, width, height, passRadius);
+                        const tempBuf = new Uint8ClampedArray(blurredData);
+                        boxBlurVertical(tempBuf, blurredData, width, height, passRadius);
+                    }
+
+                    // 3. エッジマップと閾値を使って合成
+                    const sensitivity = parseInt(edgeThresholdSlider.value, 10);
+                    const threshold = (sensitivity / 100) * 150; // 0 ~ 150 の範囲で調整
+
+                    for (let i = 0; i < newImageData.data.length; i += 4) {
+                        const pixelIndex = i / 4;
+                        const edgeStrength = edgeMap[pixelIndex];
+
+                        // エッジ境界での滑らかなブレンド
+                        let blend = 0;
+                        if (edgeStrength > threshold) {
+                            blend = 1;
+                        } else if (edgeStrength > Math.max(0, threshold - 30)) {
+                            // 遷移帯
+                            blend = (edgeStrength - (threshold - 30)) / 30;
+                        }
+
+                        if (blend > 0) {
+                            newImageData.data[i]     = originalImageData.data[i]     * (1 - blend) + blurredData[i]     * blend;
+                            newImageData.data[i + 1] = originalImageData.data[i + 1] * (1 - blend) + blurredData[i + 1] * blend;
+                            newImageData.data[i + 2] = originalImageData.data[i + 2] * (1 - blend) + blurredData[i + 2] * blend;
+                            // Alpha(i+3) は元画像のまま保持
+                        }
+                    }
+                }
+
+                // 描画更新
+                displayCtx.putImageData(newImageData, 0, 0);
+                
+                // インジケーター非表示
+                processingIndicator.classList.add('hidden');
+            }
+
+            // 水平方向のBox Blur (小数点の半径に対応)
+            function boxBlurHorizontal(src, dst, w, h, r) {
+                if (r <= 0) return;
+                
+                const r_int = Math.floor(r);
+                const r_frac = r - r_int;
+                const rowSize = w * 4;
+                
+                for (let y = 0; y < h; y++) {
+                    const rowOffset = y * rowSize;
+                    
+                    for (let x = 0; x < w; x++) {
+                        let r_sum = 0, g_sum = 0, b_sum = 0, a_sum = 0;
+                        let weight_sum = 0;
+                        
+                        // 整数部分の範囲を加算
+                        const minX = Math.max(0, x - r_int);
+                        const maxX = Math.min(w - 1, x + r_int);
+                        
+                        for (let ix = minX; ix <= maxX; ix++) {
+                            const p = rowOffset + (ix * 4);
+                            r_sum += src[p];
+                            g_sum += src[p + 1];
+                            b_sum += src[p + 2];
+                            a_sum += src[p + 3];
+                            weight_sum += 1;
+                        }
+                        
+                        // 小数部分の処理 (左側)
+                        if (r_frac > 0) {
+                            const leftX = x - r_int - 1;
+                            if (leftX >= 0) {
+                                const p = rowOffset + (leftX * 4);
+                                r_sum += src[p] * r_frac;
+                                g_sum += src[p + 1] * r_frac;
+                                b_sum += src[p + 2] * r_frac;
+                                a_sum += src[p + 3] * r_frac;
+                                weight_sum += r_frac;
+                            }
+                            
+                            // 小数部分の処理 (右側)
+                            const rightX = x + r_int + 1;
+                            if (rightX < w) {
+                                const p = rowOffset + (rightX * 4);
+                                r_sum += src[p] * r_frac;
+                                g_sum += src[p + 1] * r_frac;
+                                b_sum += src[p + 2] * r_frac;
+                                a_sum += src[p + 3] * r_frac;
+                                weight_sum += r_frac;
+                            }
+                        }
+                        
+                        // 平均を求めて格納
+                        const dstP = rowOffset + (x * 4);
+                        dst[dstP] = r_sum / weight_sum;
+                        dst[dstP + 1] = g_sum / weight_sum;
+                        dst[dstP + 2] = b_sum / weight_sum;
+                        dst[dstP + 3] = a_sum / weight_sum;
+                    }
+                }
+            }
+
+            // 垂直方向のBox Blur (小数点の半径に対応)
+            function boxBlurVertical(src, dst, w, h, r) {
+                if (r <= 0) return;
+                
+                const r_int = Math.floor(r);
+                const r_frac = r - r_int;
+                const rowSize = w * 4;
+                
+                for (let x = 0; x < w; x++) {
+                    const colOffset = x * 4;
+                    
+                    for (let y = 0; y < h; y++) {
+                        let r_sum = 0, g_sum = 0, b_sum = 0, a_sum = 0;
+                        let weight_sum = 0;
+                        
+                        const minY = Math.max(0, y - r_int);
+                        const maxY = Math.min(h - 1, y + r_int);
+                        
+                        for (let iy = minY; iy <= maxY; iy++) {
+                            const p = (iy * rowSize) + colOffset;
+                            r_sum += src[p];
+                            g_sum += src[p + 1];
+                            b_sum += src[p + 2];
+                            a_sum += src[p + 3];
+                            weight_sum += 1;
+                        }
+                        
+                        // 小数部分の処理 (上側)
+                        if (r_frac > 0) {
+                            const topY = y - r_int - 1;
+                            if (topY >= 0) {
+                                const p = (topY * rowSize) + colOffset;
+                                r_sum += src[p] * r_frac;
+                                g_sum += src[p + 1] * r_frac;
+                                b_sum += src[p + 2] * r_frac;
+                                a_sum += src[p + 3] * r_frac;
+                                weight_sum += r_frac;
+                            }
+                            
+                            // 小数部分の処理 (下側)
+                            const bottomY = y + r_int + 1;
+                            if (bottomY < h) {
+                                const p = (bottomY * rowSize) + colOffset;
+                                r_sum += src[p] * r_frac;
+                                g_sum += src[p + 1] * r_frac;
+                                b_sum += src[p + 2] * r_frac;
+                                a_sum += src[p + 3] * r_frac;
+                                weight_sum += r_frac;
+                            }
+                        }
+                        
+                        const dstP = (y * rowSize) + colOffset;
+                        dst[dstP] = r_sum / weight_sum;
+                        dst[dstP + 1] = g_sum / weight_sum;
+                        dst[dstP + 2] = b_sum / weight_sum;
+                        dst[dstP + 3] = a_sum / weight_sum;
+                    }
+                }
+            }
+
+            // Sobelフィルタを用いたエッジ検出 (輝度ベース)
+            function detectEdges(src, w, h) {
+                const edgeMap = new Float32Array(w * h);
+                const rowSize = w * 4;
+
+                const getLuma = (idx) => 0.299 * src[idx] + 0.587 * src[idx + 1] + 0.114 * src[idx + 2];
+
+                for (let y = 1; y < h - 1; y++) {
+                    for (let x = 1; x < w - 1; x++) {
+                        const i = (y * w + x) * 4;
+                        
+                        // 周囲8ピクセルのインデックス
+                        const tl = i - rowSize - 4; const tc = i - rowSize; const tr = i - rowSize + 4;
+                        const cl = i - 4;                                   const cr = i + 4;
+                        const bl = i + rowSize - 4; const bc = i + rowSize; const br = i + rowSize + 4;
+
+                        // Sobel Gx
+                        const gx = -1 * getLuma(tl) + 1 * getLuma(tr)
+                                 - 2 * getLuma(cl) + 2 * getLuma(cr)
+                                 - 1 * getLuma(bl) + 1 * getLuma(br);
+                                 
+                        // Sobel Gy
+                        const gy = -1 * getLuma(tl) - 2 * getLuma(tc) - 1 * getLuma(tr)
+                                 + 1 * getLuma(bl) + 2 * getLuma(bc) + 1 * getLuma(br);
+
+                        // 強度を計算
+                        edgeMap[y * w + x] = Math.sqrt(gx * gx + gy * gy);
+                    }
+                }
+                return edgeMap;
+            }
+
+        });
+    </script>
+</body>
+</html>
