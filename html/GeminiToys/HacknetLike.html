@@ -1,0 +1,590 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hacknet Simulator - Pure JS Edition</title>
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css" rel="stylesheet">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Fira+Code:wght@300;400;500;700&display=swap');
+
+        body {
+            background-color: #000;
+            color: #10b981;
+            font-family: 'Fira Code', monospace;
+            overflow: hidden;
+            height: 100vh;
+        }
+
+        .scanline {
+            width: 100%;
+            height: 100px;
+            z-index: 100;
+            background: linear-gradient(0deg, rgba(0, 0, 0, 0) 0%, rgba(16, 185, 129, 0.05) 50%, rgba(0, 0, 0, 0) 100%);
+            opacity: 0.1;
+            position: absolute;
+            bottom: 100%;
+            animation: scanline 6s linear infinite;
+            pointer-events: none;
+        }
+
+        @keyframes scanline {
+            0% { bottom: 100%; }
+            100% { bottom: -100px; }
+        }
+
+        .terminal-scroll::-webkit-scrollbar { width: 4px; }
+        .terminal-scroll::-webkit-scrollbar-track { background: transparent; }
+        .terminal-scroll::-webkit-scrollbar-thumb { background: #065f46; border-radius: 2px; }
+
+        .crt::before {
+            content: " ";
+            display: block;
+            position: absolute;
+            top: 0; left: 0; bottom: 0; right: 0;
+            background: linear-gradient(rgba(18, 16, 16, 0) 50%, rgba(0, 0, 0, 0.25) 50%), linear-gradient(90deg, rgba(255, 0, 0, 0.06), rgba(0, 255, 0, 0.02), rgba(0, 0, 255, 0.06));
+            z-index: 2;
+            background-size: 100% 2px, 3px 100%;
+            pointer-events: none;
+        }
+
+        .node-btn:hover {
+            box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+        }
+
+        .node-active {
+            border-color: #10b981 !important;
+            background-color: rgba(16, 185, 129, 0.1) !important;
+        }
+    </style>
+</head>
+<body class="crt">
+    <div class="scanline"></div>
+
+    <!-- UI Overlay -->
+    <div class="h-full flex flex-col p-2 gap-2 relative z-10">
+        
+        <!-- Header -->
+        <header class="flex justify-between items-center px-4 py-2 bg-black/80 border border-emerald-900/50 rounded shadow-lg">
+            <div class="flex items-center gap-3">
+                <i class="fas fa-terminal text-xl"></i>
+                <span class="font-bold tracking-[0.2em] text-lg">HACKNET_OS v2.0.4</span>
+            </div>
+            <div id="trace-container" class="hidden px-6 py-1 bg-red-950 border border-red-500 animate-pulse text-red-500 font-bold">
+                TRACE DETECTED: <span id="trace-timer">60</span>s
+            </div>
+            <div class="text-xs text-emerald-800">
+                HOST: 192.168.0.10 | ADMIN: root
+            </div>
+        </header>
+
+        <!-- Main Content -->
+        <div class="flex-1 grid grid-cols-12 gap-2 overflow-hidden">
+            
+            <!-- Left Side: RAM & NetMap -->
+            <div class="col-span-3 flex flex-col gap-2 overflow-hidden">
+                <!-- RAM -->
+                <section class="h-[35%] border border-emerald-900/30 bg-black/60 p-3 rounded flex flex-col">
+                    <div class="flex justify-between text-[10px] font-bold mb-2 text-emerald-700">
+                        <span><i class="fas fa-microchip mr-1"></i> RAM ALLOCATION</span>
+                        <span id="ram-text">0 / 4000 MB</span>
+                    </div>
+                    <div class="w-full h-2 bg-emerald-950 rounded-full overflow-hidden mb-3">
+                        <div id="ram-bar" class="h-full bg-emerald-500 transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                    <div id="process-list" class="flex-1 overflow-y-auto text-[10px] space-y-2 terminal-scroll">
+                        <!-- Processes inject here -->
+                    </div>
+                </section>
+
+                <!-- NetMap -->
+                <section class="flex-1 border border-emerald-900/30 bg-black/60 p-3 rounded overflow-hidden flex flex-col">
+                    <div class="text-[10px] font-bold mb-4 text-emerald-700 border-b border-emerald-900/20 pb-1 uppercase">
+                        <i class="fas fa-network-wired mr-1"></i> Global NetMap
+                    </div>
+                    <div id="netmap" class="flex-1 grid grid-cols-3 gap-3 overflow-y-auto terminal-scroll p-1 content-start">
+                        <!-- Nodes inject here -->
+                    </div>
+                </section>
+            </div>
+
+            <!-- Middle: Terminal -->
+            <div class="col-span-6 flex flex-col border border-emerald-900/40 bg-black/30 rounded overflow-hidden relative">
+                <div id="terminal-output" class="flex-1 p-4 overflow-y-auto text-sm space-y-1 terminal-scroll font-mono">
+                    <div class="text-emerald-800">Hacknet OS v2.0.4 - Initialized successfully.</div>
+                    <div class="text-emerald-800">Connection established to local kernel...</div>
+                    <div class="text-cyan-600 italic">Type "help" to see available commands.</div>
+                </div>
+                <div class="flex items-center px-4 py-2 border-t border-emerald-900/40 bg-emerald-950/10">
+                    <span class="mr-2 text-emerald-400 font-bold">$</span>
+                    <input type="text" id="terminal-input" class="flex-1 bg-transparent border-none outline-none text-emerald-400" autofocus spellcheck="false">
+                </div>
+            </div>
+
+            <!-- Right Side: Security & Files -->
+            <div class="col-span-3 flex flex-col gap-2 overflow-hidden">
+                <!-- Status -->
+                <section class="h-[45%] border border-emerald-900/30 bg-black/60 p-4 rounded flex flex-col">
+                    <div class="text-[10px] font-bold mb-4 text-emerald-700 border-b border-emerald-900/20 pb-1 uppercase">
+                        <i class="fas fa-shield-halved mr-1"></i> Target Security
+                    </div>
+                    <div id="node-info" class="flex-1">
+                        <!-- Info inject here -->
+                    </div>
+                </section>
+
+                <!-- Files -->
+                <section class="flex-1 border border-emerald-900/30 bg-black/60 p-4 rounded flex flex-col overflow-hidden">
+                    <div class="text-[10px] font-bold mb-2 text-emerald-700 uppercase flex justify-between">
+                        <span><i class="fas fa-folder-open mr-1"></i> File System</span>
+                        <span id="current-path-display" class="text-emerald-900">/home</span>
+                    </div>
+                    <div id="file-list" class="flex-1 overflow-y-auto terminal-scroll space-y-1">
+                        <!-- Files inject here -->
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <!-- Game Over Screen -->
+    <div id="game-over" class="fixed inset-0 bg-red-950 z-[1000] hidden flex flex-col items-center justify-center text-red-500 font-mono text-center p-10">
+        <i class="fas fa-triangle-exclamation text-8xl mb-6 animate-pulse"></i>
+        <h1 class="text-6xl font-black mb-4">CONNECTION TERMINATED</h1>
+        <p class="text-xl max-w-2xl mb-10">Your signal was traced back to your physical location. The local authorities have been dispatched to your residence. This session is ended.</p>
+        <button onclick="location.reload()" class="px-10 py-3 border-2 border-red-500 hover:bg-red-500 hover:text-black font-bold transition-all uppercase tracking-widest">Reboot System</button>
+    </div>
+
+    <script>
+        // --- Game Constants & Data ---
+        const MAX_RAM = 4000;
+        const RAM_COST = 1200;
+
+        const INITIAL_NODES = {
+            'localhost': {
+                name: 'Player Machine',
+                ip: '192.168.0.10',
+                files: {
+                    '/home': { 'notes.txt': 'Next target: 124.55.10.1. Scan to find it.' },
+                    '/bin': { 'SSHCrack.exe': 'Crack Port 22', 'PortHack.exe': 'Take Root' },
+                    '/log': { 'boot.log': 'System startup... ok.' }
+                },
+                ports: {},
+                reqPorts: 0,
+                isHacked: true
+            },
+            '124.55.10.1': {
+                name: 'Small Biz Server',
+                ip: '124.55.10.1',
+                files: {
+                    '/home': { 'contact.txt': 'CEO: John Smith. Password hint: 1234' },
+                    '/bin': { 'FTPBounce.exe': 'Crack Port 21' },
+                    '/log': {}
+                },
+                ports: { 22: { open: false, tool: 'SSHCrack' } },
+                reqPorts: 1,
+                isHacked: false
+            },
+            '211.45.9.12': {
+                name: 'Media Corp DB',
+                ip: '211.45.9.12',
+                files: {
+                    '/home': { 'data_leak.doc': 'User data exported successfully.' },
+                    '/bin': { 'SMTPOverflow.exe': 'Crack Port 25' },
+                    '/log': {}
+                },
+                ports: { 21: { open: false, tool: 'FTPBounce' }, 22: { open: false, tool: 'SSHCrack' } },
+                reqPorts: 2,
+                isHacked: false
+            },
+            '8.8.8.8': {
+                name: 'Global DNS Cluster',
+                ip: '8.8.8.8',
+                files: {
+                    '/home': { 'secrets.md': 'Project Hacknet phase 2 is starting.' },
+                    '/bin': { 'WebServerWorm.exe': 'Crack Port 80' },
+                    '/log': {}
+                },
+                ports: { 21: { open: false, tool: 'FTPBounce' }, 22: { open: false, tool: 'SSHCrack' }, 25: { open: false, tool: 'SMTPOverflow' } },
+                reqPorts: 2,
+                isHacked: false
+            },
+            '192.168.1.1': {
+                name: 'Corporate Backbone',
+                ip: '192.168.1.1',
+                files: {
+                    '/home': { 'top_secret.pdf': 'ENCRYPTED CONTENT' },
+                    '/bin': { 'SQLInject.exe': 'Crack Port 1433' },
+                    '/log': {}
+                },
+                ports: { 22: { open: false, tool: 'SSHCrack' }, 25: { open: false, tool: 'SMTPOverflow' }, 80: { open: false, tool: 'WebServerWorm' } },
+                reqPorts: 3,
+                isHacked: false
+            }
+        };
+
+        // --- State Management ---
+        let nodes = INITIAL_NODES;
+        let currentIp = 'localhost';
+        let currentPath = '/home';
+        let processes = [];
+        let discoveredIps = ['localhost', '124.55.10.1'];
+        let traceTimer = null;
+        let traceSeconds = 60;
+        let myBin = ['SSHCrack.exe', 'PortHack.exe'];
+
+        const terminalOutput = document.getElementById('terminal-output');
+        const terminalInput = document.getElementById('terminal-input');
+
+        // --- Core Functions ---
+
+        function addOutput(text, type = 'default') {
+            const div = document.createElement('div');
+            const colors = {
+                error: 'text-red-500',
+                success: 'text-emerald-400 font-bold',
+                warning: 'text-yellow-500',
+                command: 'text-emerald-300 italic',
+                info: 'text-cyan-500'
+            };
+            if (colors[type]) div.className = colors[type];
+            div.innerText = text;
+            terminalOutput.appendChild(div);
+            terminalOutput.scrollTop = terminalOutput.scrollHeight;
+        }
+
+        function updateUI() {
+            const node = nodes[currentIp];
+            
+            // Update Node Info
+            const nodeInfo = document.getElementById('node-info');
+            const portListHtml = Object.entries(node.ports).map(([port, data]) => `
+                <div class="flex justify-between items-center p-2 border border-emerald-900/30 rounded mb-1 bg-black/40">
+                    <div class="flex flex-col">
+                        <span class="text-[8px] text-emerald-800">PORT</span>
+                        <span class="text-xs font-bold">${port} - ${data.tool}</span>
+                    </div>
+                    <span class="${data.open ? 'text-emerald-400' : 'text-red-900'} text-[10px] font-bold">
+                        ${data.open ? 'OPEN' : 'LOCKED'}
+                    </span>
+                </div>
+            `).join('');
+
+            nodeInfo.innerHTML = `
+                <div class="mb-4">
+                    <h3 class="text-emerald-300 font-bold text-lg">${node.name}</h3>
+                    <p class="text-[10px] text-emerald-700">${node.ip}</p>
+                </div>
+                <div class="mb-4">
+                    <p class="text-[10px] text-emerald-800 uppercase font-bold mb-2">Required Open Ports: ${node.reqPorts}</p>
+                    ${portListHtml || '<p class="text-[10px] text-emerald-900">No security detected.</p>'}
+                </div>
+                <div class="mt-auto">
+                    ${node.isHacked ? 
+                        '<div class="bg-emerald-500/10 border border-emerald-500 p-2 text-center text-xs font-bold animate-pulse">ADMIN ACCESS ENABLED</div>' : 
+                        '<div class="bg-red-950 border border-red-900 p-2 text-center text-xs font-bold text-red-900">RESTRICTED ACCESS</div>'
+                    }
+                </div>
+            `;
+
+            // Update File System
+            document.getElementById('current-path-display').innerText = currentPath;
+            const fileList = document.getElementById('file-list');
+            const files = node.files[currentPath] || {};
+            
+            fileList.innerHTML = `
+                <button onclick="handleCommandDirect('cd ..')" class="w-full text-left p-1 text-emerald-700 hover:text-emerald-400 text-xs">
+                    <i class="fas fa-folder-arrow-up mr-2"></i> .. [PARENT]
+                </button>
+            ` + Object.keys(files).map(name => `
+                <button onclick="handleCommandDirect('cat ${name}')" class="w-full text-left p-1 hover:bg-emerald-900/10 flex items-center gap-2 group transition-colors">
+                    <i class="fas ${name.endsWith('.exe') ? 'fa-bolt text-yellow-600' : 'fa-file-lines text-emerald-800'} group-hover:text-emerald-400"></i>
+                    <span class="text-xs">${name}</span>
+                </button>
+            `).join('');
+
+            // Update NetMap
+            const netmap = document.getElementById('netmap');
+            netmap.innerHTML = discoveredIps.map(ip => {
+                const n = nodes[ip];
+                return `
+                    <button onclick="handleCommandDirect('connect ${ip}')" class="node-btn w-full aspect-square border-2 border-emerald-900/30 rounded flex flex-col items-center justify-center p-1 transition-all ${ip === currentIp ? 'node-active' : 'bg-black/20'}">
+                        <span class="text-[7px] text-emerald-900 font-bold uppercase truncate w-full text-center">${n.name}</span>
+                        <i class="fas fa-database text-lg my-1 ${ip === currentIp ? 'text-emerald-400' : 'text-emerald-900'}"></i>
+                        <span class="text-[6px] opacity-30">${ip}</span>
+                    </button>
+                `;
+            }).join('');
+
+            // Update RAM
+            const usedRam = processes.reduce((acc, p) => acc + p.ram, 0);
+            const ramPercent = (usedRam / MAX_RAM) * 100;
+            document.getElementById('ram-text').innerText = `${usedRam} / ${MAX_RAM} MB`;
+            document.getElementById('ram-bar').style.width = `${ramPercent}%`;
+            document.getElementById('ram-bar').style.backgroundColor = ramPercent > 80 ? '#ef4444' : '#10b981';
+
+            const processList = document.getElementById('process-list');
+            processList.innerHTML = processes.map(p => `
+                <div class="flex flex-col border-b border-emerald-900/20 pb-1">
+                    <div class="flex justify-between mb-1">
+                        <span class="truncate pr-2 uppercase">${p.name}</span>
+                        <span>${p.progress}%</span>
+                    </div>
+                    <div class="w-full h-1 bg-emerald-950">
+                        <div class="h-full bg-emerald-400" style="width: ${p.progress}%"></div>
+                    </div>
+                </div>
+            `).join('');
+        }
+
+        function startProcess(name, port, speed) {
+            const node = nodes[currentIp];
+            if (currentIp === 'localhost') return addOutput('ERROR: Localhost cannot be targeted.', 'error');
+            if (!node.ports[port]) return addOutput(`ERROR: Port ${port} not found.`, 'error');
+            if (node.ports[port].open) return addOutput(`INFO: Port ${port} is already open.`, 'info');
+
+            const usedRam = processes.reduce((acc, p) => acc + p.ram, 0);
+            if (usedRam + RAM_COST > MAX_RAM) return addOutput('CRITICAL: Insufficient RAM.', 'error');
+
+            const procId = Math.random().toString(16).slice(2, 6);
+            processes.push({
+                id: procId,
+                name: `${name} (${port})`,
+                ip: currentIp,
+                port: port,
+                progress: 0,
+                speed: speed,
+                ram: RAM_COST
+            });
+
+            addOutput(`INITIATING: ${name} on port ${port}...`, 'warning');
+            if (traceTimer === null && !node.isHacked) {
+                startTrace();
+            }
+        }
+
+        function startTrace() {
+            traceTimer = setInterval(() => {
+                traceSeconds--;
+                document.getElementById('trace-timer').innerText = traceSeconds;
+                document.getElementById('trace-container').classList.remove('hidden');
+                if (traceSeconds <= 0) {
+                    document.getElementById('game-over').classList.remove('hidden');
+                    clearInterval(traceTimer);
+                }
+            }, 1000);
+        }
+
+        function stopTrace() {
+            clearInterval(traceTimer);
+            traceTimer = null;
+            traceSeconds = 60;
+            document.getElementById('trace-container').classList.add('hidden');
+        }
+
+        function handleCommandDirect(fullCmd) {
+            terminalInput.value = fullCmd;
+            const event = new KeyboardEvent('keydown', { key: 'Enter' });
+            terminalInput.dispatchEvent(event);
+        }
+
+        // --- Terminal Loop ---
+
+        terminalInput.addEventListener('keydown', (e) => {
+            if (e.key === 'Enter') {
+                const fullCmd = terminalInput.value.trim();
+                if (!fullCmd) return;
+
+                addOutput(`> ${fullCmd}`, 'command');
+                terminalInput.value = '';
+
+                const parts = fullCmd.split(' ');
+                const cmd = parts[0].toLowerCase();
+                const args = parts.slice(1);
+                const node = nodes[currentIp];
+
+                switch (cmd) {
+                    case 'help':
+                        addOutput('Navigation: connect [IP], scan, dc, ls, cd [DIR]', 'info');
+                        addOutput('Files: cat [FILE], scp [FILE], rm [FILE]', 'info');
+                        addOutput('Hacking: probe, [EXE NAME], PortHack', 'info');
+                        addOutput('System: ps, kill [ID], help', 'info');
+                        break;
+
+                    case 'ls':
+                        const dir = node.files[currentPath] || {};
+                        const names = Object.keys(dir);
+                        if (names.length === 0) addOutput('[EMPTY DIRECTORY]');
+                        else names.forEach(n => addOutput(` - ${n}`));
+                        break;
+
+                    case 'cd':
+                        const target = args[0];
+                        if (!target || target === '..') {
+                            currentPath = '/home';
+                        } else if (target === '/' || target === '/home' || target === '/bin' || target === '/log') {
+                            currentPath = target;
+                        } else if (node.files[target] && typeof node.files[target] === 'object') {
+                            currentPath = target.startsWith('/') ? target : `/${target}`;
+                        } else {
+                            addOutput(`cd: no such directory: ${target}`, 'error');
+                        }
+                        break;
+
+                    case 'cat':
+                        const file = args[0];
+                        const content = (node.files[currentPath] || {})[file];
+                        if (content) addOutput(content);
+                        else addOutput(`cat: ${file}: No such file`, 'error');
+                        break;
+
+                    case 'connect':
+                        if (nodes[args[0]]) {
+                            currentIp = args[0];
+                            currentPath = '/home';
+                            addOutput(`CONNECTING TO ${nodes[currentIp].name}...`, 'success');
+                            addOutput(`Connection established.`);
+                        } else addOutput('CONNECT ERROR: Host not found.', 'error');
+                        break;
+
+                    case 'dc':
+                        currentIp = 'localhost';
+                        currentPath = '/home';
+                        addOutput('DISCONNECTED.', 'warning');
+                        break;
+
+                    case 'scan':
+                        addOutput('Scanning neighborhood...');
+                        const next = Object.keys(nodes).filter(ip => !discoveredIps.includes(ip));
+                        if (next.length > 0) {
+                            discoveredIps.push(next[0]);
+                            addOutput(`NEW NODE FOUND: ${next[0]}`, 'success');
+                        } else addOutput('No new nodes detected.');
+                        break;
+
+                    case 'probe':
+                        addOutput(`SCANNING ${node.name}...`, 'warning');
+                        addOutput(`IP: ${node.ip}`);
+                        addOutput(`PORTS OPEN: ${Object.values(node.ports).filter(p => p.open).length} / ${Object.keys(node.ports).length}`);
+                        addOutput(`SECURITY SYSTEM: REQUIRES ${node.reqPorts} PORTS OPENED.`, 'warning');
+                        if (traceTimer === null && !node.isHacked) startTrace();
+                        break;
+
+                    case 'sshcrack':
+                        if (myBin.includes('SSHCrack.exe')) startProcess('SSHCrack', 22, 10);
+                        else addOutput('sshcrack: command not found. (Missing .exe in /bin)', 'error');
+                        break;
+
+                    case 'ftpbounce':
+                        if (myBin.includes('FTPBounce.exe')) startProcess('FTPBounce', 21, 8);
+                        else addOutput('ftpbounce: command not found.', 'error');
+                        break;
+
+                    case 'smtpoverflow':
+                        if (myBin.includes('SMTPOverflow.exe')) startProcess('SMTPOverflow', 25, 7);
+                        else addOutput('smtpoverflow: command not found.', 'error');
+                        break;
+
+                    case 'webserverworm':
+                        if (myBin.includes('WebServerWorm.exe')) startProcess('WebServerWorm', 80, 5);
+                        else addOutput('webserverworm: command not found.', 'error');
+                        break;
+
+                    case 'sqlinject':
+                        if (myBin.includes('SQLInject.exe')) startProcess('SQLInject', 1433, 4);
+                        else addOutput('sqlinject: command not found.', 'error');
+                        break;
+
+                    case 'porthack':
+                        if (!myBin.includes('PortHack.exe')) {
+                            addOutput('porthack: command not found.', 'error');
+                            break;
+                        }
+                        const openCount = Object.values(node.ports).filter(p => p.open).length;
+                        if (openCount >= node.reqPorts) {
+                            addOutput('RUNNING PORTHACK...', 'warning');
+                            setTimeout(() => {
+                                node.isHacked = true;
+                                stopTrace();
+                                addOutput('SYSTEM BREACH SUCCESSFUL. ROOT PRIVILEGES OBTAINED.', 'success');
+                            }, 2000);
+                        } else addOutput(`FAILURE: Insufficient ports open (${openCount}/${node.reqPorts}).`, 'error');
+                        break;
+
+                    case 'scp':
+                        const targetFile = args[0];
+                        if (node.isHacked || currentIp === 'localhost') {
+                            const sourceDir = node.files[currentPath] || {};
+                            if (sourceDir[targetFile]) {
+                                if (targetFile.endsWith('.exe')) {
+                                    if (!myBin.includes(targetFile)) {
+                                        myBin.push(targetFile);
+                                        nodes['localhost'].files['/bin'][targetFile] = sourceDir[targetFile];
+                                        addOutput(`DOWNLOAD SUCCESSFUL: ${targetFile} saved to /bin`, 'success');
+                                    } else addOutput(`INFO: ${targetFile} already exists on localhost.`, 'info');
+                                } else {
+                                    addOutput(`DOWNLOADED: ${targetFile} (Stored in buffer)`);
+                                }
+                            } else addOutput(`scp: ${targetFile}: File not found.`, 'error');
+                        } else addOutput('scp: Permission denied (Root access required).', 'error');
+                        break;
+
+                    case 'ps':
+                        if (processes.length === 0) addOutput('No active processes.');
+                        else processes.forEach(p => addOutput(`ID: ${p.id} | ${p.name} | ${p.progress}%`));
+                        break;
+
+                    case 'kill':
+                        const killId = args[0];
+                        processes = processes.filter(p => p.id !== killId);
+                        addOutput(`Process ${killId} terminated.`);
+                        break;
+
+                    default:
+                        // Support .exe names as commands directly
+                        const exeName = cmd.endsWith('.exe') ? cmd : cmd + '.exe';
+                        if (myBin.includes(exeName)) {
+                            handleCommandDirect(cmd.replace('.exe', ''));
+                        } else {
+                            addOutput(`Command not found: ${cmd}`, 'error');
+                        }
+                }
+                updateUI();
+            }
+        });
+
+        // --- Background Loop ---
+
+        setInterval(() => {
+            let changed = false;
+            processes.forEach(p => {
+                p.progress = Math.min(100, p.progress + p.speed);
+                if (p.progress >= 100) {
+                    const targetNode = nodes[p.ip];
+                    if (targetNode.ports[p.port]) {
+                        targetNode.ports[p.port].open = true;
+                        addOutput(`COMPLETED: Port ${p.port} opened on ${p.ip}`, 'success');
+                        changed = true;
+                    }
+                }
+            });
+
+            const beforeCount = processes.length;
+            processes = processes.filter(p => p.progress < 100);
+            if (processes.length !== beforeCount || changed) {
+                updateUI();
+            }
+        }, 1000);
+
+        // Initial Boot
+        window.onload = () => {
+            updateUI();
+            addOutput('System Boot Complete.');
+            addOutput('Ready for connection.');
+        };
+    </script>
+</body>
+</html>

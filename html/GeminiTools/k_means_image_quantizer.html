@@ -1,0 +1,755 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>K-Means Color Quantizer</title>
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+    <style>
+        :root {
+            color-scheme: dark;
+        }
+        body {
+            background-color: #111827; /* Tailwind gray-900 */
+            color: #f3f4f6; /* Tailwind gray-100 */
+        }
+        /* Custom Scrollbar for a premium look */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1f2937; 
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; 
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; 
+        }
+        /* Custom Range Slider */
+        input[type=range] {
+            -webkit-appearance: none;
+            width: 100%;
+            background: transparent;
+        }
+        input[type=range]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            height: 16px;
+            width: 16px;
+            border-radius: 50%;
+            background: #3b82f6;
+            cursor: pointer;
+            margin-top: -6px;
+            box-shadow: 0 0 10px rgba(59, 130, 246, 0.5);
+        }
+        input[type=range]::-webkit-slider-runnable-track {
+            width: 100%;
+            height: 4px;
+            cursor: pointer;
+            background: #4b5563;
+            border-radius: 2px;
+        }
+        input[type=range]:focus {
+            outline: none;
+        }
+        .canvas-container {
+            background-image: 
+                linear-gradient(45deg, #1f2937 25%, transparent 25%), 
+                linear-gradient(-45deg, #1f2937 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #1f2937 75%), 
+                linear-gradient(-45deg, transparent 75%, #1f2937 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col font-sans">
+
+    <header class="bg-gray-800 border-b border-gray-700 p-4 shadow-md sticky top-0 z-10">
+        <div class="container mx-auto flex items-center justify-between">
+            <h1 class="text-xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-blue-400 to-indigo-400 flex items-center gap-2">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-blue-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                </svg>
+                K-Means Image Quantizer
+            </h1>
+        </div>
+    </header>
+
+    <main class="flex-grow container mx-auto p-4 lg:p-6 grid grid-cols-1 lg:grid-cols-12 gap-6">
+        
+        <!-- Controls Panel -->
+        <aside class="lg:col-span-4 flex flex-col gap-5">
+            <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg flex flex-col gap-4">
+                <h2 class="text-lg font-semibold border-b border-gray-700 pb-2">Image Source</h2>
+                
+                <label class="w-full flex flex-col items-center px-4 py-6 bg-gray-900 text-blue-400 rounded-lg shadow-inner tracking-wide border border-dashed border-gray-600 cursor-pointer hover:bg-gray-750 hover:border-blue-400 transition-colors duration-300">
+                    <svg class="w-8 h-8" fill="currentColor" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20">
+                        <path d="M16.88 9.1A4 4 0 0 1 16 17H5a5 5 0 0 1-1-9.9V7a3 3 0 0 1 4.52-2.59A4.98 4.98 0 0 1 17 8c0 .38-.04.74-.12 1.1zM11 11h3l-4-4-4 4h3v3h2v-3z" />
+                    </svg>
+                    <span class="mt-2 text-sm leading-normal">Select an image</span>
+                    <input type='file' id="imageInput" class="hidden" accept="image/png, image/jpeg, image/webp" />
+                </label>
+            </div>
+
+            <div class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg flex flex-col gap-4">
+                <h2 class="text-lg font-semibold border-b border-gray-700 pb-2">K-Means Parameters</h2>
+                
+                <!-- K (Colors) -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm text-gray-300 font-medium" title="Number of clusters (colors) to generate.">Colors (k)</label>
+                        <input type="number" id="kNumber" min="2" max="256" value="16" class="w-16 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-blue-500">
+                    </div>
+                    <input type="range" id="kSlider" min="2" max="256" value="16">
+                    <p class="text-xs text-gray-500 mt-1">Number of distinct colors in the final image.</p>
+                </div>
+
+                <!-- Max Iterations -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm text-gray-300 font-medium" title="Maximum number of times the algorithm refines the clusters.">Max Iterations</label>
+                        <input type="number" id="iterNumber" min="1" max="100" value="10" class="w-16 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-blue-500">
+                    </div>
+                    <input type="range" id="iterSlider" min="1" max="100" value="10">
+                    <p class="text-xs text-gray-500 mt-1">Higher values may yield better quality but take longer.</p>
+                </div>
+
+                <!-- Sampling Step -->
+                <div>
+                    <div class="flex justify-between items-center mb-1">
+                        <label class="text-sm text-gray-300 font-medium" title="Pixel step for extracting sample points.">Sampling Step</label>
+                        <input type="number" id="sampleNumber" min="1" max="20" value="4" class="w-16 bg-gray-900 border border-gray-600 rounded px-2 py-1 text-xs text-right focus:outline-none focus:border-blue-500">
+                    </div>
+                    <input type="range" id="sampleSlider" min="1" max="20" value="4">
+                    <p class="text-xs text-gray-500 mt-1">Larger step = faster processing, slightly less accurate palette.</p>
+                </div>
+
+                <button id="quantizeBtn" class="mt-2 w-full bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 text-white font-semibold py-2.5 px-4 rounded-lg shadow-lg transition-all transform hover:scale-[1.02] active:scale-95 disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center gap-2">
+                    <svg id="btnSpinner" class="animate-spin -ml-1 mr-2 h-5 w-5 text-white hidden" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                        <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                        <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                    </svg>
+                    <span>Quantize Image</span>
+                </button>
+
+                <button id="downloadBtn" class="mt-2 w-full bg-gray-700 hover:bg-gray-600 text-white font-semibold py-2.5 px-4 rounded-lg shadow transition-colors disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2" disabled>
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"></path></svg>
+                    <span>Download Image</span>
+                </button>
+
+                <div id="progressContainer" class="hidden mt-2">
+                    <div class="flex justify-between text-xs text-gray-400 mb-1">
+                        <span id="progressText">Initializing...</span>
+                        <span id="progressPercent">0%</span>
+                    </div>
+                    <div class="w-full bg-gray-700 rounded-full h-2">
+                        <div id="progressBar" class="bg-blue-500 h-2 rounded-full transition-all duration-300" style="width: 0%"></div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Palette Display -->
+            <div id="palettePanel" class="bg-gray-800 p-5 rounded-xl border border-gray-700 shadow-lg hidden flex-col gap-3">
+                <h2 class="text-lg font-semibold border-b border-gray-700 pb-2">Extracted Palette</h2>
+                <p class="text-xs text-gray-400">Click a color to copy its HEX code.</p>
+                <div id="paletteGrid" class="flex flex-wrap gap-2 mt-2">
+                    <!-- Color swatches injected here -->
+                </div>
+            </div>
+        </aside>
+
+        <!-- Preview Panel -->
+        <section class="lg:col-span-8 flex flex-col gap-4">
+            <div class="bg-gray-800 rounded-xl border border-gray-700 shadow-lg flex-grow flex flex-col overflow-hidden">
+                
+                <!-- Tabs -->
+                <div class="flex border-b border-gray-700 bg-gray-900/50">
+                    <button id="tabOriginal" class="flex-1 py-3 text-sm font-medium text-gray-400 hover:text-gray-200 transition-colors border-b-2 border-transparent">Original</button>
+                    <button id="tabQuantized" class="flex-1 py-3 text-sm font-medium text-blue-400 border-b-2 border-blue-500 transition-colors">Quantized</button>
+                </div>
+
+                <!-- Canvas Wrapper -->
+                <div id="canvasArea" class="flex-grow p-4 flex items-center justify-center bg-gray-900 relative min-h-[400px] overflow-hidden canvas-container cursor-grab">
+                    
+                    <div id="placeholder" class="flex flex-col items-center justify-center text-gray-500 absolute inset-0 z-10 pointer-events-none">
+                        <svg class="w-16 h-16 mb-4 opacity-50" fill="none" stroke="currentColor" viewBox="0 0 24 24" xmlns="http://www.w3.org/2000/svg"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z"></path></svg>
+                        <p>Upload an image to see preview</p>
+                    </div>
+
+                    <!-- Zoom Container -->
+                    <div id="zoomContainer" class="absolute w-full h-full flex items-center justify-center" style="transform-origin: 0 0;">
+                        <!-- Canvases are layered and toggled via opacity/z-index -->
+                        <canvas id="originalCanvas" class="max-w-full max-h-full object-contain absolute opacity-0 pointer-events-none transition-opacity duration-300"></canvas>
+                        <canvas id="quantizedCanvas" class="max-w-full max-h-full object-contain absolute opacity-0 pointer-events-none transition-opacity duration-300"></canvas>
+                    </div>
+                </div>
+                
+                <div id="statsBar" class="bg-gray-900/80 p-2 px-4 text-xs text-gray-400 flex justify-between items-center border-t border-gray-700 z-10 relative">
+                    <div>
+                        <span id="resolutionStat" class="mr-4">Resolution: -</span>
+                        <span id="timeStat">Time: -</span>
+                    </div>
+                    <button id="resetZoomBtn" class="text-blue-400 hover:text-blue-300 px-2 py-1 rounded bg-gray-800 border border-gray-700 hidden transition-colors">Reset Zoom</button>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <!-- Toast Message -->
+    <div id="toast" class="fixed bottom-5 right-5 px-4 py-3 rounded shadow-xl transition-opacity duration-300 opacity-0 pointer-events-none z-50 flex items-center gap-2 transform translate-y-2">
+        <span id="toastIcon"></span>
+        <span id="toastMessage" class="font-medium"></span>
+    </div>
+
+    <script>
+        // --- Web Worker Code (Blob) ---
+        // Placing K-Means logic in a worker prevents UI freezing during heavy calculations.
+        const workerCode = `
+        self.onmessage = function(e) {
+            const { imageData, k, maxIter, samplingStep } = e.data;
+            const width = imageData.width;
+            const height = imageData.height;
+            const data = imageData.data;
+            
+            self.postMessage({ type: 'progress', percent: 5, message: 'Sampling pixels...' });
+            
+            // 1. Extract points based on sampling step
+            const points = [];
+            for (let y = 0; y < height; y += samplingStep) {
+                for (let x = 0; x < width; x += samplingStep) {
+                    let i = (y * width + x) * 4;
+                    // Ignore transparent or highly translucent pixels for palette creation
+                    if (data[i+3] > 127) { 
+                        points.push([data[i], data[i+1], data[i+2]]);
+                    }
+                }
+            }
+            
+            if (points.length === 0) {
+                self.postMessage({ type: 'error', message: 'No opaque pixels found in image.' });
+                return;
+            }
+
+            let actualK = Math.min(k, points.length);
+            
+            self.postMessage({ type: 'progress', percent: 10, message: 'Initializing centroids (K-means++)...' });
+            
+            // 2. K-means++ Initialization
+            const centroids = [];
+            // Random first centroid
+            centroids.push(points[Math.floor(Math.random() * points.length)]);
+            
+            let distances = new Float32Array(points.length);
+            
+            for (let c = 1; c < actualK; c++) {
+                let sumSq = 0;
+                for (let i = 0; i < points.length; i++) {
+                    let p = points[i];
+                    let minDistSq = Infinity;
+                    for (let j = 0; j < centroids.length; j++) {
+                        let cPt = centroids[j];
+                        let distSq = (p[0]-cPt[0])**2 + (p[1]-cPt[1])**2 + (p[2]-cPt[2])**2;
+                        if (distSq < minDistSq) minDistSq = distSq;
+                    }
+                    distances[i] = minDistSq;
+                    sumSq += minDistSq;
+                }
+                
+                let rand = Math.random() * sumSq;
+                let cumulative = 0;
+                let selectedIndex = points.length - 1;
+                for (let i = 0; i < points.length; i++) {
+                    cumulative += distances[i];
+                    if (cumulative >= rand) {
+                        selectedIndex = i;
+                        break;
+                    }
+                }
+                centroids.push(points[selectedIndex]);
+            }
+            
+            // 3. Clustering Iterations
+            self.postMessage({ type: 'progress', percent: 20, message: 'Clustering started...' });
+            
+            let assignments = new Int32Array(points.length);
+            let changed = true;
+            let iter = 0;
+            
+            while (changed && iter < maxIter) {
+                changed = false;
+                
+                // Assign points to closest centroid
+                for (let i = 0; i < points.length; i++) {
+                    let p = points[i];
+                    let minDistSq = Infinity;
+                    let bestC = -1;
+                    for (let j = 0; j < centroids.length; j++) {
+                        let cPt = centroids[j];
+                        let distSq = (p[0]-cPt[0])**2 + (p[1]-cPt[1])**2 + (p[2]-cPt[2])**2;
+                        if (distSq < minDistSq) {
+                            minDistSq = distSq;
+                            bestC = j;
+                        }
+                    }
+                    if (assignments[i] !== bestC) {
+                        assignments[i] = bestC;
+                        changed = true;
+                    }
+                }
+                
+                // Update centroids
+                let sums = Array.from({length: actualK}, () => [0, 0, 0, 0]); // r, g, b, count
+                for (let i = 0; i < points.length; i++) {
+                    let cIdx = assignments[i];
+                    let p = points[i];
+                    sums[cIdx][0] += p[0];
+                    sums[cIdx][1] += p[1];
+                    sums[cIdx][2] += p[2];
+                    sums[cIdx][3]++;
+                }
+                
+                for (let j = 0; j < actualK; j++) {
+                    if (sums[j][3] > 0) {
+                        centroids[j] = [
+                            Math.round(sums[j][0] / sums[j][3]),
+                            Math.round(sums[j][1] / sums[j][3]),
+                            Math.round(sums[j][2] / sums[j][3])
+                        ];
+                    }
+                }
+                
+                iter++;
+                let progressPercent = 20 + Math.floor((iter / maxIter) * 40);
+                self.postMessage({ 
+                    type: 'progress', 
+                    percent: progressPercent, 
+                    message: 'Clustering iteration ' + iter + ' / ' + maxIter 
+                });
+            }
+            
+            // 4. Quantize Full Image
+            self.postMessage({ type: 'progress', percent: 65, message: 'Applying new palette to image...' });
+            
+            const outData = new Uint8ClampedArray(data.length);
+            const totalPixels = width * height;
+            let processed = 0;
+            const reportInterval = Math.max(1, Math.floor(totalPixels / 10)); // Report 10 times during mapping
+            
+            for (let i = 0; i < data.length; i += 4) {
+                // If pixel is mostly transparent, keep it as is
+                if (data[i+3] > 0) {
+                    let p = [data[i], data[i+1], data[i+2]];
+                    let minDistSq = Infinity;
+                    let bestC = 0;
+                    for (let j = 0; j < centroids.length; j++) {
+                        let cPt = centroids[j];
+                        let distSq = (p[0]-cPt[0])**2 + (p[1]-cPt[1])**2 + (p[2]-cPt[2])**2;
+                        if (distSq < minDistSq) {
+                            minDistSq = distSq;
+                            bestC = j;
+                        }
+                    }
+                    outData[i]   = centroids[bestC][0];
+                    outData[i+1] = centroids[bestC][1];
+                    outData[i+2] = centroids[bestC][2];
+                    outData[i+3] = data[i+3]; // keep original alpha
+                } else {
+                    outData[i]   = data[i];
+                    outData[i+1] = data[i+1];
+                    outData[i+2] = data[i+2];
+                    outData[i+3] = data[i+3];
+                }
+                
+                processed++;
+                if (processed % reportInterval === 0) {
+                    let pct = 65 + Math.floor((processed / totalPixels) * 30);
+                    self.postMessage({ type: 'progress', percent: pct, message: 'Quantizing pixels...' });
+                }
+            }
+            
+            self.postMessage({ type: 'progress', percent: 100, message: 'Done!' });
+            
+            // 5. Return result
+            self.postMessage({ 
+                type: 'done', 
+                resultData: outData, 
+                palette: centroids,
+                width: width,
+                height: height
+            }, [outData.buffer]); // Transfer buffer for performance
+        };
+        `;
+
+        const workerBlob = new Blob([workerCode], {type: 'application/javascript'});
+        let worker = new Worker(URL.createObjectURL(workerBlob));
+        
+        // DOM Elements
+        const imageInput = document.getElementById('imageInput');
+        const originalCanvas = document.getElementById('originalCanvas');
+        const quantizedCanvas = document.getElementById('quantizedCanvas');
+        const placeholder = document.getElementById('placeholder');
+        
+        const btnQuantize = document.getElementById('quantizeBtn');
+        const btnSpinner = document.getElementById('btnSpinner');
+        const btnDownload = document.getElementById('downloadBtn');
+        
+        const progressContainer = document.getElementById('progressContainer');
+        const progressBar = document.getElementById('progressBar');
+        const progressText = document.getElementById('progressText');
+        const progressPercent = document.getElementById('progressPercent');
+        
+        const palettePanel = document.getElementById('palettePanel');
+        const paletteGrid = document.getElementById('paletteGrid');
+        
+        const tabOriginal = document.getElementById('tabOriginal');
+        const tabQuantized = document.getElementById('tabQuantized');
+        
+        const resolutionStat = document.getElementById('resolutionStat');
+        const timeStat = document.getElementById('timeStat');
+        const resetZoomBtn = document.getElementById('resetZoomBtn');
+        const canvasArea = document.getElementById('canvasArea');
+        const zoomContainer = document.getElementById('zoomContainer');
+        
+        // State
+        let currentImageLoaded = false;
+        let activeTab = 'original'; // 'original' or 'quantized'
+        let hasQuantizedData = false;
+        let startTime = 0;
+
+        // Helper: Show Toast
+        function showToast(message, type = 'success') {
+            const toast = document.getElementById('toast');
+            const msgEl = document.getElementById('toastMessage');
+            const iconEl = document.getElementById('toastIcon');
+            
+            msgEl.textContent = message;
+            toast.className = `fixed bottom-5 right-5 px-4 py-3 rounded shadow-xl transition-all duration-300 z-50 flex items-center gap-2 transform translate-y-0 opacity-100 ${
+                type === 'error' ? 'bg-red-600 text-white' : 'bg-green-600 text-white'
+            }`;
+            
+            if (type === 'error') {
+                iconEl.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"></path></svg>`;
+            } else {
+                iconEl.innerHTML = `<svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24"><path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 13l4 4L19 7"></path></svg>`;
+            }
+            
+            setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-2', 'opacity-0');
+            }, 3000);
+        }
+
+        // Helper: RGB to HEX
+        function rgbToHex(r, g, b) {
+            return "#" + (1 << 24 | r << 16 | g << 8 | b).toString(16).slice(1).toUpperCase();
+        }
+
+        // Helper: Sync Slider and Number inputs
+        function syncInputs(sliderId, numberId) {
+            const slider = document.getElementById(sliderId);
+            const number = document.getElementById(numberId);
+            slider.addEventListener('input', () => { number.value = slider.value; });
+            number.addEventListener('input', () => { 
+                let val = parseInt(number.value);
+                if (val >= slider.min && val <= slider.max) slider.value = val; 
+            });
+        }
+        syncInputs('kSlider', 'kNumber');
+        syncInputs('iterSlider', 'iterNumber');
+        syncInputs('sampleSlider', 'sampleNumber');
+
+        let scale = 1;
+        let pointX = 0;
+        let pointY = 0;
+        let start = { x: 0, y: 0 };
+        let panning = false;
+
+        function setTransform() {
+            zoomContainer.style.transform = `translate(${pointX}px, ${pointY}px) scale(${scale})`;
+            if (scale !== 1 || pointX !== 0 || pointY !== 0) {
+                resetZoomBtn.classList.remove('hidden');
+            } else {
+                resetZoomBtn.classList.add('hidden');
+            }
+        }
+
+        function resetZoom() {
+            scale = 1;
+            pointX = 0;
+            pointY = 0;
+            setTransform();
+        }
+
+        resetZoomBtn.addEventListener('click', resetZoom);
+
+        canvasArea.addEventListener('mousedown', (e) => {
+            if (!currentImageLoaded) return;
+            e.preventDefault();
+            start = { x: e.clientX - pointX, y: e.clientY - pointY };
+            panning = true;
+            canvasArea.classList.remove('cursor-grab');
+            canvasArea.classList.add('cursor-grabbing');
+        });
+
+        canvasArea.addEventListener('mouseup', () => {
+            panning = false;
+            canvasArea.classList.remove('cursor-grabbing');
+            canvasArea.classList.add('cursor-grab');
+        });
+
+        canvasArea.addEventListener('mouseleave', () => {
+            panning = false;
+            canvasArea.classList.remove('cursor-grabbing');
+            canvasArea.classList.add('cursor-grab');
+        });
+
+        canvasArea.addEventListener('mousemove', (e) => {
+            if (!panning || !currentImageLoaded) return;
+            pointX = (e.clientX - start.x);
+            pointY = (e.clientY - start.y);
+            setTransform();
+        });
+
+        canvasArea.addEventListener('wheel', (e) => {
+            if (!currentImageLoaded) return;
+            e.preventDefault(); // Prevent page scroll
+            
+            const rect = canvasArea.getBoundingClientRect();
+            const mouseX = e.clientX - rect.left;
+            const mouseY = e.clientY - rect.top;
+
+            let xs = (mouseX - pointX) / scale;
+            let ys = (mouseY - pointY) / scale;
+
+            let delta = e.deltaY;
+            (delta > 0) ? (scale /= 1.1) : (scale *= 1.1);
+            
+            // Limit zoom scale (0.1x to 20x)
+            scale = Math.max(0.1, Math.min(scale, 20));
+
+            pointX = mouseX - xs * scale;
+            pointY = mouseY - ys * scale;
+
+            setTransform();
+        });
+
+        imageInput.addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(event) {
+                const img = new Image();
+                img.onload = function() {
+                    // Resize large images to avoid out-of-memory and extreme slow down
+                    const MAX_SIZE = 1200;
+                    let width = img.width;
+                    let height = img.height;
+                    
+                    if (width > MAX_SIZE || height > MAX_SIZE) {
+                        const ratio = Math.min(MAX_SIZE / width, MAX_SIZE / height);
+                        width = Math.floor(width * ratio);
+                        height = Math.floor(height * ratio);
+                    }
+                    
+                    originalCanvas.width = width;
+                    originalCanvas.height = height;
+                    const ctx = originalCanvas.getContext('2d');
+                    ctx.drawImage(img, 0, 0, width, height);
+                    
+                    quantizedCanvas.width = width;
+                    quantizedCanvas.height = height;
+                    
+                    currentImageLoaded = true;
+                    hasQuantizedData = false;
+                    btnDownload.disabled = true;
+                    
+                    placeholder.classList.add('hidden');
+                    palettePanel.classList.add('hidden');
+                    
+                    resolutionStat.textContent = `Resolution: ${width} × ${height}`;
+                    timeStat.textContent = 'Time: -';
+                    
+                    resetZoom();
+                    switchTab('original');
+                    showToast('Image loaded successfully');
+                };
+                img.src = event.target.result;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        function switchTab(tabName) {
+            if (!currentImageLoaded) return;
+            activeTab = tabName;
+            
+            const baseTabClass = "flex-1 py-3 text-sm font-medium transition-colors border-b-2";
+            const inactiveClass = "text-gray-400 hover:text-gray-200 border-transparent";
+            const activeClass = "text-blue-400 border-blue-500";
+            
+            if (tabName === 'original') {
+                tabOriginal.className = `${baseTabClass} ${activeClass}`;
+                tabQuantized.className = `${baseTabClass} ${inactiveClass}`;
+                
+                originalCanvas.classList.remove('opacity-0', 'pointer-events-none');
+                quantizedCanvas.classList.add('opacity-0', 'pointer-events-none');
+            } else {
+                tabOriginal.className = `${baseTabClass} ${inactiveClass}`;
+                tabQuantized.className = `${baseTabClass} ${activeClass}`;
+                
+                quantizedCanvas.classList.remove('opacity-0', 'pointer-events-none');
+                originalCanvas.classList.add('opacity-0', 'pointer-events-none');
+            }
+        }
+        
+        tabOriginal.addEventListener('click', () => switchTab('original'));
+        tabQuantized.addEventListener('click', () => {
+            if (hasQuantizedData) switchTab('quantized');
+            else showToast('Please quantize the image first', 'error');
+        });
+
+        btnQuantize.addEventListener('click', () => {
+            if (!currentImageLoaded) {
+                showToast('Please upload an image first.', 'error');
+                return;
+            }
+            
+            // Set UI to loading state
+            btnQuantize.disabled = true;
+            btnSpinner.classList.remove('hidden');
+            progressContainer.classList.remove('hidden');
+            palettePanel.classList.add('hidden');
+            progressBar.style.width = '0%';
+            progressText.textContent = 'Preparing data...';
+            progressPercent.textContent = '0%';
+            
+            const k = parseInt(document.getElementById('kNumber').value) || 16;
+            const maxIter = parseInt(document.getElementById('iterNumber').value) || 10;
+            const samplingStep = parseInt(document.getElementById('sampleNumber').value) || 4;
+            
+            const ctx = originalCanvas.getContext('2d');
+            const imageData = ctx.getImageData(0, 0, originalCanvas.width, originalCanvas.height);
+            
+            startTime = performance.now();
+            
+            // Send data to worker
+            worker.postMessage({
+                imageData: imageData,
+                k: k,
+                maxIter: maxIter,
+                samplingStep: samplingStep
+            });
+        });
+
+        worker.onmessage = function(e) {
+            const data = e.data;
+            
+            if (data.type === 'progress') {
+                progressBar.style.width = `${data.percent}%`;
+                progressPercent.textContent = `${data.percent}%`;
+                progressText.textContent = data.message;
+            } 
+            else if (data.type === 'error') {
+                showToast(data.message, 'error');
+                resetUIState();
+            }
+            else if (data.type === 'done') {
+                const endTime = performance.now();
+                const timeTaken = ((endTime - startTime) / 1000).toFixed(2);
+                timeStat.textContent = `Time: ${timeTaken}s`;
+                
+                // Draw new image data to quantized canvas
+                const qCtx = quantizedCanvas.getContext('2d');
+                const newImageData = new ImageData(data.resultData, data.width, data.height);
+                qCtx.putImageData(newImageData, 0, 0);
+                
+                hasQuantizedData = true;
+                btnDownload.disabled = false;
+                
+                // Render Palette
+                renderPalette(data.palette);
+                
+                // Switch to quantized tab
+                switchTab('quantized');
+                
+                showToast(`Quantization complete! (${timeTaken}s)`);
+                resetUIState();
+                
+                // Optional: Give a slight highlight to palette panel
+                palettePanel.classList.remove('hidden');
+                palettePanel.classList.add('animate-pulse');
+                setTimeout(() => palettePanel.classList.remove('animate-pulse'), 1000);
+            }
+        };
+        
+        function resetUIState() {
+            btnQuantize.disabled = false;
+            btnSpinner.classList.add('hidden');
+            setTimeout(() => {
+                progressContainer.classList.add('hidden');
+            }, 2000);
+        }
+
+        btnDownload.addEventListener('click', () => {
+            if (!hasQuantizedData) return;
+            
+            const link = document.createElement('a');
+            link.download = 'quantized_image.png';
+            link.href = quantizedCanvas.toDataURL('image/png');
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+            
+            showToast('Download started!');
+        });
+
+        function renderPalette(paletteColors) {
+            paletteGrid.innerHTML = '';
+            
+            // Sort colors by brightness for aesthetic display
+            paletteColors.sort((a, b) => {
+                const lumA = 0.299*a[0] + 0.587*a[1] + 0.114*a[2];
+                const lumB = 0.299*b[0] + 0.587*b[1] + 0.114*b[2];
+                return lumB - lumA;
+            });
+            
+            paletteColors.forEach(color => {
+                const hex = rgbToHex(color[0], color[1], color[2]);
+                
+                const swatchBox = document.createElement('div');
+                swatchBox.className = 'w-10 h-10 rounded-md shadow-md cursor-pointer relative group transition-transform hover:scale-110 border border-gray-600 flex-shrink-0';
+                swatchBox.style.backgroundColor = `rgb(${color[0]}, ${color[1]}, ${color[2]})`;
+                
+                // Tooltip logic
+                const tooltip = document.createElement('span');
+                tooltip.className = 'absolute bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 bg-black/90 text-xs text-white rounded opacity-0 group-hover:opacity-100 whitespace-nowrap transition-opacity pointer-events-none z-20 shadow-lg';
+                tooltip.textContent = hex;
+                
+                swatchBox.appendChild(tooltip);
+                
+                swatchBox.addEventListener('click', () => {
+                    // Fallback clipboard logic
+                    const textArea = document.createElement("textarea");
+                    textArea.value = hex;
+                    document.body.appendChild(textArea);
+                    textArea.select();
+                    try {
+                        document.execCommand('copy');
+                        showToast(`Copied ${hex} to clipboard!`);
+                    } catch (err) {
+                        showToast('Failed to copy', 'error');
+                    }
+                    document.body.removeChild(textArea);
+                });
+                
+                paletteGrid.appendChild(swatchBox);
+            });
+        }
+    </script>
+</body>
+</html>
