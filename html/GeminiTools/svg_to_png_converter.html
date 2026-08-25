@@ -1,0 +1,565 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>SVG to PNG Converter</title>
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+    <style>
+        /* 透過部分を視覚的にわかりやすくするためのチェッカーボード背景 */
+        .checkerboard {
+            background-color: #1f2937; /* Tailwind gray-800 */
+            background-image:
+                linear-gradient(45deg, #374151 25%, transparent 25%), /* gray-700 */
+                linear-gradient(-45deg, #374151 25%, transparent 25%),
+                linear-gradient(45deg, transparent 75%, #374151 75%),
+                linear-gradient(-45deg, transparent 75%, #374151 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+
+        /* ダークモード用のカスタムスクロールバー */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #111827; /* gray-900 */
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #4b5563; /* gray-600 */
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #6b7280; /* gray-500 */
+        }
+
+        /* 数値入力のスピンボタンを非表示にする */
+        input[type=number]::-webkit-inner-spin-button, 
+        input[type=number]::-webkit-outer-spin-button { 
+            -webkit-appearance: none; 
+            margin: 0; 
+        }
+    </style>
+</head>
+<body class="bg-gray-900 text-gray-100 min-h-screen font-sans flex flex-col selection:bg-blue-500 selection:text-white">
+    
+    <!-- ヘッダー -->
+    <header class="w-full px-6 py-4 border-b border-gray-800 bg-gray-900/80 backdrop-blur sticky top-0 z-10 shadow-sm">
+        <div class="max-w-6xl mx-auto flex items-center justify-between">
+            <div class="flex items-center gap-3">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-blue-500" viewBox="0 0 256 256"><path fill="currentColor" d="M213.66,82.34l-56-56A8,8,0,0,0,152,24H56A16,16,0,0,0,40,40V216a16,16,0,0,0,16,16H200a16,16,0,0,0,16-16V88A8,8,0,0,0,213.66,82.34ZM160,51.31,188.69,80H160ZM200,216H56V40h88V88a8,8,0,0,0,8,8h48V216ZM80.64,153.11a8,8,0,0,1,11.25-1.75l24.11,18.08V104a8,8,0,0,1,16,0v65.44l24.11-18.08a8,8,0,1,1,9.6,12.8l-40,30a8,8,0,0,1-9.6,0l-40-30A8,8,0,0,1,80.64,153.11Z"/></svg>
+                <h1 class="text-xl font-bold tracking-tight text-white">SVG to PNG Converter</h1>
+            </div>
+            <p class="text-sm text-gray-400 hidden sm:block">高品質な画像フォーマット変換ツール</p>
+        </div>
+    </header>
+
+    <!-- メインコンテンツ -->
+    <main class="flex-1 w-full max-w-6xl mx-auto p-4 sm:p-6 lg:p-8 flex flex-col lg:flex-row gap-6 lg:gap-8">
+        
+        <!-- 左側：コントロールパネル -->
+        <div class="w-full lg:w-5/12 flex flex-col gap-6">
+            
+            <!-- ファイルアップロードセクション -->
+            <section class="bg-gray-800 rounded-2xl p-5 shadow-lg border border-gray-700">
+                <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-4">1. SVGファイルをアップロード</h2>
+                
+                <div id="dropZone" class="border-2 border-dashed border-gray-600 rounded-xl p-8 flex flex-col items-center justify-center text-center cursor-pointer hover:border-blue-500 hover:bg-gray-700/50 transition-all duration-200 group bg-gray-900/30">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 text-gray-500 group-hover:text-blue-500 transition-colors mb-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.5" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    </svg>
+                    <p class="text-gray-200 font-medium mb-1 group-hover:text-white transition-colors">クリックまたはドラッグ＆ドロップ</p>
+                    <p class="text-gray-500 text-xs mt-2">対応フォーマット: .svg</p>
+                    <input type="file" id="fileInput" accept=".svg" class="hidden">
+                </div>
+
+                <!-- ファイル選択後の情報表示 -->
+                <div id="fileInfo" class="hidden mt-4 flex items-center justify-between p-3 bg-gray-900/50 rounded-lg border border-gray-700 shadow-inner">
+                    <div class="flex items-center gap-3 overflow-hidden">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-blue-500 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        </svg>
+                        <span id="fileNameDisplay" class="text-sm font-medium text-gray-200 truncate"></span>
+                    </div>
+                    <button id="removeFileBtn" class="text-gray-500 hover:text-red-400 p-1.5 rounded-md hover:bg-gray-800 transition-all flex-shrink-0" title="ファイルを削除">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                            <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd" />
+                        </svg>
+                    </button>
+                </div>
+            </section>
+
+            <!-- 変換オプションセクション (未選択時は半透明＆操作不可) -->
+            <section id="optionsPanel" class="bg-gray-800 rounded-2xl p-5 shadow-lg border border-gray-700 opacity-50 pointer-events-none transition-opacity duration-300 flex-1 flex flex-col">
+                <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider mb-5">2. 変換オプションを設定</h2>
+                
+                <div class="space-y-6 flex-1">
+                    <!-- 画像サイズ設定 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-2">画像サイズ (ピクセル)</label>
+                        <div class="flex items-center gap-3">
+                            <!-- 幅 -->
+                            <div class="flex-1 relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 text-xs">W</span>
+                                </div>
+                                <input type="number" id="widthInput" min="1" class="w-full bg-gray-900 border border-gray-700 text-gray-100 rounded-lg pl-8 pr-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner" placeholder="幅">
+                            </div>
+                            <!-- リンクアイコン（アスペクト比固定表示） -->
+                            <div class="text-gray-500 flex-shrink-0" title="アスペクト比は維持されます">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+                                    <path fill-rule="evenodd" d="M12.586 4.586a2 2 0 112.828 2.828l-3 3a2 2 0 01-2.828 0 1 1 0 00-1.414 1.414 4 4 0 005.656 0l3-3a4 4 0 00-5.656-5.656l-1.5 1.5a1 1 0 101.414 1.414l1.5-1.5zm-5 5a2 2 0 012.828 0 1 1 0 101.414-1.414 4 4 0 00-5.656 0l-3 3a4 4 0 105.656 5.656l1.5-1.5a1 1 0 10-1.414-1.414l-1.5 1.5a2 2 0 11-2.828-2.828l3-3z" clip-rule="evenodd" />
+                                </svg>
+                            </div>
+                            <!-- 高さ -->
+                            <div class="flex-1 relative">
+                                <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+                                    <span class="text-gray-500 text-xs">H</span>
+                                </div>
+                                <input type="number" id="heightInput" min="1" class="w-full bg-gray-900 border border-gray-700 text-gray-100 rounded-lg pl-8 pr-3 py-2.5 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-all shadow-inner" placeholder="高さ">
+                            </div>
+                        </div>
+                        <p class="text-xs text-gray-500 mt-2 text-right">※縦横比は自動的に維持されます</p>
+                    </div>
+
+                    <hr class="border-gray-700">
+
+                    <!-- 背景設定 -->
+                    <div>
+                        <label class="block text-sm font-medium text-gray-400 mb-3">背景設定</label>
+                        <div class="flex items-center justify-between bg-gray-900/50 p-3 rounded-lg border border-gray-700">
+                            <!-- 透過チェックボックス -->
+                            <label class="flex items-center gap-3 cursor-pointer group">
+                                <div class="relative flex items-center">
+                                    <input type="checkbox" id="transparentCheckbox" checked class="peer sr-only">
+                                    <div class="w-5 h-5 bg-gray-700 border-2 border-gray-600 rounded peer-checked:bg-blue-500 peer-checked:border-blue-500 transition-colors"></div>
+                                    <svg class="absolute w-3.5 h-3.5 text-white left-[3px] top-[3px] opacity-0 peer-checked:opacity-100 pointer-events-none" xmlns="http://www.w3.org/2000/svg" viewBox="0 0 20 20" fill="currentColor">
+                                        <path fill-rule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clip-rule="evenodd" />
+                                    </svg>
+                                </div>
+                                <span class="text-sm font-medium text-gray-300 group-hover:text-white transition-colors">背景を透過する</span>
+                            </label>
+                            
+                            <!-- カラーピッカー -->
+                            <div class="flex items-center gap-2">
+                                <span class="text-xs text-gray-500" id="colorLabel">背景色指定:</span>
+                                <input type="color" id="colorInput" value="#ffffff" disabled class="w-9 h-9 p-0.5 rounded cursor-not-allowed opacity-50 bg-gray-800 border border-gray-600 focus:outline-none transition-opacity">
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ダウンロードボタン -->
+                <div class="mt-8">
+                    <button id="downloadBtn" disabled class="w-full py-3.5 px-4 bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold rounded-xl shadow-lg transition-all disabled:opacity-50 disabled:cursor-not-allowed flex items-center justify-center gap-2 transform disabled:hover:scale-100 hover:scale-[1.02]">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                        </svg>
+                        PNGとしてダウンロード
+                    </button>
+                </div>
+            </section>
+        </div>
+
+        <!-- 右側：プレビューエリア -->
+        <div class="w-full lg:w-7/12 bg-gray-800 rounded-2xl shadow-lg border border-gray-700 flex flex-col overflow-hidden h-[500px] lg:h-auto min-h-[400px]">
+            <div class="px-5 py-3 border-b border-gray-700 bg-gray-800/80 backdrop-blur flex justify-between items-center">
+                <h2 class="text-sm font-semibold text-gray-300 uppercase tracking-wider">プレビュー</h2>
+                <span class="text-xs text-gray-500 bg-gray-900 px-2 py-1 rounded">リアルタイム反映</span>
+            </div>
+            
+            <!-- プレビュー表示枠 (チェッカーボード) -->
+            <div id="previewContainer" class="flex-1 w-full flex items-center justify-center checkerboard p-4 relative overflow-hidden transition-colors duration-300">
+                
+                <!-- 初期プレースホルダー -->
+                <div id="previewPlaceholder" class="flex flex-col items-center justify-center text-gray-500">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 mb-4 opacity-30" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                    </svg>
+                    <p class="text-sm">画像がここに表示されます</p>
+                </div>
+
+                <!-- 実際のプレビュー画像 -->
+                <img id="previewImage" src="" alt="SVG Preview" class="hidden max-w-full max-h-full object-contain drop-shadow-2xl transition-all duration-300 scale-95" />
+            </div>
+        </div>
+    </main>
+
+    <!-- エラートースト通知 -->
+    <div id="toast" class="fixed bottom-6 left-1/2 transform -translate-x-1/2 bg-red-900/90 border border-red-700 text-white px-5 py-3 rounded-xl shadow-2xl transition-all duration-300 translate-y-24 opacity-0 flex items-center gap-3 z-50 backdrop-blur-sm">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 text-red-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span id="toastMessage" class="font-medium text-sm">エラーが発生しました</span>
+    </div>
+
+    <script>
+        // --- 状態変数 ---
+        let currentSvgContent = null;
+        let originalFileName = 'image.svg';
+        let svgAspectRatio = 1;
+
+        // --- DOM要素 ---
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileNameDisplay = document.getElementById('fileNameDisplay');
+        const removeFileBtn = document.getElementById('removeFileBtn');
+        
+        const optionsPanel = document.getElementById('optionsPanel');
+        const widthInput = document.getElementById('widthInput');
+        const heightInput = document.getElementById('heightInput');
+        const transparentCheckbox = document.getElementById('transparentCheckbox');
+        const colorInput = document.getElementById('colorInput');
+        const colorLabel = document.getElementById('colorLabel');
+        const downloadBtn = document.getElementById('downloadBtn');
+        
+        const previewContainer = document.getElementById('previewContainer');
+        const previewPlaceholder = document.getElementById('previewPlaceholder');
+        const previewImage = document.getElementById('previewImage');
+
+        // --- エラー通知関数 ---
+        let toastTimeout;
+        function showError(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toastMessage').textContent = message;
+            
+            toast.classList.remove('translate-y-24', 'opacity-0');
+            toast.classList.add('translate-y-0', 'opacity-100');
+            
+            clearTimeout(toastTimeout);
+            toastTimeout = setTimeout(() => {
+                toast.classList.remove('translate-y-0', 'opacity-100');
+                toast.classList.add('translate-y-24', 'opacity-0');
+            }, 4000);
+        }
+
+        // --- ファイルアップロードイベント ---
+        // クリックでファイル選択
+        dropZone.addEventListener('click', () => fileInput.click());
+
+        // ドラッグ＆ドロップエフェクト
+        ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, preventDefaults, false);
+            document.body.addEventListener(eventName, preventDefaults, false);
+        });
+
+        function preventDefaults(e) {
+            e.preventDefault();
+            e.stopPropagation();
+        }
+
+        ['dragenter', 'dragover'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.add('border-blue-500', 'bg-gray-800');
+            });
+        });
+
+        ['dragleave', 'drop'].forEach(eventName => {
+            dropZone.addEventListener(eventName, () => {
+                dropZone.classList.remove('border-blue-500', 'bg-gray-800');
+            });
+        });
+
+        // ドロップ時の処理
+        dropZone.addEventListener('drop', (e) => {
+            const dt = e.dataTransfer;
+            const files = dt.files;
+            if (files && files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        // ファイル入力変更時の処理
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files && e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+            // 同じファイルを再選択できるようにvalueをクリア
+            fileInput.value = '';
+        });
+
+        // --- ファイル処理ロジック ---
+        function handleFile(file) {
+            // 簡易的なMIMEタイプおよび拡張子チェック
+            if (!file.type.includes('svg') && !file.name.toLowerCase().endsWith('.svg')) {
+                showError('有効なSVGファイルを選択してください。');
+                return;
+            }
+
+            originalFileName = file.name;
+            fileNameDisplay.textContent = originalFileName;
+            fileNameDisplay.title = originalFileName;
+            
+            const reader = new FileReader();
+            reader.onload = (e) => {
+                currentSvgContent = e.target.result;
+                parseSvgMetadata(currentSvgContent);
+            };
+            reader.onerror = () => {
+                showError('ファイルの読み込みに失敗しました。');
+            };
+            reader.readAsText(file);
+        }
+
+        function parseSvgMetadata(svgText) {
+            try {
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(svgText, "image/svg+xml");
+                const svgEl = doc.documentElement;
+                
+                // SVGタグとして認識されているかチェック
+                if (svgEl.tagName.toLowerCase() !== 'svg') {
+                    throw new Error('無効なSVG構造です。');
+                }
+                
+                let w = 800; // 取得できなかった場合のデフォルト幅
+                let h = 800; // 取得できなかった場合のデフォルト高さ
+                
+                // 1. viewBoxから比率/サイズ取得を試みる
+                const viewBox = svgEl.getAttribute('viewBox');
+                if (viewBox) {
+                    const parts = viewBox.trim().split(/[\s,]+/).map(parseFloat);
+                    if (parts.length === 4 && parts[2] > 0 && parts[3] > 0) {
+                        w = parts[2];
+                        h = parts[3];
+                    }
+                } else {
+                    // 2. width, height属性から取得を試みる
+                    const wAttr = svgEl.getAttribute('width');
+                    const hAttr = svgEl.getAttribute('height');
+                    if (wAttr && hAttr) {
+                        w = parseFloat(wAttr);
+                        h = parseFloat(hAttr);
+                    }
+                }
+                
+                // 不正な値のフェイルセーフ
+                if (isNaN(w) || w <= 0) w = 800;
+                if (isNaN(h) || h <= 0) h = 800;
+                
+                svgAspectRatio = w / h;
+                
+                // UIの更新
+                widthInput.value = Math.round(w);
+                heightInput.value = Math.round(h);
+                
+                // UI状態をアクティブに
+                dropZone.classList.add('hidden');
+                fileInfo.classList.remove('hidden');
+                
+                optionsPanel.classList.remove('opacity-50', 'pointer-events-none');
+                downloadBtn.disabled = false;
+                
+                updatePreview();
+                
+            } catch (err) {
+                console.error(err);
+                showError('SVGの解析に失敗しました。データが壊れている可能性があります。');
+            }
+        }
+
+        // --- 設定連動ロジック ---
+        
+        // サイズ連動
+        widthInput.addEventListener('input', () => {
+            if (!currentSvgContent) return;
+            const w = parseInt(widthInput.value);
+            if (w > 0) {
+                heightInput.value = Math.max(1, Math.round(w / svgAspectRatio));
+            }
+        });
+
+        heightInput.addEventListener('input', () => {
+            if (!currentSvgContent) return;
+            const h = parseInt(heightInput.value);
+            if (h > 0) {
+                widthInput.value = Math.max(1, Math.round(h * svgAspectRatio));
+            }
+        });
+
+        // 背景色と透過の連動
+        transparentCheckbox.addEventListener('change', () => {
+            if (transparentCheckbox.checked) {
+                colorInput.disabled = true;
+                colorInput.classList.add('opacity-50', 'cursor-not-allowed');
+                colorLabel.classList.add('opacity-50');
+            } else {
+                colorInput.disabled = false;
+                colorInput.classList.remove('opacity-50', 'cursor-not-allowed');
+                colorLabel.classList.remove('opacity-50');
+            }
+            updatePreviewBackground();
+        });
+
+        colorInput.addEventListener('input', updatePreviewBackground);
+
+        // --- プレビュー更新ロジック ---
+        function updatePreviewBackground() {
+            if (transparentCheckbox.checked) {
+                previewContainer.style.backgroundColor = 'transparent';
+                previewContainer.classList.add('checkerboard');
+            } else {
+                previewContainer.classList.remove('checkerboard');
+                previewContainer.style.backgroundColor = colorInput.value;
+            }
+        }
+
+        function updatePreview() {
+            if (!currentSvgContent) return;
+            
+            // 安全のため Blob URL を利用してプレビュー表示
+            const blob = new Blob([currentSvgContent], {type: 'image/svg+xml;charset=utf-8'});
+            const url = URL.createObjectURL(blob);
+            
+            previewImage.onload = () => {
+                URL.revokeObjectURL(url); // メモリ解放
+                // アニメーション表示
+                setTimeout(() => {
+                    previewImage.classList.remove('scale-95', 'opacity-0');
+                    previewImage.classList.add('scale-100', 'opacity-100');
+                }, 50);
+            };
+            
+            previewImage.classList.add('scale-95', 'opacity-0'); // トランジションリセット
+            previewImage.src = url;
+            
+            previewPlaceholder.classList.add('hidden');
+            previewImage.classList.remove('hidden');
+            
+            updatePreviewBackground();
+        }
+
+        // ファイルリセット機能
+        removeFileBtn.addEventListener('click', () => {
+            currentSvgContent = null;
+            originalFileName = 'image.svg';
+            
+            // UI初期化
+            fileInfo.classList.add('hidden');
+            dropZone.classList.remove('hidden');
+            
+            optionsPanel.classList.add('opacity-50', 'pointer-events-none');
+            downloadBtn.disabled = true;
+            
+            widthInput.value = '';
+            heightInput.value = '';
+            
+            previewImage.classList.add('hidden');
+            previewImage.src = '';
+            previewPlaceholder.classList.remove('hidden');
+            
+            previewContainer.classList.add('checkerboard');
+            previewContainer.style.backgroundColor = 'transparent';
+            transparentCheckbox.checked = true;
+            colorInput.disabled = true;
+            colorInput.classList.add('opacity-50', 'cursor-not-allowed');
+            colorLabel.classList.add('opacity-50');
+        });
+
+        // --- PNG変換とダウンロードロジック ---
+        downloadBtn.addEventListener('click', () => {
+            if (!currentSvgContent) return;
+            
+            const targetWidth = parseInt(widthInput.value);
+            const targetHeight = parseInt(heightInput.value);
+            
+            if (isNaN(targetWidth) || targetWidth <= 0 || isNaN(targetHeight) || targetHeight <= 0) {
+                showError('有効な画像サイズを入力してください。');
+                return;
+            }
+
+            const isTransparent = transparentCheckbox.checked;
+            const bgColor = colorInput.value;
+            
+            // ダウンロードボタンをローディング状態に
+            const originalBtnText = downloadBtn.innerHTML;
+            downloadBtn.disabled = true;
+            downloadBtn.innerHTML = `
+                <svg class="animate-spin -ml-1 mr-2 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                    <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                    <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                変換中...
+            `;
+
+            try {
+                // SVGを指定サイズで描画させるためにwidth/height属性を強制的に書き換える
+                const parser = new DOMParser();
+                const doc = parser.parseFromString(currentSvgContent, "image/svg+xml");
+                const svgEl = doc.documentElement;
+                
+                svgEl.setAttribute('width', `${targetWidth}px`);
+                svgEl.setAttribute('height', `${targetHeight}px`);
+                
+                const serializer = new XMLSerializer();
+                const modifiedSvgContent = serializer.serializeToString(svgEl);
+                
+                // Canvasの準備
+                const canvas = document.createElement('canvas');
+                canvas.width = targetWidth;
+                canvas.height = targetHeight;
+                const ctx = canvas.getContext('2d');
+                
+                // 背景の描画
+                if (!isTransparent) {
+                    ctx.fillStyle = bgColor;
+                    ctx.fillRect(0, 0, targetWidth, targetHeight);
+                }
+                
+                // SVGをImageとして読み込む
+                const blob = new Blob([modifiedSvgContent], { type: 'image/svg+xml;charset=utf-8' });
+                const url = URL.createObjectURL(blob);
+                const img = new Image();
+                
+                img.onload = () => {
+                    // Canvasに描画
+                    ctx.drawImage(img, 0, 0, targetWidth, targetHeight);
+                    URL.revokeObjectURL(url);
+                    
+                    // PNGのDataURLを取得
+                    const pngUrl = canvas.toDataURL('image/png');
+                    
+                    // ダウンロード処理
+                    const a = document.createElement('a');
+                    a.href = pngUrl;
+                    
+                    // 元のファイル名から拡張子を.pngに変更
+                    let downloadName = originalFileName.replace(/\.svg$/i, '') + '.png';
+                    // 拡張子がなかった場合のフォールバック
+                    if (downloadName === originalFileName + '.png') downloadName = 'converted.png';
+                    
+                    a.download = downloadName;
+                    document.body.appendChild(a);
+                    a.click();
+                    document.body.removeChild(a);
+                    
+                    // ボタン状態の復元
+                    restoreDownloadBtn();
+                };
+                
+                img.onerror = () => {
+                    URL.revokeObjectURL(url);
+                    restoreDownloadBtn();
+                    showError('画像の変換に失敗しました。SVGの形式がサポートされていない可能性があります。');
+                };
+                
+                img.src = url;
+
+            } catch (err) {
+                console.error(err);
+                restoreDownloadBtn();
+                showError('予期せぬエラーが発生しました。');
+            }
+            
+            function restoreDownloadBtn() {
+                downloadBtn.innerHTML = originalBtnText;
+                downloadBtn.disabled = false;
+            }
+        });
+    </script>
+</body>
+</html>
