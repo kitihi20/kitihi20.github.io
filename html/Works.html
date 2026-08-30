@@ -1,45 +1,241 @@
 <!DOCTYPE html>
 <html lang="ja" standardized-themed-scrollbar style="height: 100%;">
 
-  <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width,initial-scale=1.0">
-    <title>kitihi20_works</title>
-    <link rel="stylesheet" type="text/css" href="/css/variables.css">
-    <link rel="stylesheet" type="text/css" href="/css/main.css">
-    <link rel="stylesheet" type="text/css" href="/css/other.css">
-    <link rel="shortcut icon" href="/images/Favicon/kitihi20.ico">
-  </head>
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1.0">
+  <title>kitihi20_works</title>
+  <link rel="stylesheet" type="text/css" href="/css/variables.css">
+  <link rel="stylesheet" type="text/css" href="/css/main.css">
+  <link rel="stylesheet" type="text/css" href="/css/other.css">
+  <link rel="shortcut icon" href="/images/Favicon/kitihi20.ico">
 
-  <body id="body" style="margin: 0px; height: 100%;">
+  <style>
+    /* -------------------------------------
+       検索 & フィルター用スタイル (追加分)
+       ------------------------------------- */
+    .works-controls-container {
+      max-width: 1200px;
+      margin: 24px auto 8px;
+      padding: 0 16px;
+      position: relative;
+      z-index: 10;
+    }
 
-    <!--ヘッダー配置用-->
-    <header id="headermain"></header>
+    .works-search-wrapper {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+      background-color: #202020;
+      box-shadow: 0px 0px 16px 4px var(--ShadowColor);
+      border: 1px solid #555555;
+      padding: 10px 16px;
+      margin-bottom: 16px;
+      transition: border-color 0.2s ease;
+    }
 
-    <!--背景-->
-    <img src="/images/Other/AnomalyCorrector_background.webp" 
-      height="100%" style="object-fit: cover; position: fixed; width: 100%; z-index: -10;">
-    
-    <!--ヘッダーのスペース分あける用-->
-    <div style="width: 100%; height: 50px;"></div>
+    .works-search-wrapper:focus-within {
+      border-color: #1c9dd8;
+    }
 
-    <!--タイトル-->
-    <div style="height: 300px; width: 100%; overflow: hidden; position: relative;">
-      <img style="object-fit: cover; position: absolute; 
-      height: 100%; width: 110%;" 
-      src="/images/Other/worksImage4.webp">
+    .works-search-box {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      flex: 1;
+    }
 
-      <div style="object-fit: cover; position: absolute; padding: 0px;
+    .works-search-icon {
+      font-family: var(--HeadFont), monospace;
+      font-size: 14px;
+      font-weight: 700;
+      color: #1c9dd8;
+      letter-spacing: 0.05em;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .works-search-input {
+      flex: 1;
+      border: none;
+      outline: none;
+      background: transparent;
+      color: var(--Font_Color);
+      font-size: 16px;
+      font-family: var(--MainFont), Yu Gothic, Arial, sans-serif;
+    }
+
+    .works-search-input::placeholder {
+      color: #888888;
+    }
+
+    .works-search-clear {
+      background: none;
+      border: none;
+      color: #888888;
+      font-size: 20px;
+      cursor: pointer;
+      padding: 0 6px;
+      line-height: 1;
+      display: none;
+      transition: color 0.15s ease;
+    }
+
+    .works-search-clear:hover {
+      color: #ff5555;
+    }
+
+    .works-status {
+      font-family: var(--HeadFont), monospace;
+      font-size: 14px;
+      color: #aaaaaa;
+      white-space: nowrap;
+      user-select: none;
+    }
+
+    .works-filter-container {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      justify-content: center;
+      margin-bottom: 24px;
+    }
+
+    .works-filter-btn {
+      background-color: #202020;
+      box-shadow: 0px 0px 8px 2px var(--ShadowColor);
+      color: var(--Font_Color);
+      border: 1px solid #555555;
+      padding: 6px 14px;
+      font-size: 14px;
+      font-family: var(--MainFont), sans-serif;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      user-select: none;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+    }
+
+    .works-filter-btn:hover {
+      background-color: #333333;
+      border-color: #1c9dd8;
+      color: #ffffff;
+    }
+
+    .works-filter-btn.active {
+      background-color: #1c9dd8;
+      border-color: #1c9dd8;
+      color: #ffffff;
+    }
+
+    .works-filter-count {
+      font-size: 12px;
+      opacity: 0.85;
+    }
+
+    .othertag {
+      cursor: pointer;
+    }
+
+    .otherbutton {
+      cursor: pointer;
+      background-color: #202020;
+      color: var(--Font_Color);
+      font-family: var(--MainFont), sans-serif;
+      transition: all 0.2s ease;
+    }
+
+    .otherbutton:hover {
+      background-color: #1c9dd8;
+      border-color: #1c9dd8;
+      color: #ffffff;
+    }
+
+    .empty-works {
+      grid-column: 1 / -1;
+      padding: 48px 16px;
+      text-align: center;
+      color: #aaaaaa;
+      background-color: #202020;
+      box-shadow: 0px 0px 16px 4px var(--ShadowColor);
+      border: 1px solid #555555;
+      margin: 16px;
+    }
+
+    .empty-works-title {
+      font-size: 20px;
+      font-family: var(--HeadFont), sans-serif;
+      color: #ff8000;
+      margin-bottom: 8px;
+    }
+
+    .empty-works-desc {
+      font-size: 14px;
+      line-height: 1.6;
+    }
+
+    .empty-reset-btn {
+      margin-top: 16px;
+      background-color: #202020;
+      color: var(--Font_Color);
+      border: 1px solid #f0f0f0;
+      padding: 8px 24px;
+      cursor: pointer;
+      font-size: 14px;
+      font-family: var(--MainFont), sans-serif;
+      transition: all 0.2s ease;
+    }
+
+    .empty-reset-btn:hover {
+      background-color: #1c9dd8;
+      border-color: #1c9dd8;
+      color: #ffffff;
+    }
+
+    @media screen and (max-width: 750px) {
+      .works-search-wrapper {
+        flex-direction: column;
+        align-items: stretch;
+        gap: 8px;
+      }
+
+      .works-status {
+        text-align: right;
+      }
+    }
+  </style>
+</head>
+
+<body id="body" style="margin: 0px; height: 100%;">
+
+  <!--ヘッダー配置用-->
+  <header id="headermain"></header>
+
+  <!--背景-->
+  <img src="/images/Other/AnomalyCorrector_background.webp" height="100%"
+    style="object-fit: cover; position: fixed; width: 100%; z-index: -10;" alt="background">
+
+  <!--ヘッダーのスペース分あける用-->
+  <div style="width: 100%; height: 50px;"></div>
+
+  <!--タイトル-->
+  <div style="height: 300px; width: 100%; overflow: hidden; position: relative;">
+    <img style="object-fit: cover; position: absolute; height: 100%; width: 110%;" src="/images/Other/worksImage4.webp"
+      alt="works banner">
+
+    <div style="object-fit: cover; position: absolute; padding: 0px;
       top: 50%; left: 24px; transform: translate(0%,-50%);
       font-size: 24px; text-align: left;">
       <h1 style="padding: 0px; margin: 0px;">作品一覧</h1>
       <h3 style="padding: 0px; margin: 0px;">どこかで公開した作品の一覧</h3>
-      <div class ="titleShadow"></div>
-      </div>
+      <div class="titleShadow"></div>
     </div>
+  </div>
 
-    <!--タイトル下の影-->
-    <div style="width: 100%; height: 400px; 
+  <!--タイトル下の影-->
+  <div style="width: 100%; height: 400px; 
       position: absolute;
       border-top: solid 1px #f0f0f0ff;
       background-image: linear-gradient(0deg, 
@@ -47,534 +243,496 @@
       transparent 80%, 
       var(--BackgroundColorGradient));
       pointer-events: none;">
+  </div>
+
+  <!-- 検索・フィルターエリア -->
+  <div class="works-controls-container">
+    <!-- 検索バー -->
+    <div class="works-search-wrapper">
+      <div class="works-search-box">
+        <span class="works-search-icon">SEARCH /</span>
+        <input type="text" id="works-search-input" class="works-search-input"
+          placeholder="作品名、説明文、ジャンル、制作年、タグで検索..." autocomplete="off" spellcheck="false">
+        <button type="button" id="works-search-clear" class="works-search-clear" title="検索をクリア"
+          aria-label="検索をクリア">×</button>
+      </div>
+      <div id="works-status" class="works-status">29 作品</div>
     </div>
 
-    <!--メイン-->
-    <div class="tripleGrid" style="text-align: center;">
+    <!-- タグフィルター -->
+    <div id="works-filter-container" class="works-filter-container"></div>
+  </div>
 
-      <div class="box">
-          <h2>OMNISIGHT INC.</h2>
-        <img src="/images/Other/OMNISIGHT.webp" width="98%" class="otherimg">
-        <!--
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
-          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
-        </p>
-        -->
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-          <span class="othertag" style="background-color: rgb(32, 138, 167);">2days</span>
-        </p>
-        <p>
-          HTML<br>
-          2026年3月
-        </p>
-        <p>Webブラウザを用いたARG風ゲーム<br>
-          2日でAIにページの大枠を作らせた</p>
-        <a href="/html/Games/OMNISIGHT/Recruit.html" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+  <!-- メイン作品グリッド -->
+  <div id="dynamic-works-list" class="tripleGrid" style="text-align: center;"></div>
 
-      <div class="box">
-          <h2>雲</h2>
-        <img src="/images/Other/ASVolumetricCloud.webp" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>
-          Shader等<br>
-          2025年12月
-        </p>
-        <p>UnityのURPで利用できるVolumetric Cloud<br>
-          RenderGraphを利用し、容易に組み込める</p>
-        <a href="https://unityroom.com/games/as_clouds" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+  <br>
 
-      <div class="box">
-          <h2>No Name Mech</h2>
-        <img src="/images/N2M4/NoNameMech_5.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>3Dロボットアクションゲーム<br>
-          2025年
-        </p>
-        <p>これは名もなき機体の戦闘テスト<br>
-          制作中</p>
-        <a href="/html/N2M4.html">
-          <button class="otherbutton">
-          専用ページ
-          </button>
-        </a>
-      </div>
+  <script>
+    /*
+    ========================================================
+    Works リスト管理 (データ定義・動的描画・絞り込み機能)
+    ========================================================
+    */
+    const tagColors = {
+      '個人制作': 'rgb(47, 25, 133)',
+      'チーム制作': 'rgb(133, 25, 130)',
+      '実績': 'rgb(167, 32, 32)',
+      '1week': 'rgb(32, 138, 167)',
+      '2days': 'rgb(32, 138, 167)',
+    };
 
-      <div class="box">
-          <h2>高低差対応VRテレポート手法</h2>
-        <img src="/images/Other/PenetrationTeleport.webp" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
-        </p>
-        <p>研究<br>
-          2025年
-        </p>
-        <p>高低差のあるVR環境向けのテレポーテーション手法の提案<br>
-          SIGGRAPH 2025でポスター、VRST 2025でフルペーパーで発表</p>
-        <a href="https://www.doi.org/10.1145/3756884.3766038" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Link
-          </button>
-        </a>
-      </div>
+    const worksData = [
+      {
+        title: 'OMNISIGHT INC.',
+        img: '/images/Other/OMNISIGHT.webp',
+        tags: ['チーム制作', '2days'],
+        category: 'HTML',
+        date: '2026年3月',
+        desc: 'Webブラウザを用いたARG風ゲーム\n2日でAIにページの大枠を作らせた',
+        link: { url: '/html/Games/OMNISIGHT/Recruit.html', label: 'Play', target: '_blank' }
+      },
+      {
+        title: '雲',
+        img: '/images/Other/ASVolumetricCloud.webp',
+        tags: ['個人制作'],
+        category: 'Shader等',
+        date: '2025年12月',
+        desc: 'UnityのURPで利用できるVolumetric Cloud\nRenderGraphを利用し、容易に組み込める',
+        link: { url: 'https://unityroom.com/games/as_clouds', label: 'Play', target: '_blank' }
+      },
+      {
+        title: 'No Name Mech',
+        img: '/images/N2M4/NoNameMech_5.jpg',
+        tags: ['個人制作'],
+        category: '3Dロボットアクションゲーム',
+        date: '2025年',
+        desc: 'これは名もなき機体の戦闘テスト\n制作中',
+        link: { url: '/html/N2M4.html', label: '専用ページ', target: null }
+      },
+      {
+        title: '高低差対応VRテレポート手法',
+        img: '/images/Other/PenetrationTeleport.webp',
+        tags: ['チーム制作', '実績'],
+        category: '研究',
+        date: '2025年',
+        desc: '高低差のあるVR環境向けのテレポーテーション手法の提案\nSIGGRAPH 2025でポスター、VRST 2025でフルペーパーで発表',
+        link: { url: 'https://www.doi.org/10.1145/3756884.3766038', label: 'Link', target: '_blank' }
+      },
+      {
+        title: 'SVGF_StereoRendering',
+        img: '/images/Other/SVGF_StereoRendering.png',
+        tags: ['個人制作', '実績'],
+        category: 'Shader',
+        date: '2025年5月',
+        desc: 'SVGF作品を改造、ステレオレンダリングに (青が左画像を使いまわしている場所)\nHigh Performance Graphics 2025、Student Competition 2位',
+        link: { url: 'https://www.shadertoy.com/view/WcGGW1', label: 'Link', target: '_blank' }
+      },
+      {
+        title: 'Lack_of_Reality_Type-b',
+        img: '/images/Other/LoRTb/LoRTb_3.jpg',
+        tags: ['個人制作'],
+        category: '3DFPSゲーム',
+        date: '2025年4月',
+        desc: 'サークル向けFPSゲームのサンプルとその発展版\nサンプルはシンプルさ、発展版はゲームらしく見せることを重視',
+        link: { url: 'https://unityroom.com/games/as_lor_tb', label: 'Play', target: '_blank' }
+      },
+      {
+        title: '川流神社からの脱出',
+        img: '/images/Other/Escape/EscapeFromKawaru/EscapeFromKawaru_1.jpg',
+        tags: ['チーム制作', '1week'],
+        category: '3D脱出ゲーム',
+        date: '2024年3月 シナリオ・絵以外担当',
+        desc: '神社に閉じ込められた少女の脱出劇\n脱出・ノベルの仕組み、3Dモデルと1週間の限界に挑戦',
+        link: { url: 'https://unityroom.com/games/as_roomofkawarushrine', label: 'Play', target: '_blank' }
+      },
+      {
+        title: 'IGC²サイト',
+        img: '/images/Other/IGC2OldSite.webp',
+        tags: ['チーム制作'],
+        category: 'Webサイト',
+        date: '2024年2月～2025年12月 実装・デザイン担当',
+        desc: 'サークルのサイトの制作と管理\nhtml・css・jsのみの静的サイト、画像はサークル員作成',
+        link: null
+      },
+      {
+        title: 'GatheringPlace',
+        img: '/images/Other/GatheringPlace.jpg',
+        tags: ['個人制作'],
+        category: 'Cluster用ワールド',
+        date: '2024年1月',
+        desc: 'サークル向けに集まれる場所を作ろうとした\nデータサイズの減少とShaderのInstance化を重視',
+        link: { url: 'https://cluster.mu/w/d00e2d0d-6288-47f1-83ee-ca6edd8ad24d', label: 'Link', target: '_blank' }
+      },
+      {
+        title: 'IGC²15秒あほげ集基盤',
+        img: '/images/Other/AHG_System.jpg',
+        tags: ['個人制作'],
+        category: '2Dミニゲーム集ゲーム基盤',
+        date: '2023年',
+        desc: 'サークル員製ミニゲーム集の基盤システム\nゲーム制作経験が無い人でも作れる仕組みを提供',
+        link: { url: 'https://unityroom.com/games/igc2_15secfungames', label: 'Play', target: '_blank' }
+      },
+      {
+        title: "Subthreshold object: Diviner's Gauntlet",
+        img: '/images/Other/Subthreshold_object/HWGame_ChargeAttack.jpg',
+        tags: ['個人制作'],
+        category: 'VRハンドトラッキングアクションゲーム',
+        date: '2023年11月',
+        desc: '手のみで移動から攻撃までできるVRゲーム\n自身の研究内容をゲームにしたもの',
+        link: null
+      },
+      {
+        title: 'VOIDLASE',
+        img: '/images/Voidlase/VOIDLASE_Play1.jpg',
+        tags: ['チーム制作'],
+        category: '2Dレーザーアクションゲーム',
+        date: '2023年 実装担当',
+        desc: 'レーザーを駆使して駆け回る2Dアクション\n様々な場所で出展・展示した',
+        link: { url: '/html/Voidlase.html', label: '専用ページ', target: null }
+      },
+      {
+        title: '文字の間からの脱出',
+        img: '/images/Other/Escape/RoomOfINIMUEL/RoomOfINIMUEL_Play1.jpg',
+        tags: ['チーム制作', '1week'],
+        category: '3D脱出ゲーム',
+        date: '2023年3月 シナリオ以外担当',
+        desc: '遺物のパズルを解いて脱出を目指す\nこれまでより見た目を重視',
+        link: { url: 'https://unityroom.com/games/as_roomofiemel', label: 'Play', target: '_blank' }
+      },
+      {
+        title: 'RE:鯵の素〜Aji Fry Factory〜',
+        img: '/images/Other/AjiNoMoto.jpg',
+        tags: ['個人制作', '1week'],
+        category: '2.5Dカジュアルゲーム',
+        date: '2022年12月',
+        desc: 'アジを開きまくって、アジフライを大量生産\n過去に複数人で制作した作品のリメイク作',
+        link: { url: 'https://unityroom.com/games/ass_re_ajifryfactory', label: 'Play', target: '_blank' }
+      },
+      {
+        title: 'Anomaly Corrector',
+        img: '/images/Other/AnomalyCorrector_2.jpg',
+        tags: ['チーム制作', '1week'],
+        category: '3D間違い探しゲーム',
+        date: '2022年9月 シナリオ以外担当',
+        desc: '異変を見つけて報告するゲーム\n雰囲気の演出を重視',
+        link: { url: 'https://unityroom.com/games/as_anomalycorrector_tameru', label: 'Play', target: '_blank' }
+      },
+      {
+        title: '欠けた世界、駆ける',
+        img: '/images/Other/CW_s.jpg',
+        tags: ['個人制作', '実績'],
+        category: 'Cluster用ワールド',
+        date: '2022年3月',
+        desc: '無機質な奇妙な世界を駆け抜けるワールド\nClusterGAMEJAM 2022 in SPRING アスレチック部門入賞',
+        link: { url: 'https://cluster.mu/w/ce504fcf-46f5-4567-bdcb-4d56ac6f6617', label: 'Link', target: '_blank' }
+      },
+      {
+        title: '正月の間からの脱出',
+        img: '/images/Other/Escape/Escape_Shou.jpg',
+        tags: ['チーム制作', '実績'],
+        category: '3D脱出ゲーム',
+        date: '2021年12月 シナリオ以外担当',
+        desc: '盆と正月が一緒に来たような状況から脱出するゲーム\n閲覧数が10万を突破した',
+        link: { url: 'https://unityroom.com/games/as_roomofshogatu', label: 'Play', target: '_blank' }
+      },
+      {
+        title: 'NoNameMech v2',
+        img: '/images/Other/N2M2_background.jpg',
+        tags: ['個人制作'],
+        category: '3Dロボットアクションゲーム',
+        date: '2021年12月',
+        desc: '大量のパーツを繋げてアセンブルできるゲーム\n大量の多色パーツの軽量描画を重視',
+        link: { url: 'https://unityroom.com/games/as_archive_nonamemech2', label: 'Play', target: '_blank' }
+      },
+      {
+        title: 'INIAD GAME SHOW 2021 展示会場',
+        img: '/images/Other/INIADGameShow2021.jpg',
+        tags: ['個人制作'],
+        category: 'Cluster用ワールド',
+        date: '2021年10月',
+        desc: '所属サークルの作品を展示した、どこか不思議な美術館\nStencil maskを用いた表現に挑戦',
+        link: { url: 'https://cluster.mu/w/9de29f39-4b90-4317-b3eb-4311946bd8c1', label: 'Link', target: '_blank' }
+      },
+      {
+        title: '大体INIAD',
+        img: '/images/Other/SomethingINIAD.jpg',
+        tags: ['個人制作'],
+        category: 'Cluster用ワールド',
+        date: '2021年10月',
+        desc: '大学をそれとなく再現したワールド',
+        link: { url: 'https://cluster.mu/w/7407bf42-499d-45ad-96c7-9b9ebc329818', label: 'Link', target: '_blank' }
+      },
+      {
+        title: '雨の振る箱庭',
+        img: '/images/Other/RainMiniatureGarden/RainyGarden.jpg',
+        tags: ['個人制作'],
+        category: 'Cluster用ワールド',
+        date: '2021年10月',
+        desc: '雨が降っているワールド\nバーチャルホーム的なものを作ろうとした名残',
+        link: { url: 'https://cluster.mu/w/d3b21e71-a071-468a-904c-f975dc0001ca', label: 'Link', target: '_blank' }
+      },
+      {
+        title: 'ちゅうの間からの脱出',
+        img: '/images/Other/Escape/Escape_chuu.jpg',
+        tags: ['チーム制作', '1week'],
+        category: '3D脱出ゲーム',
+        date: '2021年9月 シナリオ以外担当',
+        desc: '変わり者の親類から相続した"ちゅうの間"から脱出するゲーム\n閲覧数が5万を突破した',
+        link: { url: 'https://unityroom.com/games/as_roomofchu', label: 'Play', target: '_blank' }
+      },
+      {
+        title: 'NoNameMech v1',
+        img: '/images/Other/N2M1_background.jpg',
+        tags: ['個人制作'],
+        category: '3Dロボットアクションゲーム',
+        date: '2021年3月',
+        desc: 'シンプルなロボットアクションゲーム\n大量の敵の管理の最適化を行った',
+        link: { url: 'https://unityroom.com/games/as_archive_nonamemech1', label: 'Play', target: '_blank' }
+      },
+      {
+        title: 'GridLab',
+        img: '/images/Other/GridLab_2.jpg',
+        tags: ['チーム制作'],
+        category: '3DFPSゲーム',
+        date: '2020年9月 実装等担当',
+        desc: 'U22プログラミング・コンテスト向けに作成したゲーム\nゲーム内でステージを作り、パルクールFPSで遊べる',
+        link: null
+      },
+      {
+        title: 'セイビングパル',
+        img: '/images/Other/SavingPal_2.jpg',
+        tags: ['チーム制作', '実績'],
+        category: '3DRPGアクションゲーム',
+        date: '2019年8月 実装等担当',
+        desc: 'Unityインターハイ2019向けに作成したゲーム\n一次突破、入賞した',
+        link: null
+      },
+      {
+        title: 'LunarDefender (2019)',
+        img: '/images/Other/LunarDefender2/LunarDefender2_7.jpg',
+        tags: ['個人制作'],
+        category: '3Dロボットアクションゲーム',
+        date: '2019年4月',
+        desc: 'はじめて作ったロボットアクションゲーム\n速さを重視、アセンブルもできる',
+        link: null
+      },
+      {
+        title: 'Shine Dive',
+        img: '/images/Other/ShineDive.jpg',
+        tags: ['個人制作'],
+        category: '3Dフライトゲーム',
+        date: '2018年10月',
+        desc: '宙に浮かんだ輪をくぐるゲーム\n今でもカメラ等の演出の例として役に立っている',
+        link: { url: 'https://unityroom.com/games/flighttest_shinedive', label: 'Play', target: '_blank' }
+      },
+      {
+        title: 'LunarDefender (2018)',
+        img: '/images/Other/LunarDefender1/LunarDefender1_10.jpg',
+        tags: ['個人制作'],
+        category: '3DFPSゲーム',
+        date: '2018年4月',
+        desc: '近未来な月面基地を守るFPSゲーム\nミッションをクリアして素材を集め、新たな銃を作ることができる',
+        link: null
+      },
+      {
+        title: 'MyCraft',
+        img: '/images/Other/MyCraft.jpg',
+        tags: ['個人制作'],
+        category: '3D建築ゲーム',
+        date: '2017年8月',
+        desc: 'ブロックを配置して遊べるゲーム\n地形の自動生成にも挑戦',
+        link: { url: 'https://unityroom.com/games/asra_dreamer_mycraft1', label: 'Play', target: '_blank' }
+      }
+    ];
 
-      <div class="box">
-          <h2>SVGF_StereoRendering</h2>
-        <img src="/images/Other/SVGF_StereoRendering.png" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
-        </p>
-        <p>Shader<br>
-          2025年5月
-        </p>
-        <p>SVGF作品を改造、ステレオレンダリングに (青が左画像を使いまわしている場所)<br>
-          High Performance Graphics 2025、Student Competition 2位</p>
-        <a href="https://www.shadertoy.com/view/WcGGW1" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Link
-          </button>
-        </a>
-      </div>
+    let currentFilter = 'All';
+    let searchQuery = '';
 
-      <div class="box">
-          <h2>Lack_of_Reality_Type-b</h2>
-        <img src="/images/Other/LoRTb/LoRTb_3.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>3DFPSゲーム<br>
-          2025年4月
-        </p>
-        <p>サークル向けFPSゲームのサンプルとその発展版<br>
-          サンプルはシンプルさ、発展版はゲームらしく見せることを重視</p>
-        <a href="https://unityroom.com/games/as_lor_tb" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+    const listContainer = document.getElementById('dynamic-works-list');
+    const filterContainer = document.getElementById('works-filter-container');
+    const searchInput = document.getElementById('works-search-input');
+    const searchClearBtn = document.getElementById('works-search-clear');
+    const statusEl = document.getElementById('works-status');
 
-      <div class="box">
-          <h2>川流神社からの脱出</h2>
-        <img src="/images/Other/Escape/EscapeFromKawaru/EscapeFromKawaru_1.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
-        </p>
-        <p>3D脱出ゲーム<br>
-          2024年3月 シナリオ・絵以外担当
-        </p>
-        <p>神社に閉じ込められた少女の脱出劇<br>
-          脱出・ノベルの仕組み、3Dモデルと1週間の限界に挑戦</p>
-        <a href="https://unityroom.com/games/as_roomofkawarushrine" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+    function updateStatus(filteredCount, totalCount) {
+      if (!statusEl) return;
+      if (currentFilter === 'All' && !searchQuery.trim()) {
+        statusEl.textContent = `${totalCount} 作品`;
+      } else {
+        statusEl.textContent = `${filteredCount} / ${totalCount} 作品`;
+      }
+    }
 
-      <div class="box">
-          <h2>IGC²サイト</h2>
-        <img src="/images/Other/IGC2OldSite.webp" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-        </p>
-        <p>Webサイト<br>
-          2024年2月～2025年12月 実装・デザイン担当
-        </p>
-        <p>サークルのサイトの制作と管理<br>
-          html・css・jsのみの静的サイト、画像はサークル員作成
-      </div>
+    function setTagFilter(tag) {
+      currentFilter = tag;
+      renderFilters();
+      renderWorks();
+    }
 
-      <div class="box">
-          <h2>GatheringPlace</h2>
-        <img src="/images/Other/GatheringPlace.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>Cluster用ワールド<br>
-          2024年1月
-        </p>
-        <p>サークル向けに集まれる場所を作ろうとした<br>
-          データサイズの減少とShaderのInstance化を重視</p>
-        <a href="https://cluster.mu/w/d00e2d0d-6288-47f1-83ee-ca6edd8ad24d" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Link
-          </button>
-        </a>
-      </div>
+    function renderWorks() {
+      listContainer.innerHTML = '';
 
-      <div class="box">
-          <h2>IGC²15秒あほげ集基盤</h2>
-        <img src="/images/Other/AHG_System.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>2Dミニゲーム集ゲーム基盤<br>
-          2023年
-        </p>
-        <p>サークル員製ミニゲーム集の基盤システム<br>
-          ゲーム制作経験が無い人でも作れる仕組みを提供</p>
-        <a href="https://unityroom.com/games/igc2_15secfungames" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+      const terms = searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
 
-      <div class="box">
-          <h2>Subthreshold object: Diviner's Gauntlet</h2>
-        <img src="/images/Other/Subthreshold_object/HWGame_ChargeAttack.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>VRハンドトラッキングアクションゲーム<br>
-          2023年11月
-        </p>
-        <p>手のみで移動から攻撃までできるVRゲーム<br>
-          自身の研究内容をゲームにしたもの</p>
-        
-      </div>
+      // タグと検索語句による絞り込み
+      const filteredWorks = worksData.filter(work => {
+        const matchesTag = currentFilter === 'All' || work.tags.includes(currentFilter);
+        if (!matchesTag) return false;
 
-      <div class="box">
-          <h2>VOIDLASE</h2>
-        <img src="/images/Voidlase/VOIDLASE_Play1.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-        </p>
-        <p>2Dレーザーアクションゲーム<br>
-          2023年 実装担当
-        </p>
-        <p>レーザーを駆使して駆け回る2Dアクション<br>
-          様々な場所で出展・展示した
-        </p>
-        <a href="/html/Voidlase.html">
-          <button class="otherbutton">
-          専用ページ
-          </button>
-        </a>
-      </div>
+        if (terms.length === 0) return true;
 
-      <div class="box">
-          <h2>文字の間からの脱出</h2>
-        <img src="/images/Other/Escape/RoomOfINIMUEL/RoomOfINIMUEL_Play1.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
-        </p>
-        <p>3D脱出ゲーム<br>
-          2023年3月 シナリオ以外担当
-        </p>
-        <p>遺物のパズルを解いて脱出を目指す<br>
-          これまでより見た目を重視
-        </p>
-        <a href="https://unityroom.com/games/as_roomofiemel" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+        const searchableText = `${work.title} ${work.desc} ${work.category} ${work.date} ${work.tags.join(' ')}`.toLowerCase();
+        return terms.every(term => searchableText.includes(term));
+      });
 
-      <div class="box">
-          <h2>RE:鯵の素〜Aji Fry Factory〜</h2>
-        <img src="/images/Other/AjiNoMoto.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
-        </p>
-        <p>2.5Dカジュアルゲーム<br>
-          2022年12月
-        </p>
-        <p>アジを開きまくって、アジフライを大量生産<br>
-          過去に複数人で制作した作品のリメイク作</p>
-        <a href="https://unityroom.com/games/ass_re_ajifryfactory" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+      updateStatus(filteredWorks.length, worksData.length);
 
-      <div class="box">
-          <h2>Anomaly Corrector</h2>
-        <img src="/images/Other/AnomalyCorrector_2.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
-        </p>
-        <p>3D間違い探しゲーム<br>
-          2022年9月 シナリオ以外担当
-        </p>
-        <p>異変を見つけて報告するゲーム<br>
-          雰囲気の演出を重視</p>
-        <a href="https://unityroom.com/games/as_anomalycorrector_tameru" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+      if (filteredWorks.length === 0) {
+        const emptyBox = document.createElement('div');
+        emptyBox.className = 'empty-works';
+        emptyBox.innerHTML = `
+          <div class="empty-works-title">一致する作品が見つかりませんでした</div>
+          <div class="empty-works-desc">
+            検索キーワードや選択中のタグ条件を変更してお試しください。
+          </div>
+          <button type="button" class="empty-reset-btn" id="empty-reset-btn">フィルターをリセット</button>
+        `;
+        listContainer.appendChild(emptyBox);
 
-      <div class="box">
-          <h2>欠けた世界、駆ける</h2>
-        <img src="/images/Other/CW_s.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
-        </p>
-        <p>Cluster用ワールド<br>
-          2022年3月
-        </p>
-        <p>無機質な奇妙な世界を駆け抜けるワールド<br>
-          ClusterGAMEJAM 2022 in SPRING アスレチック部門入賞</p>
-        <a href="https://cluster.mu/w/ce504fcf-46f5-4567-bdcb-4d56ac6f6617" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Link
-          </button>
-        </a>
-      </div>
+        const resetBtn = document.getElementById('empty-reset-btn');
+        if (resetBtn) {
+          resetBtn.addEventListener('click', () => {
+            currentFilter = 'All';
+            searchQuery = '';
+            if (searchInput) searchInput.value = '';
+            if (searchClearBtn) searchClearBtn.style.display = 'none';
+            renderFilters();
+            renderWorks();
+          });
+        }
+        return;
+      }
 
-      <div class="box">
-          <h2>正月の間からの脱出</h2>
-        <img src="/images/Other/Escape/Escape_Shou.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
-        </p>
-        <p>3D脱出ゲーム<br>
-          2021年12月 シナリオ以外担当
-        </p>
-        <p>盆と正月が一緒に来たような状況から脱出するゲーム<br>
-          閲覧数が10万を突破した
+      // 作品カードのDOM生成 (other.css のスタイルに合わせたマークアップ)
+      filteredWorks.forEach(work => {
+        const card = document.createElement('div');
+        card.className = 'box';
+
+        const tagsHtml = work.tags.map(tag => {
+          const bgColor = tagColors[tag] || '#2a3b5c';
+          return `<span class="othertag" style="background-color: ${bgColor};" data-tag="${tag}" title="「${tag}」で絞り込み">${tag}</span>`;
+        }).join('');
+
+        const linkHtml = work.link
+          ? `
+            <a href="${work.link.url}" ${work.link.target ? `target="${work.link.target}" rel="noopener noreferrer"` : ''}>
+              <button type="button" class="otherbutton">${work.link.label}</button>
+            </a>
+          `
+          : '';
+
+        const descHtml = work.desc.replace(/\n/g, '<br>');
+
+        card.innerHTML = `
+          <h2>${work.title}</h2>
+          <img src="${work.img}" width="98%" class="otherimg" alt="${work.title}">
+          <p class="othertags">
+            ${tagsHtml}
           </p>
-        <a href="https://unityroom.com/games/as_roomofshogatu" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
-
-      <div class="box">
-          <h2>NoNameMech v2</h2>
-        <img src="/images/Other/N2M2_background.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>3Dロボットアクションゲーム<br>
-          2021年12月
-        </p>
-        <p>大量のパーツを繋げてアセンブルできるゲーム<br>大量の多色パーツの軽量描画を重視</p>
-        <a href="https://unityroom.com/games/as_archive_nonamemech2" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
-
-      <div class="box">
-          <h2>INIAD GAME SHOW 2021 展示会場</h2>
-        <img src="/images/Other/INIADGameShow2021.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>Cluster用ワールド<br>
-          2021年10月
-        </p>
-        <p>所属サークルの作品を展示した、どこか不思議な美術館<br>
-          Stencil maskを用いた表現に挑戦</p>
-        <a href="https://cluster.mu/w/9de29f39-4b90-4317-b3eb-4311946bd8c1" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Link
-          </button>
-        </a>
-      </div>
-
-      <div class="box">
-          <h2>大体INIAD</h2>
-        <img src="/images/Other/SomethingINIAD.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>Cluster用ワールド<br>
-          2021年10月
-        </p>
-        <p>大学をそれとなく再現したワールド</p>
-        <a href="https://cluster.mu/w/7407bf42-499d-45ad-96c7-9b9ebc329818" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Link
-          </button>
-        </a>
-      </div>
-
-      <div class="box">
-          <h2>雨の振る箱庭</h2>
-        <img src="/images/Other/RainMiniatureGarden/RainyGarden.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>Cluster用ワールド<br>
-          2021年10月
-        </p>
-        <p>雨が降っているワールド<br>
-          バーチャルホーム的なものを作ろうとした名残</p>
-        <a href="https://cluster.mu/w/d3b21e71-a071-468a-904c-f975dc0001ca" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Link
-          </button>
-        </a>
-      </div>
-
-      <div class="box">
-          <h2>ちゅうの間からの脱出</h2>
-        <img src="/images/Other/Escape/Escape_chuu.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-          <span class="othertag" style="background-color: rgb(32, 138, 167);">1week</span>
-        </p>
-        <p>3D脱出ゲーム<br>
-          2021年9月 シナリオ以外担当
-        </p>
-        <p>変わり者の親類から相続した"ちゅうの間"から脱出するゲーム<br>
-          閲覧数が5万を突破した
+          <p>
+            ${work.category}<br>
+            ${work.date}
           </p>
-        <a href="https://unityroom.com/games/as_roomofchu" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+          <p>${descHtml}</p>
+          ${linkHtml}
+        `;
 
-      <div class="box">
-          <h2>NoNameMech v1</h2>
-        <img src="/images/Other/N2M1_background.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>3Dロボットアクションゲーム<br>
-          2021年3月
-        </p>
-        <p>シンプルなロボットアクションゲーム<br>
-          大量の敵の管理の最適化を行った</p>
-        <a href="https://unityroom.com/games/as_archive_nonamemech1" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+        // カード内タグをクリックした際のフィルター切り替え
+        card.querySelectorAll('.othertag').forEach(tagEl => {
+          tagEl.addEventListener('click', (e) => {
+            e.stopPropagation();
+            const selectedTag = tagEl.getAttribute('data-tag');
+            if (selectedTag) {
+              setTagFilter(selectedTag);
+            }
+          });
+        });
 
-      <div class="box">
-          <h2>GridLab</h2>
-        <img src="/images/Other/GridLab_2.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-        </p>
-        <p>3DFPSゲーム<br>
-          2020年9月 実装等担当
-        </p>
-        <p>U22プログラミング・コンテスト向けに作成したゲーム<br>
-          ゲーム内でステージを作り、パルクールFPSで遊べる</p>
-      </div>
+        listContainer.appendChild(card);
+      });
+    }
 
-      <div class="box">
-          <h2>セイビングパル</h2>
-        <img src="/images/Other/SavingPal_2.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(133, 25, 130);">チーム制作</span>
-          <span class="othertag" style="background-color: rgb(167, 32, 32);">実績</span>
-        </p>
-        <p>3DRPGアクションゲーム<br>
-          2019年8月 実装等担当
-        </p>
-        <p>Unityインターハイ2019向けに作成したゲーム<br>
-          一次突破、入賞した</p>
-      </div>
+    function renderFilters() {
+      filterContainer.innerHTML = '';
 
-      <div class="box">
-          <h2>LunarDefender</h2>
-        <img src="/images/Other/LunarDefender2/LunarDefender2_7.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>3Dロボットアクションゲーム<br>
-          2019年4月
-        </p>
-        <p>はじめて作ったロボットアクションゲーム<br>
-          速さを重視、アセンブルもできる
-        </p>
-      </div>
+      // タグの集計
+      const tagCounts = {};
+      worksData.forEach(work => {
+        work.tags.forEach(tag => {
+          tagCounts[tag] = (tagCounts[tag] || 0) + 1;
+        });
+      });
 
-      <div class="box">
-          <h2>Shine Dive</h2>
-        <img src="/images/Other/ShineDive.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>3Dフライトゲーム<br>
-          2018年10月
-        </p>
-        <p>宙に浮かんだ輪をくぐるゲーム<br>
-      今でもカメラ等の演出の例として役に立っている</p>
-        <a href="https://unityroom.com/games/flighttest_shinedive" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+      // 固定表示順を定義し、残りはアルファベット順
+      const preferredOrder = ['All', '個人制作', 'チーム制作', '実績', '1week', '2days'];
+      const otherTags = Object.keys(tagCounts).filter(t => !preferredOrder.includes(t)).sort();
+      const allTags = ['All', ...preferredOrder.filter(t => t !== 'All' && tagCounts[t]), ...otherTags];
 
-      <div class="box">
-          <h2>LunarDefender</h2>
-        <img src="/images/Other/LunarDefender1/LunarDefender1_10.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>3DFPSゲーム<br>
-          2018年4月
-        </p>
-        <p>近未来な月面基地を守るFPSゲーム<br>
-          ミッションをクリアして素材を集め、新たな銃を作ることができる</p>
-      </div>
+      allTags.forEach(tag => {
+        const count = tag === 'All' ? worksData.length : (tagCounts[tag] || 0);
+        const btn = document.createElement('button');
+        btn.type = 'button';
+        btn.className = `works-filter-btn ${tag === currentFilter ? 'active' : ''}`;
+        btn.innerHTML = `${tag} <span class="works-filter-count">(${count})</span>`;
 
-      <div class="box">
-          <h2>MyCraft</h2>
-        <img src="/images/Other/MyCraft.jpg" width="98%" class="otherimg">
-        <p class="othertags">
-          <span class="othertag" style="background-color: rgb(47, 25, 133);">個人制作</span>
-        </p>
-        <p>3D建築ゲーム<br>
-          2017年8月
-        </p>
-        <p>ブロックを配置して遊べるゲーム<br>
-          地形の自動生成にも挑戦</p>
-        <a href="https://unityroom.com/games/asra_dreamer_mycraft1" target="_blank" rel="noopener noreferrer">
-          <button class="otherbutton">
-          Play
-          </button>
-        </a>
-      </div>
+        btn.addEventListener('click', () => {
+          setTagFilter(tag);
+        });
 
-    </div>
+        filterContainer.appendChild(btn);
+      });
+    }
 
-    <br>
+    // 検索入力イベントハンドラ
+    if (searchInput) {
+      searchInput.addEventListener('input', (e) => {
+        searchQuery = e.target.value;
+        if (searchClearBtn) {
+          searchClearBtn.style.display = searchQuery ? 'block' : 'none';
+        }
+        renderWorks();
+      });
 
-  </body>
+      searchInput.addEventListener('keydown', (e) => {
+        if (e.key === 'Escape') {
+          searchInput.value = '';
+          searchQuery = '';
+          if (searchClearBtn) searchClearBtn.style.display = 'none';
+          renderWorks();
+        }
+      });
+    }
+
+    if (searchClearBtn) {
+      searchClearBtn.addEventListener('click', () => {
+        if (searchInput) {
+          searchInput.value = '';
+          searchInput.focus();
+        }
+        searchQuery = '';
+        searchClearBtn.style.display = 'none';
+        renderWorks();
+      });
+    }
+
+    // 初期化描画
+    renderFilters();
+    renderWorks();
+  </script>
 
   <script src="/js/hamburger.js"></script>
+
+</body>
 
 </html>

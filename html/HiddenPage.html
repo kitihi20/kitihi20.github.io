@@ -1,16 +1,18 @@
 <!DOCTYPE html>
 <html lang="ja" standardized-themed-scrollbar style="height: 100%;">
+
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>kitihi20_hidden</title>
-    
+
     <link rel="shortcut icon" href="/images/Favicon/kitihi20.ico">
 
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Mono&display=swap" rel="stylesheet">
-    
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700&family=Space+Mono&display=swap"
+        rel="stylesheet">
+
     <style>
         :root {
             /* グリッドパラメータ */
@@ -18,15 +20,19 @@
             --gutter: 24px;
             --margin: 48px;
             --max-width: 1440px;
-            
+
             /* 垂直リズムパラメータ */
             --baseline: 8px;
-            --leading: 24px; /* baseline * 3 */
+            --leading: 24px;
+            /* baseline * 3 */
 
             /* カラーパレット */
-            --color-paper: #ffffff; /* ピュアホワイト */
-            --color-ink: #111111;   /* ニアブラック */
-            --color-accent: #e4002b; /* 赤 */
+            --color-paper: #ffffff;
+            /* ピュアホワイト */
+            --color-ink: #111111;
+            /* ニアブラック */
+            --color-accent: #e4002b;
+            /* 赤 */
             --color-muted: #666666;
             --color-border: #cccccc;
 
@@ -38,22 +44,44 @@
         /* -------------------------------------
            リセットと基本設定
            ------------------------------------- */
-        *, *::before, *::after { box-sizing: border-box; }
+        *,
+        *::before,
+        *::after {
+            box-sizing: border-box;
+        }
+
         body {
             margin: 0;
             padding: 0;
             background-color: var(--color-paper);
             color: var(--color-ink);
             font-family: var(--font-sans);
-            font-size: 16px; 
-            line-height: var(--leading); /* 4. 垂直リズムのロック */
+            font-size: 16px;
+            line-height: var(--leading);
+            /* 4. 垂直リズムのロック */
             -webkit-font-smoothing: antialiased;
             -moz-osx-font-smoothing: grayscale;
         }
 
-        h1, h2, h3, p, ul, a { margin: 0; padding: 0; font-weight: normal; }
-        ul { list-style: none; }
-        a { color: inherit; text-decoration: none; }
+        h1,
+        h2,
+        h3,
+        p,
+        ul,
+        a {
+            margin: 0;
+            padding: 0;
+            font-weight: normal;
+        }
+
+        ul {
+            list-style: none;
+        }
+
+        a {
+            color: inherit;
+            text-decoration: none;
+        }
 
         /* -------------------------------------
            タイポグラフィの階層と垂直リズム
@@ -61,32 +89,41 @@
         h1 {
             font-size: 64px;
             font-weight: 700;
-            line-height: 72px; /* baseline * 9 */
-            margin-bottom: 24px; /* baseline * 3 */
+            line-height: 72px;
+            /* baseline * 9 */
+            margin-bottom: 24px;
+            /* baseline * 3 */
             letter-spacing: -0.02em;
         }
+
         h2 {
             font-size: 32px;
             font-weight: 700;
-            line-height: 48px; /* baseline * 6 */
-            margin-top: 72px;  /* baseline * 9 */
+            line-height: 48px;
+            /* baseline * 6 */
+            margin-top: 72px;
+            /* baseline * 9 */
             margin-bottom: 24px;
             letter-spacing: -0.01em;
             border-top: 2px solid var(--color-ink);
-            padding-top: 6px; /* 境界線の2pxと合わせて8px(ベースライン)を消費 */
+            padding-top: 6px;
+            /* 境界線の2pxと合わせて8px(ベースライン)を消費 */
         }
+
         p.desc {
             font-size: 24px;
-            line-height: 32px; /* baseline * 4 */
+            line-height: 32px;
+            /* baseline * 4 */
             color: var(--color-muted);
-            margin-bottom: 48px; /* baseline * 6 */
+            margin-bottom: 48px;
+            /* baseline * 6 */
         }
-        
-        .mono { 
-            font-family: var(--font-mono); 
-            font-size: 14px; 
-            text-transform: uppercase; 
-            letter-spacing: 0.05em; 
+
+        .mono {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.05em;
             color: var(--color-accent);
         }
 
@@ -97,8 +134,10 @@
         .wrap {
             max-width: var(--max-width);
             margin: 0 auto;
-            padding: 96px var(--margin); /* 上下余白もベースラインの倍数 */
-            position: relative; /* ガイド線の基準点 */
+            padding: 96px var(--margin);
+            /* 上下余白もベースラインの倍数 */
+            position: relative;
+            /* ガイド線の基準点 */
         }
 
         /* 3. Subgridによるカラムラインでのスナップ */
@@ -115,8 +154,13 @@
         }
 
         /* 要素の配置ユーティリティ (左揃え・右ラグを形成) */
-        .col-1-8 { grid-column: 1 / 9; }
-        .col-1-12 { grid-column: 1 / 13; }
+        .col-1-8 {
+            grid-column: 1 / 9;
+        }
+
+        .col-1-12 {
+            grid-column: 1 / 13;
+        }
 
         /* -------------------------------------
            コンポーネント: Quick Applications (Icon Grid)
@@ -124,20 +168,26 @@
         .tool-grid {
             margin-bottom: 48px;
         }
+
         .tool-item-card {
-            grid-column: span 3; /* 12カラム中3カラム = 4列配置 */
+            grid-column: span 3;
+            /* 12カラム中3カラム = 4列配置 */
             display: flex;
             flex-direction: column;
             border-top: 1px solid var(--color-border);
-            padding-top: 15px; /* border1px + padding15px = 16px (baseline*2) */
+            padding-top: 15px;
+            /* border1px + padding15px = 16px (baseline*2) */
             margin-bottom: 48px;
-            height: 120px; /* 垂直リズムの維持 */
+            height: 120px;
+            /* 垂直リズムの維持 */
             transition: color 0.1s ease, border-color 0.1s ease;
         }
+
         .tool-item-card:hover {
             color: var(--color-accent);
             border-top-color: var(--color-accent);
         }
+
         .tool-item-single {
             grid-column: span 1;
             display: flex;
@@ -148,15 +198,18 @@
             height: 56px;
             transition: color 0.1s ease, border-color 0.1s ease;
         }
+
         .tool-item-single:hover {
             color: var(--color-accent);
             border-top-color: var(--color-accent);
         }
+
         .tool-icon {
             font-size: 32px;
             line-height: 32px;
             margin-bottom: 16px;
         }
+
         .tool-name {
             font-weight: 500;
             font-size: 16px;
@@ -169,30 +222,36 @@
         .tool-list-container {
             border-top: 1px solid var(--color-ink);
         }
+
         .tool-list-row {
             display: grid;
             grid-template-columns: subgrid;
             grid-column: 1 / -1;
             border-bottom: 1px solid var(--color-border);
-            padding: 23px 0; /* padding上下23px + border1px*2 = 48px (baseline*6) の行高 */
+            padding: 23px 0;
+            /* padding上下23px + border1px*2 = 48px (baseline*6) の行高 */
             align-items: baseline;
             transition: color 0.1s ease;
         }
+
         .tool-list-row:hover {
             color: var(--color-accent);
         }
+
         .list-title {
             grid-column: 1 / 4;
             font-weight: 500;
             font-size: 24px;
             line-height: 32px;
         }
+
         .list-desc {
             grid-column: 4 / 11;
             color: var(--color-muted);
             font-size: 16px;
             line-height: var(--leading);
         }
+
         .list-arrow {
             grid-column: 12 / 13;
             text-align: right;
@@ -211,6 +270,7 @@
             margin-bottom: 24px;
             flex-wrap: wrap;
         }
+
         .filter-tag {
             grid-column: span 2;
             color: var(--color-muted);
@@ -226,16 +286,19 @@
             height: 56px;
             transition: color 0.1s ease, border-color 0.1s ease;
         }
+
         .filter-tag:hover {
             border-color: var(--color-accent);
             color: var(--color-accent);
         }
+
         .filter-tag.active {
             border-color: var(--color-accent);
             color: var(--color-accent);
             font-weight: 600;
         }
-/*.tool-item-single {
+
+        /*.tool-item-single {
     grid-column: span 1;
     display: flex;
     flex-direction: column;
@@ -254,6 +317,7 @@
             gap: 4px;
             margin-top: 4px;
         }
+
         .tool-tag {
             font-size: 12px;
             background: #f0f0f0;
@@ -263,26 +327,169 @@
         }
 
         /* -------------------------------------
+           検索バー用UIコンポーネント
+           ------------------------------------- */
+        .search-wrapper {
+            grid-column: 1 / -1;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 16px;
+            margin-bottom: 24px;
+            border-bottom: 2px solid var(--color-ink);
+            padding-bottom: 8px;
+            transition: border-color 0.15s ease;
+        }
+
+        .search-wrapper:focus-within {
+            border-bottom-color: var(--color-accent);
+        }
+
+        .search-input-box {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex: 1;
+        }
+
+        .search-icon {
+            font-family: var(--font-mono);
+            font-size: 14px;
+            color: var(--color-accent);
+            letter-spacing: 0.05em;
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .search-input {
+            flex: 1;
+            border: none;
+            outline: none;
+            font-family: var(--font-sans);
+            font-size: 16px;
+            line-height: var(--leading);
+            color: var(--color-ink);
+            background: transparent;
+            padding: 4px 0;
+        }
+
+        .search-input::placeholder {
+            color: #999999;
+            font-size: 15px;
+        }
+
+        .search-clear-btn {
+            background: none;
+            border: none;
+            font-family: var(--font-sans);
+            font-size: 18px;
+            line-height: 1;
+            color: var(--color-muted);
+            cursor: pointer;
+            padding: 4px 8px;
+            display: none;
+            transition: color 0.1s ease;
+        }
+
+        .search-clear-btn:hover {
+            color: var(--color-accent);
+        }
+
+        .search-status {
+            font-size: 13px;
+            color: var(--color-muted);
+            white-space: nowrap;
+            user-select: none;
+        }
+
+        .tool-list-empty {
+            grid-column: 1 / -1;
+            padding: 48px 0;
+            text-align: center;
+            color: var(--color-muted);
+        }
+
+        .tool-list-empty .empty-title {
+            color: var(--color-accent);
+            margin-bottom: 8px;
+            font-size: 16px;
+            font-weight: 700;
+        }
+
+        .tool-list-empty .empty-desc {
+            font-size: 14px;
+            line-height: 24px;
+        }
+
+        /* -------------------------------------
            レスポンシブ対応
            ------------------------------------- */
         @media (max-width: 1024px) {
-            .tool-item-card { grid-column: span 4; } /* 3列配置に変更 */
+            .tool-item-card {
+                grid-column: span 4;
+            }
+
+            /* 3列配置に変更 */
         }
+
         @media (max-width: 768px) {
-            :root { --margin: 24px; --gutter: 16px; }
-            h1 { font-size: 40px; line-height: 48px; }
-            h2 { font-size: 24px; line-height: 32px; }
-            .col-1-8 { grid-column: 1 / -1; }
-            .tool-item-card { grid-column: span 6; height: auto; padding-bottom: 24px; }
-            .list-title { grid-column: 1 / -1; margin-bottom: 8px; }
-            .list-desc { grid-column: 1 / -1; }
-            .list-arrow { display: none; }
+            :root {
+                --margin: 24px;
+                --gutter: 16px;
+            }
+
+            h1 {
+                font-size: 40px;
+                line-height: 48px;
+            }
+
+            h2 {
+                font-size: 24px;
+                line-height: 32px;
+            }
+
+            .col-1-8 {
+                grid-column: 1 / -1;
+            }
+
+            .tool-item-card {
+                grid-column: span 6;
+                height: auto;
+                padding-bottom: 24px;
+            }
+
+            .list-title {
+                grid-column: 1 / -1;
+                margin-bottom: 8px;
+            }
+
+            .list-desc {
+                grid-column: 1 / -1;
+            }
+
+            .list-arrow {
+                display: none;
+            }
+
+            .search-wrapper {
+                flex-direction: column;
+                align-items: stretch;
+                gap: 8px;
+            }
+
+            .search-status {
+                text-align: right;
+            }
         }
+
         @media (max-width: 500px) {
-            .tool-item-single { grid-column: span 2; }
+            .tool-item-single {
+                grid-column: span 2;
+            }
         }
     </style>
 </head>
+
 <body>
 
     <!--ヘッダー配置用-->
@@ -293,16 +500,16 @@
 
     <!-- コンテンツのラッパー (.wrap) -->
     <div class="wrap">
-        
+
         <!-- カラム・グリッド (同一コンテナ内に配置) -->
         <div class="grid-overlay" id="gridOverlay"></div>
 
         <div class="grid">
-            
+
             <!-- ヘッダーエリア -->
             <div class="subgrid">
                 <div class="col-1-8 optical-align">
-                    <div class="mono" style="margin-bottom: 16px;">System / Index 01</div>
+                    <div class="mono" style="margin-bottom: 16px;">=D</div>
                     <h1 class="optical-align">Hidden Page</h1>
                     <p class="desc">便利ツール・よく使うサイト等<br>サイト上で動作する機能へのポータル。</p>
                 </div>
@@ -313,15 +520,15 @@
                 <div class="col-1-12">
                     <h2 class="optical-align">Quick Applications</h2>
                 </div>
-                
+
                 <div class="subgrid tool-grid" style="margin-bottom: 0px;">
                     <a href="https://squoosh.app/" class="tool-item-single">
-                        <img style="object-fit: cover; width: 90%; margin: auto;"
-                        class="" src="/images/Tools/Squoosh.webp">
+                        <img style="object-fit: cover; width: 90%; margin: auto;" class=""
+                            src="/images/Tools/Squoosh.webp">
                     </a>
                     <a href="https://cpetry.github.io/NormalMap-Online/" class="tool-item-single">
-                        <img style="object-fit: cover; width: 90%; margin: auto;"
-                        class="" src="/images/Tools/nmap_logo_test.webp">
+                        <img style="object-fit: cover; width: 90%; margin: auto;" class=""
+                            src="/images/Tools/nmap_logo_test.webp">
                     </a>
                     <!--<a href="#" class="tool-item-card">
                         <span class="tool-icon">📝</span>
@@ -331,32 +538,32 @@
 
                 <div class="subgrid tool-grid">
                     <a href="/html/GeminiTools_Text/JSMiniPython3.html" class="tool-item-single">
-                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)"
-                        class="" src="/images/Tools/JSMPythonCalc_icon.webp">
+                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)" class=""
+                            src="/images/Tools/JSMPythonCalc_icon.webp">
                     </a>
                     <a href="/html/GeminiTools_Text/CharacterCounter.html" class="tool-item-single">
-                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)"
-                        class="" src="/images/Tools/CharCounter_icon.webp">
+                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)" class=""
+                            src="/images/Tools/CharCounter_icon.webp">
                     </a>
                     <a href="/html/GeminiTools/ColorToAlpha.html" class="tool-item-single">
-                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)"
-                        class="" src="/images/Tools/ColorToAlpha_icon.webp">
+                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)" class=""
+                            src="/images/Tools/ColorToAlpha_icon.webp">
                     </a>
                     <a href="/html/GeminiTools/CutColor.html" class="tool-item-single">
-                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)"
-                        class="" src="/images/Tools/CutTheColor_icon.webp">
+                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)" class=""
+                            src="/images/Tools/CutTheColor_icon.webp">
                     </a>
                     <a href="/html/GeminiTools/AudioTrimmer.html" class="tool-item-single">
-                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)"
-                        class="" src="/images/Tools/AudioTrimmer.webp">
+                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)" class=""
+                            src="/images/Tools/AudioTrimmer.webp">
                     </a>
                     <a href="/html/GeminiTools/MediaComberter2.html" class="tool-item-single">
-                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)"
-                        class="" src="/images/Tools/MediaComberter.webp">
+                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)" class=""
+                            src="/images/Tools/MediaComberter.webp">
                     </a>
                     <a href="/html/GeminiToys/MarkovAudio.html" class="tool-item-single">
-                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)"
-                        class="" src="/images/Tools/MarkovAudio_icon.webp">
+                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)" class=""
+                            src="/images/Tools/MarkovAudio_icon.webp">
                     </a>
                 </div>
             </section>
@@ -390,6 +597,19 @@
                     <p class="desc" style="font-size: 16px; line-height: 24px; margin-bottom: 24px;">
                         痒い所に手が届くGemini製ツール群</p>
                 </div>
+
+                <!-- 検索バー -->
+                <div class="col-1-12 search-wrapper">
+                    <div class="search-input-box">
+                        <span class="search-icon mono">SEARCH /</span>
+                        <input type="text" id="tool-search-input" class="search-input" placeholder="タイトル、説明文、タグで絞り込み..."
+                            autocomplete="off" spellcheck="false">
+                        <button type="button" id="search-clear-btn" class="search-clear-btn" title="検索をクリア"
+                            aria-label="検索をクリア">×</button>
+                    </div>
+                    <div id="search-status" class="mono search-status"></div>
+                </div>
+
                 <div id="filter-container" class="subgrid tool-grid"></div>
                 <div id="dynamic-tool-list" class="subgrid tool-list-container"></div>
             </section>
@@ -459,51 +679,86 @@
         Game（明確なゲーム要素を持つもの）
         */
         const toolsData = [
-        { title: 'Video to GIF Converter', url: '/html/GeminiTools/Video2GifConverter.html', desc: 'MP4からGIFに変換する。時間、FPS、画質等も設定できる。', tags: ['Video', 'Image'] },
-        { title: 'Video Frame Extractor', url: '/html/GeminiTools/VideoFrameExtractor.html', desc: 'MP4の1フレームをPNGで出力する。Windowsで切り取れない時に。', tags: ['Video', 'Image'] },
-        { title: 'Audio Trimmer', url: '/html/GeminiTools/AudioTrimmer.html', desc: '音声を任意の範囲で切り取る。音声の切り抜きに。', tags: ['Audio', 'Utility'] },
-        { title: 'Media Comberter', url: '/html/GeminiTools/MediaComberter2.html', desc: '音声/動画を別の形式に変換する。サーバーの都合でシングルコア駆動。', tags: ['Video', 'Audio'] },
-        { title: 'Color to Alpha', url: '/html/GeminiTools/ColorToAlpha.html', desc: '背景透過ツール1。指定色から閾値までを良い感じに透過する。', tags: ['Image', 'Utility'] },
-        { title: 'Cut the Color', url: '/html/GeminiTools/CutColor.html', desc: '背景透過ツール2。指定色周辺を透過する、所謂バケツツール。', tags: ['Image', 'Utility'] },
-        { title: 'SVG to PNG', url: '/html/GeminiTools/svg_to_png_converter.html', desc: 'SVGを任意のサイズのPNG画像に変換するツール。背景色も変えられる。', tags: ['Image','Utility'] },
-        { title: 'Blur Filter', url: '/html/GeminiTools/blur_image_studio.html', desc: '画像にブラーをかけるツール。何種類か選べる。', tags: ['Image','Utility'] },
-        { title: 'k-means Filter', url: '/html/GeminiTools/k_means_image_quantizer.html', desc: 'k平均法で画像の色を減らすツール。処理が重い。', tags: ['Image','Utility'] },
-        { title: 'Device Input Visualizer', url: '/html/GeminiTools/DeviceInputVisualizer_JIS.html', desc: 'PCの入力デバイスの動作を確認。JISキーボードとマウスに対応。', tags: ['System', 'Utility'] },
-        { title: 'Gamepad Tester', url: '/html/GeminiTools/GamepadTester.html', desc: 'コントローラーの動作を確認。単体向け。', tags: ['System', 'Utility'] },
-        { title: 'Device Information Dashboard', url: '/html/GeminiToys/DeviceInformationDashboard.html', desc: '端末情報を確認。端末によってセキュリティが随分違う。', tags: ['System', 'Data'] },
-        { title: 'CPU & iGPU Performance Dashboard', url: '/html/PC/CPUComp2.html', desc: 'CPUと内蔵GPUの性能を比較。情報の正確性は保証できません。', tags: ['System', 'Data'] },
-        { title: 'CPU & iGPU Performance Dashboard', url: '/html/PC/CPUComp2.html?cputype=LowCPU', desc: 'ローエンドCPU版。Chromebookとかそういうの。', tags: ['System', 'Data'] },
-        { title: 'JS-MiniPython Calculator', url: '/html/GeminiTools_Text/JSMiniPython3.html', desc: 'Python風簡易計算機。履歴ごと編集できる関数電卓的な...', tags: ['Dev', 'Utility'] },
-        { title: 'Json Analyzer', url: '/html/GeminiTools_Text/JsonAnalyzer.html', desc: 'jsonの内容や構造を確認できる。プロンプトの圧縮にも。', tags: ['Data', 'Dev'] },
-        { title: 'Json Data Viewer', url: '/html/PC/JsonDataViewer.html', desc: 'jsonの内容をある程度見やすく確認できる。ソートもできる。', tags: ['Data', 'Dev'] },
-        { title: 'Character Counter', url: '/html/GeminiTools_Text/CharacterCounter.html', desc: '文字数え上げツール。めっちゃシンプル。', tags: ['Text', 'Utility'] },
-        { title: 'String Combination Generator', url: '/html/GeminiTools_Text/StringCombinationGenerator.html', desc: '2つの文字列リストの組み合わせ一覧を作成。ルーレットにもどうぞ。', tags: ['Text', 'Data'] },
-        { title: 'Square Cipher', url: '/html/GeminiTools_Text/SquareCipher.html', desc: '文字列を四角で構成された暗号へ変換する。プロトタイプのテキスト思いつかないときに。', tags: ['Text', 'Toy'] },
-        { title: 'LLM Text Converter', url: '/html/GeminiTools_Text/romaji_converter.html', desc: 'LLMでひらがなだけの文を良い感じに変換。LLMは自前で用意してください。', tags: ['Text', 'Dev'] },
-        { title: '3D Dice', url: '/html/GeminiTools/3DDiceSimulator.html', desc: 'よく使われているダイスロールができる。3Dで無駄に凝ってる。', tags: ['Toy', 'Utility'] },
-        { title: 'Multi Timer', url: '/html/GeminiTools/MultiTimer.html', desc: '同時に複数のタイマーを動かせる。複数の時間のループなども可能。', tags: ['Utility'] },
-        { title: 'Web Window System', url: '/html/GeminiToys/WebWindowSystem.html', desc: 'マルチウインドウでWebを見れる。セキュリティの都合上、Youtube等は見れない。', tags: ['Web', 'Utility'] },
-        { title: 'Markov Audio', url: '/html/GeminiToys/MarkovAudio.html', desc: 'マルコフ連鎖に従い音を再生する。色々と応用が利くかもしれない。', tags: ['Audio', 'Toy'] },
-        { title: 'Chaos Tetris', url: '/html/GeminiToys/NotTetris.html', desc: 'あそばせないテトリス。Gemini 3.1 Proのユーモア。', tags: ['Game', 'Toy'] },
-        { title: 'Browser & Web API Tester', url: '/html/GeminiToys/Browser&WebAPI_Test.html', desc: 'ブラウザを使ったギミックまとめ。何かのネタになるかも。', tags: ['Web', 'Dev'] },
-        { title: 'History API Maze', url: '/html/GeminiToys/HistoryAPI_Maze.html', desc: 'ブラウザの戻るで戻れる迷路。何かのネタになるかも。', tags: ['Web', 'Game'] },
-        { title: 'NFC Reader', url: '/html/GeminiTools/NFCReader.html', desc: 'NFCカードの固有IDを読み取る。一部Androidのみ利用可。', tags: ['System', 'Utility'] },
-        { title: '3D Tube Shooter', url: '/html/GeminiToys/3DTubeShooter.html', desc: '画面奥から迫りくる敵を撃退するゲーム。あるゲームを形だけ再現したもの。', tags: ['Game'] },
-        { title: 'T-Hacking Sim', url: '/html/GeminiToys/HacknetLike.html', desc: 'ターミナル操作でハッキングするゲーム。あるゲームを形だけ再現したもの。', tags: ['Game'] },
+            { title: 'Video to GIF Converter', url: '/html/GeminiTools/Video2GifConverter.html', desc: 'MP4からGIFに変換する。時間、FPS、画質等も設定できる。', tags: ['Video', 'Image'] },
+            { title: 'Video Frame Extractor', url: '/html/GeminiTools/VideoFrameExtractor.html', desc: 'MP4の1フレームをPNGで出力する。Windowsで切り取れない時に。', tags: ['Video', 'Image'] },
+            { title: 'Audio Trimmer', url: '/html/GeminiTools/AudioTrimmer.html', desc: '音声を任意の範囲で切り取る。音声の切り抜きに。', tags: ['Audio', 'Utility'] },
+            { title: 'Media Comberter', url: '/html/GeminiTools/MediaComberter2.html', desc: '音声/動画を別の形式に変換する。サーバーの都合でシングルコア駆動。', tags: ['Video', 'Audio'] },
+            { title: 'Color to Alpha', url: '/html/GeminiTools/ColorToAlpha.html', desc: '背景透過ツール1。指定色から閾値までを良い感じに透過する。', tags: ['Image', 'Utility'] },
+            { title: 'Cut the Color', url: '/html/GeminiTools/CutColor.html', desc: '背景透過ツール2。指定色周辺を透過する、所謂バケツツール。', tags: ['Image', 'Utility'] },
+            { title: 'SVG to PNG', url: '/html/GeminiTools/svg_to_png_converter.html', desc: 'SVGを任意のサイズのPNG画像に変換するツール。背景色も変えられる。', tags: ['Image', 'Utility'] },
+            { title: 'Blur Filter', url: '/html/GeminiTools/blur_image_studio.html', desc: '画像にブラーをかけるツール。何種類か選べる。', tags: ['Image', 'Utility'] },
+            { title: 'k-means Filter', url: '/html/GeminiTools/k_means_image_quantizer.html', desc: 'k平均法で画像の色を減らすツール。処理が重い。', tags: ['Image', 'Utility'] },
+            { title: 'Device Input Visualizer', url: '/html/GeminiTools/DeviceInputVisualizer_JIS.html', desc: 'PCの入力デバイスの動作を確認。JISキーボードとマウスに対応。', tags: ['System', 'Utility'] },
+            { title: 'Gamepad Tester', url: '/html/GeminiTools/GamepadTester.html', desc: 'コントローラーの動作を確認。単体向け。', tags: ['System', 'Utility'] },
+            { title: 'Device Information Dashboard', url: '/html/GeminiToys/DeviceInformationDashboard.html', desc: '端末情報を確認。端末によってセキュリティが随分違う。', tags: ['System', 'Data'] },
+            { title: 'CPU & iGPU Performance Dashboard', url: '/html/PC/CPUComp2.html', desc: 'CPUと内蔵GPUの性能を比較。情報の正確性は保証できません。', tags: ['System', 'Data'] },
+            { title: 'CPU & iGPU Performance Dashboard', url: '/html/PC/CPUComp2.html?cputype=LowCPU', desc: 'ローエンドCPU版。Chromebookとかそういうの。', tags: ['System', 'Data'] },
+            { title: 'JS-MiniPython Calculator', url: '/html/GeminiTools_Text/JSMiniPython3.html', desc: 'Python風簡易計算機。履歴ごと編集できる関数電卓的な...', tags: ['Dev', 'Utility'] },
+            { title: 'Json Analyzer', url: '/html/GeminiTools_Text/JsonAnalyzer.html', desc: 'jsonの内容や構造を確認できる。プロンプトの圧縮にも。', tags: ['Data', 'Dev'] },
+            { title: 'Json Data Viewer', url: '/html/PC/JsonDataViewer.html', desc: 'jsonの内容をある程度見やすく確認できる。ソートもできる。', tags: ['Data', 'Dev'] },
+            { title: 'Character Counter', url: '/html/GeminiTools_Text/CharacterCounter.html', desc: '文字数え上げツール。めっちゃシンプル。', tags: ['Text', 'Utility'] },
+            { title: 'String Combination Generator', url: '/html/GeminiTools_Text/StringCombinationGenerator.html', desc: '2つの文字列リストの組み合わせ一覧を作成。ルーレットにもどうぞ。', tags: ['Text', 'Data'] },
+            { title: 'Square Cipher', url: '/html/GeminiTools_Text/SquareCipher.html', desc: '文字列を四角で構成された暗号へ変換する。プロトタイプのテキスト思いつかないときに。', tags: ['Text', 'Toy'] },
+            { title: 'LLM Text Converter', url: '/html/GeminiTools_Text/romaji_converter.html', desc: 'LLMでひらがなだけの文を良い感じに変換。LLMは自前で用意してください。', tags: ['Text', 'Dev'] },
+            { title: '3D Dice', url: '/html/GeminiTools/3DDiceSimulator.html', desc: 'よく使われているダイスロールができる。3Dで無駄に凝ってる。', tags: ['Toy', 'Utility'] },
+            { title: 'Multi Timer', url: '/html/GeminiTools/MultiTimer.html', desc: '同時に複数のタイマーを動かせる。複数の時間のループなども可能。', tags: ['Utility'] },
+            { title: 'Web Window System', url: '/html/GeminiToys/WebWindowSystem.html', desc: 'マルチウインドウでWebを見れる。セキュリティの都合上、Youtube等は見れない。', tags: ['Web', 'Utility'] },
+            { title: 'Markov Audio', url: '/html/GeminiToys/MarkovAudio.html', desc: 'マルコフ連鎖に従い音を再生する。色々と応用が利くかもしれない。', tags: ['Audio', 'Toy'] },
+            { title: 'Chaos Tetris', url: '/html/GeminiToys/NotTetris.html', desc: 'あそばせないテトリス。Gemini 3.1 Proのユーモア。', tags: ['Game', 'Toy'] },
+            { title: 'Browser & Web API Tester', url: '/html/GeminiToys/Browser&WebAPI_Test.html', desc: 'ブラウザを使ったギミックまとめ。何かのネタになるかも。', tags: ['Web', 'Dev'] },
+            { title: 'History API Maze', url: '/html/GeminiToys/HistoryAPI_Maze.html', desc: 'ブラウザの戻るで戻れる迷路。何かのネタになるかも。', tags: ['Web', 'Game'] },
+            { title: 'NFC Reader', url: '/html/GeminiTools/NFCReader.html', desc: 'NFCカードの固有IDを読み取る。一部Androidのみ利用可。', tags: ['System', 'Utility'] },
+            { title: '3D Tube Shooter', url: '/html/GeminiToys/3DTubeShooter.html', desc: '画面奥から迫りくる敵を撃退するゲーム。あるゲームを形だけ再現したもの。', tags: ['Game'] },
+            { title: 'T-Hacking Sim', url: '/html/GeminiToys/HacknetLike.html', desc: 'ターミナル操作でハッキングするゲーム。あるゲームを形だけ再現したもの。', tags: ['Game'] },
         ];
 
         let currentFilter = 'All';
+        let searchQuery = '';
 
         const listContainer = document.getElementById('dynamic-tool-list');
         const filterContainer = document.getElementById('filter-container');
+        const searchInput = document.getElementById('tool-search-input');
+        const searchClearBtn = document.getElementById('search-clear-btn');
+        const searchStatus = document.getElementById('search-status');
+
+        function updateSearchStatus(filteredCount, totalCount) {
+            if (searchStatus) {
+                if (currentFilter === 'All' && !searchQuery.trim()) {
+                    searchStatus.textContent = `${totalCount} TOOLS`;
+                } else {
+                    searchStatus.textContent = `${filteredCount} / ${totalCount} TOOLS`;
+                }
+            }
+        }
 
         function renderTools() {
             listContainer.innerHTML = '';
-            
-            // 現在のフィルターに合致するツールを抽出
-            const filteredTools = currentFilter === 'All' 
-                ? toolsData 
-                : toolsData.filter(t => t.tags.includes(currentFilter));
+
+            const terms = searchQuery.trim().toLowerCase().split(/\s+/).filter(Boolean);
+
+            // 現在のフィルターと検索語句に合致するツールを抽出
+            const filteredTools = toolsData.filter(tool => {
+                const matchesTag = currentFilter === 'All' || tool.tags.includes(currentFilter);
+                if (!matchesTag) return false;
+
+                if (terms.length === 0) return true;
+
+                const searchableText = `${tool.title} ${tool.desc} ${tool.tags.join(' ')}`.toLowerCase();
+                return terms.every(term => searchableText.includes(term));
+            });
+
+            updateSearchStatus(filteredTools.length, toolsData.length);
+
+            if (filteredTools.length === 0) {
+                const emptyMsg = document.createElement('div');
+                emptyMsg.className = 'tool-list-empty';
+                emptyMsg.innerHTML = `
+                    <div class="empty-title mono">NO MATCHES FOUND</div>
+                    <div class="empty-desc">一致するツールが見つかりませんでした。<br>検索キーワードやタグの選択を変更してお試しください。</div>
+                `;
+                listContainer.appendChild(emptyMsg);
+                return;
+            }
 
             // リストのDOM生成 (行全体をaタグでラップし、元のホバー効果を維持)
             filteredTools.forEach(tool => {
@@ -526,27 +781,61 @@
 
         function renderFilters() {
             filterContainer.innerHTML = '';
-            
+
             // 現在のデータからユニークなタグを抽出
             const allTags = new Set();
             toolsData.forEach(tool => tool.tags.forEach(tag => allTags.add(tag)));
-            
+
             // 'All' を先頭にしてアルファベット順にソート
-            const tagsArray = ['All', ...Array.from(allTags)].sort();
+            const sortedTags = Array.from(allTags).sort();
+            const tagsArray = ['All', ...sortedTags];
 
             // タグボタンの生成
             tagsArray.forEach(tag => {
                 const btn = document.createElement('button');
+                btn.type = 'button';
                 btn.className = `filter-tag ${tag === currentFilter ? 'active' : ''}`;
                 btn.textContent = tag;
-                
+
                 btn.addEventListener('click', () => {
                     currentFilter = tag;
                     renderFilters(); // activeクラスの付け替えのために再描画
                     renderTools();   // リストの絞り込み
                 });
-                
+
                 filterContainer.appendChild(btn);
+            });
+        }
+
+        // 検索入力イベントハンドラ
+        if (searchInput) {
+            searchInput.addEventListener('input', (e) => {
+                searchQuery = e.target.value;
+                if (searchClearBtn) {
+                    searchClearBtn.style.display = searchQuery ? 'block' : 'none';
+                }
+                renderTools();
+            });
+
+            searchInput.addEventListener('keydown', (e) => {
+                if (e.key === 'Escape') {
+                    searchInput.value = '';
+                    searchQuery = '';
+                    if (searchClearBtn) searchClearBtn.style.display = 'none';
+                    renderTools();
+                }
+            });
+        }
+
+        if (searchClearBtn) {
+            searchClearBtn.addEventListener('click', () => {
+                if (searchInput) {
+                    searchInput.value = '';
+                    searchInput.focus();
+                }
+                searchQuery = '';
+                searchClearBtn.style.display = 'none';
+                renderTools();
             });
         }
 
