@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Markdown Fetcher</title>
+  <!-- GitHub風CSS -->
+  <link rel="stylesheet"
+    href="https://cdnjs.cloudflare.com/ajax/libs/github-markdown-css/5.5.1/github-markdown.min.css">
+  <!-- シンタックスハイライト（GitHub Darkテーマ） -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/styles/github-dark.min.css">
+  <style>
+    body {
+      background-color: #000a13;
+      margin: 0;
+      padding: 24px;
+    }
+
+    .markdown-body {
+      box-sizing: border-box;
+      /*max-width: 860px;*/
+      margin: 0 auto;
+      padding: 40px;
+      background: #222529;
+      border: 1px solid #d0d7de;
+      border-radius: 8px;
+      min-height: 200px;
+    }
+
+    /* 読み込み中・エラー時の簡易スタイル */
+    .status-msg {
+      color: #57606a;
+      font-size: 15px;
+      text-align: center;
+      margin-top: 40px;
+    }
+
+    .status-error {
+      color: #cf222e;
+    }
+  </style>
+</head>
+
+<body>
+
+  <!-- Markdownを描画するコンテナ -->
+  <article id="content" class="markdown-body">
+    <div class="status-msg">マークダウンを読み込み中...</div>
+  </article>
+
+  <!-- ライブラリ読み込み (marked, DOMPurify, highlight.js) -->
+  <script src="https://cdn.jsdelivr.net/npm/marked/marked.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/dompurify/3.0.9/purify.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/highlight.js/11.9.0/highlight.min.js"></script>
+
+  <script>
+    async function renderMarkdown(filePath) {
+      const container = document.getElementById('content');
+
+      try {
+        // 1. 外部ファイルの取得
+        const response = await fetch(filePath);
+        if (!response.ok) {
+          throw new Error(`ファイルの取得に失敗しました (HTTPステータス: ${response.status})`);
+        }
+
+        // 2. テキストデータの抽出
+        const markdownText = await response.text();
+
+        // 3. MarkdownからHTMLへ変換
+        const rawHtml = marked.parse(markdownText, {
+          gfm: true,     // GitHub Flavored Markdown（表、タスクリスト等）
+          breaks: true   // 単一改行を <br> に反映
+        });
+
+        // 4. XSS脆弱性対策（サニタイズ）
+        const sanitizedHtml = DOMPurify.sanitize(rawHtml);
+        container.innerHTML = sanitizedHtml;
+
+        // 5. コードブロックのシンタックスハイライトを適用
+        container.querySelectorAll('pre code').forEach((block) => {
+          hljs.highlightElement(block);
+        });
+
+      } catch (error) {
+        container.innerHTML = `
+          <div class="status-msg status-error">
+            <strong>エラー:</strong> ${error.message}
+          </div>
+        `;
+        console.error(error);
+      }
+    }
+
+    // 読み込みたい .md ファイルのパスを指定して実行
+    // 例: 同一フォルダ内の 'article.md' や '/docs/readme.md'
+    renderMarkdown('Unity6_UPR_Horror_Environment_Guide.md');
+  </script>
+</body>
+
+</html>
