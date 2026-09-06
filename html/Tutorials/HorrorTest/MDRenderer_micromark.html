@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Minimal Micromark Viewer</title>
+</head>
+
+<body>
+
+  <div id="content">読み込み中...</div>
+
+  <script type="module">
+    // CDNからmicromarkをバンドル形式でインポート
+    import { micromark } from 'https://esm.sh/micromark@4?bundle';
+
+    fetch('Unity6_UPR_Horror_Environment_Guide.md')
+      .then(response => response.text())
+      .then(markdown => {
+        document.getElementById('content').innerHTML = micromark(markdown);
+      });
+  </script>
+
+</body>
+
+</html>
