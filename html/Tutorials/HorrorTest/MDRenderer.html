@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+  <meta charset="UTF-8">
+  <title>Micromark GFM Viewer</title>
+
+  <!-- 見た目も気にするならここら辺もいる -->
+  <link rel="stylesheet" href="/html/Markdown/markdown_packages/github_markdown_css_5_9_0.css">
+  <style>
+    body {
+      background-color: #d7e3ed;
+    }
+
+    .markdown-body {
+      padding: 8px 20px 8px 20px;
+    }
+
+    @media (prefers-color-scheme: dark) {
+      body {
+        background-color: #000a13;
+      }
+    }
+  </style>
+
+</head>
+
+<body>
+
+  <div id="content" class="markdown-body">読み込み中...</div>
+
+  <script type="module">
+    import { micromark } from '/html/Markdown/markdown_packages/micromark.js';
+    import { gfm, gfmHtml } from '/html/Markdown/markdown_packages/micromark_extension_gfm.js';
+
+    fetch('/html/Tutorials/HorrorTest/Unity6_UPR_Horror_Environment_Guide.md')
+      .then(res => {
+        // ステータスコードが 200番台以外（404など）なら明示的にエラーを投げる
+        if (!res.ok) { throw new Error(`HTTPエラー: ${res.status}`); }
+        return res.text();
+      })
+      .then(markdown => {
+        const html = micromark(markdown, {
+          extensions: [gfm()],
+          htmlExtensions: [gfmHtml()]
+        });
+        document.getElementById('content').innerHTML = html;
+      })
+      .catch(error => {
+        // throw されたエラー、または通信障害時にここが実行される
+        document.getElementById('content').innerHTML = `エラー: ファイルが見つかりませんでした (${error.message})`;
+      });
+  </script>
+
+</body>
+
+</html>

@@ -24,6 +24,8 @@
 
 というステップで進めていきます。
 
+### もしわからないことがあれば、この資料をAIに渡して質問してみるのも良いかもしれません。
+
 ---
 
 ## 完成イメージ（Before / After）
@@ -32,13 +34,24 @@
 
 | Before（作業前：のっぺりして怖くない） | After（作業後：重厚で不気味なホラー空間） |
 | :---: | :---: |
-| ![作業前の画像](Scene_Before.jpg) | ![作業後の画像](Scene_After.jpg) |
+| ![作業前の画像](SceneImages/Scene_Before.jpg) | ![作業後の画像](SceneImages/Scene_After.jpg) |
 | 均一に明るく、CG感が強い | 闇の表現、懐中電灯のムラ、壁の手形、映画のような質感 |
 
-### 用意されているサンプルシーン
-- **ダウンロードはこちらから**
-[Sample Project](HorrorGraphics.zip)
 
+## 各種リンク
+
+### 資料ダウンロード
+- **資料 (マークダウンのみ)**
+[>>>> MarkDown Data <<<<](Unity6_UPR_Horror_Environment_Guide.md)
+
+### サンプルシーン
+- **ダウンロードはこちらから**
+[>>>> Sample Project <<<<](HorrorGraphics.zip)
+- **利用方法**
+  1. 上記リンクよりサンプルプロジェクトをダウンロードする。
+  2. 任意の場所に解凍する。
+  3. Unity Hubを起動し、プロジェクト一覧の`追加`の`ディスクから加える`を選択し、解凍したフォルダを指定して開く。
+  4. `Assets/Scenes/HorrorScene` を開く。
 - **場所**: 古びたホテルの長い一本廊下
 - **配置済みオブジェクト**:
   - 廊下の壁・床・天井・ドア
@@ -67,7 +80,7 @@
 
 | Before：全体的に明るい空間 | After：深い闇の中の空間 |
 | :---: | :---: |
-| ![作業前の画像](Scene_Before.jpg) | ![作業後の画像](Scene_SkyChanged.jpg) |
+| ![作業前の画像](SceneImages/Scene_Before.jpg) | ![作業後の画像](SceneImages/Scene_SkyChanged.jpg) |
 | デフォルトの空が反射し、全体的に明るい | ライトの当たっていないところは真っ暗になった |
 
 ### 1. この章のゴール
@@ -83,7 +96,9 @@
 4. **`Skybox` > `Cubemap`** を選択します。
 5. **`Tint Color`** を **完全な黒（RGB: 0, 0, 0）** に設定します。
 
-<!-- [画像：マテリアルのInspector設定画面] -->
+| マテリアルの作成 | Shaderのドロップダウン | Tint Colorの変更 |
+| :---: | :---: | :---: |
+| ![マテリアルの作成の画像](UIImages/UI_CreateMaterial.jpg) | ![Shaderの変更の画像](UIImages/UI_ChangeShader.jpg) | ![スカイボックスのマテリアルの画像](UIImages/UI_BlackSkybox.jpg) |
 
 #### ステップ2：シーンのSkyboxに適用する
 1. Unity上部メニューから **`Window` > `Rendering` > `Lighting`** を選択して `Lighting` パネルを開きます。
@@ -92,7 +107,9 @@
 4. `Lighting` パネル下部にある **`Generate Lighting`** ボタンをクリックします。
 5. シーンビューを見て、外の空が消えて真っ黒になったことを確認してください。
 
-<!-- [画像：LightingパネルのEnvironmentタブ設定画面] -->
+| Lightingパネルを開く | Environmentタブの表示 | 空と部屋が黒くなった |
+| :---: | :---: | :---: |
+| ![Lightingパネルを開く画像](UIImages/UI_OpenLightingWindow.jpg) | ![Environmentタブの画像](UIImages/UI_LightingEnv.jpg) | ![空が黒くなった画像](UIImages/UI_BlackSky.jpg) |
 
 ### 3. どうしてこうなるの？（仕組みの解説）
 * **スカイボックスは「巨大な照明」である**:
@@ -102,6 +119,8 @@
 
 ### 4. 初心者がハマる罠・Tips
 > [!WARNING]
+> **空を黒くしたのに、部屋が明るい場合**
+> `Lighting` パネル下部にある **`Generate Lighting`** ボタンをクリックしてください。
 > **空を黒くしたのに、まだうっすら明るい場合**
 > `Lighting` パネル > `Environment` タブにある **`Environment Lighting`** の項目を確認してください。
 > - `Source` が `Skybox` になっている場合、Unityが古いスカイボックスの光をキャッシュしていることがあります。
@@ -114,7 +133,7 @@
 
 | Before：均一な光の当たり方 | After：不規則な光の当たり方 |
 | :---: | :---: |
-| ![作業前の画像](Scene_SkyChanged.jpg) | ![作業後の画像](Scene_CookieChanged.jpg) |
+| ![作業前の画像](SceneImages/Scene_SkyChanged.jpg) | ![作業後の画像](SceneImages/Scene_CookieChanged.jpg) |
 | スポットライトの当たる範囲が均一 | スポットライトのレンズの歪みや、反射板のムラがわかる |
 
 ### 1. この章のゴール
@@ -126,10 +145,12 @@
 1. `Hierarchy` ウィンドウから、検索窓に`Spot Light`と入力し、出てきたオブジェクト全てを選択します。
 2. `Inspector` の `Light` コンポーネントを開きます。
 3. **`Emission`** セクションにある **`Cookie`** のスロットへ、`Project` ウィンドウの `Assets\Textures\SpotLight_Cookie` をドラッグ＆ドロップします。
-4. **`Shape`** セクションの **`Inner Spot Angle (左の数字)`** を **`0`** に変更します。
+4. **`Shape`** セクションの **`Inner Spot Angle (左の数字)`** を **`80`** に変更します。
 5. シーンビューまたはゲームビューで、床や壁に当たる光の輪郭が懐中電灯の不規則なパターンに変わったことを確認します。
 
-<!-- [画像：Spot LightコンポーネントのCookieスロット設定] -->
+| Spot Lightを選択 | Cookieテクスチャを設定 | Cookieが変わった |
+| :---: | :---: | :---: |
+| ![Spot Lightを選択した画像](UIImages/UI_SelectSpotLights.jpg) | ![Cookieテクスチャを設定した画像](UIImages/UI_ChangeCookie.jpg) | ![Cookieが変わった画像](UIImages/UI_CookieChanged.jpg) |
 
 ### 3. どうしてこうなるの？（仕組みの解説）
 * **Cookieは光のステンシル (型紙)**:
@@ -139,7 +160,7 @@
 ### 4. 初心者がハマる罠・Tips
 > [!CAUTION]
 > **Cookieの色が反映されない**
-> Cookieとして使用するテクスチャのインポート設定で **`Texture Type`** を **`Cookie`** にすると、色が反映されなくなってしまいます。これは、Cookieモードではモノクロに対応していないためです。
+> Cookieとして使用するテクスチャのインポート設定で **`Texture Type`** を **`Cookie`** にすると、色が反映されなくなってしまいます。これは、Cookieモードは古いBuilt-in Render Pipelineの機能であり、色には対応していないためです。そのため、テクスチャのインポート設定は **`Default`** にしてください。 
 > また、Universal Render Pipeline Assetsの設定でCookie Atlas FormatがGrayscale系に設定されていると、色が反映されなくなってしまいます。
 
 ---
@@ -149,7 +170,7 @@
 
 | Before：小綺麗な部屋 | After：汚れた部屋 |
 | :---: | :---: |
-| ![作業前の画像](Scene_Before.jpg) | ![作業後の画像](Scene_DecalAdded_Light.jpg) |
+| ![作業前の画像](SceneImages/Scene_Before.jpg) | ![作業後の画像](SceneImages/Scene_DecalAdded_Light.jpg) |
 | ディテールが少なく、小綺麗な部屋 | 手形・血痕・汚れが追加され、不気味になった部屋 |
 
 ### 1. この章のゴール
@@ -162,7 +183,9 @@
 2. `Inspector` の下部にある **`Add Renderer Feature`** ボタンをクリックします。
 3. リストから **`Decal`** を選択して追加します。
 
-<!-- [画像：Renderer FeatureにDecalを追加する画面] -->
+| PC_Rendererを選択 | Decalを追加 | Decalが追加された |
+| :---: | :---: | :---: |
+| ![PC_Rendererを選択した画像](UIImages/UI_PC_Renderer.jpg) | ![Decalを追加した画像](UIImages/UI_AddDecalRendererFeature.jpg) | ![Decalが追加された画像](UIImages/UI_AddedDecalRendererFeature.jpg) |
 
 #### ステップ2：Decal Projectorをシーンに配置する
 1. `Hierarchy` ウィンドウで右クリックし、**`Rendering` > `URP Decal Projector`** を選択します。
@@ -177,7 +200,9 @@
 > [!CAUTION]
 > **Decalを配置しても見えない場合、暗くて見えない可能性があります。その場合は、一時的にシーンを明るくするなどして調整してください。**
 
-<!-- [画像：シーンビューでのDecal Projectorの直方体ギズモと投影結果] -->
+| Decal Projectorを作成 | Decal_HandPrintの設定 | Decal配置例 |
+| :---: | :---: | :---: |
+| ![Decal Projectorを作成する画像](UIImages/UI_CreateDecal.jpg) | ![Decal_HandPrintの設定画像](UIImages/UI_Decal_HandPrint.jpg) | ![Decalが配置された画像](UIImages/UI_DecalAdded.jpg) |
 
 ### 3. どうしてこうなるの？（仕組みの解説）
 * **Decalはプロジェクターで絵を投影する技術**:
@@ -197,7 +222,7 @@
 
 | Before：直接光のみ | After：間接光あり |
 | :---: | :---: |
-| ![作業前の画像](Scene_DecalAdded_Dark.jpg) | ![作業後の画像](Scene_LightmapBaked.jpg) |
+| ![作業前の画像](SceneImages/Scene_DecalAdded_Dark.jpg) | ![作業後の画像](SceneImages/Scene_LightmapBaked.jpg) |
 | 天井と懐中電灯の光が当たる場所以外は暗い | 光の跳ね返りが追加され、部屋全体がリアルに明るくなった |
 
 ### 1. この章のゴール
@@ -211,16 +236,20 @@
 2. `Inspector` の右上にある **`Static`** のチェックボックスをクリックしてONにします。
    （「子オブジェクトも変更しますか？」と出たら **`Yes, change children`** を選択）
 
-<!-- [画像：Inspector右上のStaticチェックボックス] -->
+| Staticのチェックボックス | ChangeStaticFlagsダイアログ |
+| :---: | :---: |
+| ![Staticのチェックボックス画像](UIImages/UI_StaticCheckbox.jpg) | ![ChangeStaticFlagsダイアログ画像](UIImages/UI_ChangeStaticFlags.jpg) |
 
 #### ステップ2：ライトのModeを設定する
 1. `Hierarchy` から天井のライト（`Level` > `StaticLight` > そこにある `Point Light`全て）を選択します。
 2. `Inspector` の `Light` コンポーネントで **`Mode` を `Baked`** に変更します。
 3. 床の懐中電灯の中のライト（`Flashlight` > `Spot Light`）を選択し、**`Mode` を `Mixed`** に変更します。
 
-<!-- [画像：LightコンポーネントのModeドロップダウン] -->
+| 天井のライトを選択 | LightのModeを変更 | 懐中電灯のライトの位置 |
+| :---: | :---: | :---: |
+| ![天井のライトを選択する画像](UIImages/UI_SelectCeilingLight.jpg) | ![LightのModeを変更する画像](UIImages/UI_ChangeLightMode.jpg) | ![懐中電灯のライトの位置を調整する画像](UIImages/UI_AdjustFlashlightPosition.jpg) |
 
-#### ステップ3：高速ベイクの設定を行い、ライティングを生成する
+#### ステップ3：Lightmapの設定を行い、ライティングを生成する
 1. Unity上部メニューから **`Window` > `Rendering` > `Lighting`** を選択して `Lighting` パネルを開きます。
 2. 上部の **`Scene`** タブをクリックします。
 3. 以下を設定します：
@@ -231,7 +260,9 @@
 4. 右下の **`Generate Lighting`** ボタンを押す。
 5. 画面右下にプログレスバーが表示され、ベイクが完了するとシーン全体に柔らかい陰影と光の跳ね返りが定着します。
 
-<!-- [画像：LightingパネルでのGPU Lightmapper設定とGenerate Lightingボタン] -->
+| LightingパネルのSceneタブ | Sceneタブ設定後 | ライトのベイク後 |
+| :---: | :---: | :---: |
+| ![LightingパネルのSceneタブ画像](UIImages/UI_BeforeLightingWindow.jpg) | ![Sceneタブ設定後画像](UIImages/UI_AfterLightingWindow.jpg) | ![ライトのベイク後画像](UIImages/UI_LightmapBaked.jpg) |
 
 ### 3. どうしてこうなるの？（仕組みの解説）
 * **間接光（グローバルイルミネーション / GI）**:
@@ -239,8 +270,8 @@
   CGでこの計算をリアルタイムで毎フレーム行うには処理が重すぎます。
 * そこで、**動かないものに対する光の計算結果を、あらかじめ画像（ライトマップ）として壁や床に焼き付けておく**のがライトマップです。
 * **なぜ天井はBakedで懐中電灯はMixedなのか？**:
-  - **`Baked`**: 完全に焼き付けるため実行時の負荷はゼロ。固定された環境照明に最適。
-  - **`Mixed`**: 動かない背景には間接光を焼き付けつつ、プレイヤーや動く敵にはリアルタイムで光と影を落とすことができる、便利なハイブリッド設定です。
+  - **`Baked`**: 完全に焼き付けるため実行時のライトの計算負荷を減らせる。固定された環境照明に最適。
+  - **`Mixed`**: 動かない背景には間接光を焼き付けつつ、プレイヤーや動く敵にはリアルタイムで光と影を落とすことができる、便利なハイブリッド設定です。一方で、ライトを持ち歩く等、動かす場合はベイク済みの光が追従しないため、**`Realtime`**を選びましょう。
 
 ### 4. 初心者がハマる罠・Tips
 > [!IMPORTANT]
@@ -256,7 +287,7 @@
 
 | Before：反射が真っ暗 | After：部屋が反射する |
 | :---: | :---: |
-| ![作業前の画像](Scene_LightmapBaked.jpg) | ![作業後の画像](Scene_ReflectionProveAdded.jpg) |
+| ![作業前の画像](SceneImages/Scene_LightmapBaked.jpg) | ![作業後の画像](SceneImages/Scene_ReflectionProveAdded.jpg) |
 | 反射すべき箇所がスカイボックスの反映で真っ黒 | キューブやドアノブに廊下が映り込んでいる |
 
 ### 1. この章のゴール
@@ -268,8 +299,6 @@
 1. `Hierarchy` で右クリックし、**`Light` > `Reflection Probe`** を作成します。
 2. 廊下の中心付近（X: 1.18, Y: 1.75, Z: 6.18）に移動します。
 
-<!-- [画像：シーンビューに配置されたReflection Probe球体] -->
-
 #### ステップ2：Box Projectionを有効にし、部屋のサイズに合わせる
 1. `Reflection Probe` の `Inspector` を開きます。
 2. **`Box Projection`** のチェックボックスを **ON** にします。
@@ -279,7 +308,9 @@
 5. インスペクター下部の **`Bake`** ボタンをクリックします。
 6. 金属のドアノブやキューブを見て、廊下の壁や天井のライトが正しく反射して映り込んでいるか確認します。
 
-<!-- [画像：Box Projectionのサイズ調整ギズモとインスペクター設定] -->
+| Reflection Probeの配置 | Reflection Probeの設定 | 反射 |
+| :---: | :---: | :---: |
+| ![Reflection Probeの配置画像](UIImages/UI_LightProbeBoxSize.jpg) | ![Reflection Probeの設定画像](UIImages/UI_LightProbe.jpg) | ![Box Projectionのサイズ調整ギズモ画像](UIImages/UI_LightProbeBaked.jpg) |
 
 ### 3. どうしてこうなるの？（仕組みの解説）
 * **Reflection Probeは360度カメラ**:
@@ -300,11 +331,11 @@
 
 | Before：ものの明るさが変わらない | After：場所に応じて明るさが変わる |
 | :---: | :---: |
-| ![作業前の画像](Scene_APV_Before.jpg) | ![作業後の画像](Scene_APV_After.jpg) |
+| ![作業前の画像](SceneImages/Scene_APV_Before.jpg) | ![作業後の画像](SceneImages/Scene_APV_After.jpg) |
 | 直接光が当たる場所以外は暗い、反射によりそれっぽくは見えるが... | 天井の光源等場所によって明るさが変化して馴染んでいる |
 
 ### 1. この章のゴール
-- 動くオブジェクト（テスト用のCubeや、徘徊するクリーチャーなど）が、静的な廊下の光と影をリアルタイムかつ自然に受け取るようにする。
+- 間接光が反映されなかった動くオブジェクト（テスト用のCubeや、徘徊するクリーチャーなど）に、周囲の環境光が反映されるようにする。
 
 ### 2. 実践ステップ
 
@@ -312,25 +343,31 @@
 1. `Project` ウィンドウの **`Assets\Settings\PC_RPAsset`** を選択します。
 2. `Inspector` ウインドウで **`Lighting`** セクションにある **`Light Probe System`** を、**`Adaptive Probe Volumes`** に切り替えます。
 
-<!-- [画像：Project SettingsでAPVを有効化する設定画面] -->
+| PC_RPAsset |
+| :---: |
+| ![PC_RPAssetの場所の画像](UIImages/UI_PC_RPAsset.jpg) |
 
 #### ステップ2：Adaptive Probe Volumeをシーンに配置する
 1. `Hierarchy` で右クリックし、**`Light` > `Adaptive Probe Volume`** を作成します。
 2. `Inspector` で **`Mode` を `Global`**（または廊下を囲む `Scene`）に設定します。
-3. `Lighting` パネル（`Window` > `Rendering` > `Lighting`）を開き、再度 **`Generate Lighting`** をクリックします。
+3. `Inspector` で **`Bake Probe Volumes`** をクリックします。
+4. `Lighting` パネル（`Window` > `Rendering` > `Lighting`）を開き、再度 **`Generate Lighting`** をクリックします。
 
-<!-- [画像：シーンビューに自動配置されたAPVのプローブグリッド] -->
+| APVを作成 | APVの設定 | 配置後 |
+| :---: | :---: | :---: |
+| ![APV作成画像](UIImages/UI_AddAPV.jpg) | ![APVの設定画像](UIImages/UI_APV.jpg) | ![APV配置後の画像](UIImages/UI_APVBaked.jpg) |
 
 #### ステップ3：Cubeを動かして効果を体感する
 1. シーン内に `Cube` を配置し、移動ツールで懐中電灯の光の近くから、奥の暗闇へと動かしてみます。
 2. キューブの表面が、周囲の明るさに応じて滑らかに暗闇に溶け込んだり、光を受けたりするのを確認してください。
 
+| 動かしてみた感じ |
+| :---: |
+| ![動かした感じの画像](UIImages/UI_APV_Cubes.jpg) |
+
 ### 3. どうしてこうなるの？（仕組みの解説）
 * **ライトマップの弱点を補う動的ライティング**:
-  ライトマップは壁や床のような動かないものにしか使えません。そのため、キャラクターや小道具が暗闇に入ったとき用に、従来は手作業で点々とLight Probeを並べる必要がありました。
-* **Unity 6のAPVのすごさ**:
-  1. **完全自動配置**: 壁の近くは細かく、何もない広い空間は粗くと、自動で最適な密度でプローブを配置してくれます。
-  2. **ピクセル単位のサンプリング**: 大きなクリーチャーの足元だけが光に照らされ、頭は闇に沈んでいるといった、極めて不気味でリアルなホラー表現が可能になります。
+  ライトマップは壁や床のような動かないものにしか使いません。そのため、動くものであるキャラクターや小道具が暗闇に入ったとき用に、従来は手作業で点々と**Light Probe**を並べる必要がありました。今回利用した**Adaptive Probe Volumes (APV)**では自動でLight Probeを配置してくれるので、従来の方法よりも手軽に利用することが可能です。
 
 ### 4. 初心者がハマる罠・Tips
 > [!NOTE]
@@ -345,7 +382,7 @@
 
 | Before： これも悪くない | After：見やすくなり、演出も増えた |
 | :---: | :---: |
-| ![作業前の画像](Scene_PostProcess_Before.jpg) | ![作業後の画像](Scene_PostProcess_1.jpg) |
+| ![作業前の画像](SceneImages/Scene_PostProcess_Before.jpg) | ![作業後の画像](SceneImages/Scene_PostProcess_1.jpg) |
 | Unityのデフォルト設定も悪くない | ゲームや場に合わせた雰囲気にできる |
 
 ### 1. この章のゴール
@@ -358,40 +395,51 @@
 2. `Inspector` の `Camera` コンポーネント > **`Rendering`** セクションを開きます。
 3. **`Post Processing`** のチェックボックスが **ON** になっていることを確認します。
 
-<!-- [画像：Main CameraのPost Processingチェック] -->
+| Main Cameraの位置 | Post Processingのチェック欄 |
+| :---: | :---: |
+| ![Main Cameraの位置](UIImages/UI_SelectMainCamera.jpg) | ![Post Processingのチェック欄](UIImages/UI_MainCamera.jpg) |
 
 #### ステップ2：Global Volumeを作成し、エフェクトを追加する
 1. `Hierarchy` で右クリックし、**`Volume` > `Global Volume`** を作成します。
-2. `Inspector` の `Volume` コンポーネントにある `Profile` の横の **`New`** ボタンをクリックしてプロファイルを作成します。
+2. `Inspector` の `Volume` コンポーネントにある `Volume Profile` の **`New`** ボタンをクリックしてプロファイルを作成します。
 3. **`Add Override`** ボタンを押し、以下のエフェクトを順番に追加・調整していきます：
 
 ##### ① Tonemapping
 - CG特有の白飛びを抑えます。
+- `Mode`の左の四角にチェックを入れる。
 - `Mode`: **`Neutral`**
 
 ##### ② Color Adjustments
 - 画面を明るくし、彩度も下げることで不気味な雰囲気を出します。
+- `Post Exposure`、`Saturation`の左の四角にチェックを入れる。
 - `Post Exposure`: `1`（全体を明るくする）
 - `Saturation`: `-10`（彩度を下げる）
 
 ##### ③ Vignette（ビネット）
 - 画面の四隅を暗く落とし、圧迫感を出します。
+- `Intensity`の左の四角にチェックを入れる。
 - `Intensity`: `0.4`
 
 ##### ④ Film Grain（フィルムグレイン）
 - 暗闇にザラザラとしたノイズを走らせ、アナログ感や光量不足によるザラつきを表現します。
+- `Type`、`Intensity`の左の四角にチェックを入れる。
 - `Type`: `Medium 1`
 - `Intensity`: `0.15`
 
 ##### ⑤ Chromatic Aberration（色収差）
 - 画面の端に色ズレを生じさせ、レンズによる色収差や精神異常のような不快感を演出します。
+- `Intensity`の左の四角にチェックを入れる。
 - `Intensity`: `0.06`
 
 ##### ⑥ Lens Distortion（レンズ歪曲）
 - 画面全体を歪ませ、レンズによる歪曲収差の演出や遠近感の強調をします。
+- `Intensity`の左の四角にチェックを入れる。
 - `Intensity`: `-0.15`
 
-<!-- [画像：Global VolumeのInspector設定一覧] -->
+| Global Volumeを作成 | Add Overrideを押す | Global Volumeの設定 |
+| :---: | :---: | :---: |
+| ![Global Volumeを作成する](UIImages/UI_AddGlobalVolume.jpg) | ![Add Overrideを押す](UIImages/UI_AddOverride.jpg) | ![Global Volumeの設定](UIImages/UI_GlobalVolumeSettings.jpg) |
+
 
 ### 3. どうしてこうなるの？（仕組みの解説）
 * **物理的なライティング ＋ カメラのレンズ効果 ＝ 世界観の完成**:
@@ -401,7 +449,7 @@
 
 | 現在の設定 | 暗さを強調した設定 |　明るくした場合　|
 | :---: | :---: | :---: |
-| ![現在のPostProcessingの画像](Scene_PostProcess_1.jpg) | ![暗さを強調したのPostProcessingの画像](Scene_PostProcess_2.jpg) | ![明るくした場合のPostProcessingの画像](Scene_PostProcess_3.jpg) |
+| ![現在のPostProcessingの画像](SceneImages/Scene_PostProcess_1.jpg) | ![暗さを強調したのPostProcessingの画像](SceneImages/Scene_PostProcess_2.jpg) | ![明るくした場合のPostProcessingの画像](SceneImages/Scene_PostProcess_3.jpg) |
 | バランス重視 | 暗さによる恐怖を強調 |  Liminal space向きの表現 |
 
 ### 4. 初心者がハマる罠・Tips
