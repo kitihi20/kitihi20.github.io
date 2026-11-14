@@ -30,8 +30,8 @@ class Handler2(http.server.SimpleHTTPRequestHandler):
 Handler = http.server.SimpleHTTPRequestHandler
 
 if __name__ == '__main__':
-
-    with socketserver.TCPServer(("", 8000), Handler) as httpd:
-        print("serving at port", 8000)
+    port = 8001
+    with socketserver.TCPServer(("", port), Handler) as httpd:
+        print("serving at port", port)
         httpd.serve_forever()
 

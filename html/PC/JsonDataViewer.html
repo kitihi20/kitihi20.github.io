@@ -1,185 +1,851 @@
 <!DOCTYPE html>
-<html lang="ja">
+<html lang="ja" class="dark">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>JSON Data Viewer</title>
   <!-- Tailwind CSS -->
-    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
-    <script src="/js/tailwindcss_3_4_17.js"></script>
+  <script src="/js/tailwindcss_3_4_17.js"></script>
   <!-- Lucide Icons -->
   <script src="https://unpkg.com/lucide@latest"></script>
+  <style>
+    :root {
+      color-scheme: dark;
+    }
+
+    select,
+    select option {
+      background-color: #0f172a;
+      color: #e2e8f0;
+    }
+
+    /* Dark custom scrollbar */
+    ::-webkit-scrollbar {
+      width: 8px;
+      height: 8px;
+    }
+
+    ::-webkit-scrollbar-track {
+      background: #0f172a;
+    }
+
+    ::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 9999px;
+    }
+
+    ::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+
+    .drag-active {
+      border-color: #3b82f6 !important;
+      background-color: rgba(30, 58, 138, 0.2) !important;
+    }
+  </style>
 </head>
-<body class="bg-slate-50 font-sans text-slate-800">
+
+<body
+  class="bg-slate-950 font-sans text-slate-100 antialiased selection:bg-blue-500/30 selection:text-blue-200 overflow-x-hidden">
+
+  <!-- モバイル用トップヘッダー -->
+  <header
+    class="md:hidden sticky top-0 z-30 bg-slate-900/95 backdrop-blur-md border-b border-slate-800 px-3.5 py-2.5 flex items-center justify-between gap-2">
+    <div class="flex items-center gap-2 min-w-0">
+      <div
+        class="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center shrink-0">
+        <i data-lucide="database" class="w-4 h-4 text-blue-400"></i>
+      </div>
+      <div class="min-w-0">
+        <h1 class="font-bold text-sm text-slate-100 truncate">JSON Viewer</h1>
+      </div>
+      <span id="mobile-count-badge"
+        class="hidden text-[11px] font-semibold px-2 py-0.5 rounded-full bg-slate-800 text-slate-300 border border-slate-700 shrink-0">
+        0件
+      </span>
+    </div>
+    <div class="flex items-center gap-1.5 shrink-0">
+      <button type="button" id="btn-mobile-iframe"
+        class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center gap-1.5 transition-colors">
+        <i data-lucide="globe" class="w-3.5 h-3.5 text-cyan-400"></i>
+        <span>URL / 取得</span>
+      </button>
+      <button type="button" id="btn-mobile-drawer-open"
+        class="px-2.5 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm">
+        <i data-lucide="sliders-horizontal" class="w-3.5 h-3.5"></i>
+        <span>設定</span>
+      </button>
+    </div>
+  </header>
+
+  <!-- モバイル用ドロワー背景オーバーレイ -->
+  <div id="mobile-backdrop" class="fixed inset-0 z-40 bg-black/70 backdrop-blur-sm hidden md:hidden"></div>
+
   <div class="flex flex-col md:flex-row min-h-screen">
-    
-    <!-- サイドバー (設定パネル) -->
-    <aside class="w-full md:w-80 bg-white border-r border-slate-200 flex flex-col shadow-sm z-10 md:sticky md:top-0 md:h-screen">
-      <div class="p-5 border-b border-slate-100 flex items-center gap-2 bg-slate-800 text-white">
-        <i data-lucide="database" class="w-5 h-5 text-blue-400"></i>
-        <h1 class="font-bold text-lg tracking-wide">JSON Viewer</h1>
+
+    <!-- サイドバー (データソース・お気に入りURL・設定パネル) -->
+    <aside id="sidebar-drawer"
+      class="fixed inset-y-0 left-0 z-50 w-[88vw] max-w-sm bg-slate-900 border-r border-slate-800 flex flex-col shadow-2xl transform -translate-x-full transition-transform duration-200 ease-out md:translate-x-0 md:static md:w-80 lg:w-96 md:h-screen md:sticky md:top-0 shrink-0">
+      <!-- サイドバーヘッダー -->
+      <div class="px-4 py-3.5 border-b border-slate-800 flex items-center justify-between bg-slate-900/95 shrink-0">
+        <div class="flex items-center gap-2.5">
+          <div class="w-8 h-8 rounded-lg bg-blue-500/15 border border-blue-500/30 flex items-center justify-center">
+            <i data-lucide="database" class="w-4 h-4 text-blue-400"></i>
+          </div>
+          <div>
+            <h1 class="font-bold text-base tracking-wide text-slate-100 leading-tight">JSON Viewer</h1>
+            <p class="text-[11px] text-slate-400">Dark List Explorer</p>
+          </div>
+        </div>
+        <button type="button" id="btn-mobile-drawer-close"
+          class="md:hidden p-1.5 rounded-lg text-slate-400 hover:text-slate-100 hover:bg-slate-800 transition-colors"
+          aria-label="設定を閉じる">
+          <i data-lucide="x" class="w-5 h-5"></i>
+        </button>
       </div>
 
-      <form id="settings-form" class="p-5 flex-1 overflow-y-auto space-y-5">
-        
-        <!-- Data Source Type -->
-        <div class="space-y-2 border-b border-slate-100 pb-4">
-          <label class="text-sm font-semibold text-slate-700">データソース</label>
-          <div class="flex gap-4">
-            <label class="flex items-center gap-2 cursor-pointer text-sm">
-              <input type="radio" name="sourceType" value="url" class="text-blue-600 focus:ring-blue-500">
-              URLから取得
-            </label>
-            <label class="flex items-center gap-2 cursor-pointer text-sm">
-              <input type="radio" name="sourceType" value="text" class="text-blue-600 focus:ring-blue-500">
-              直接入力
-            </label>
+      <!-- スクロール可能なフォーム領域 -->
+      <form id="settings-form" class="flex-1 overflow-y-auto p-4 space-y-5">
+
+        <!-- 1. お気に入りURL & iframe取得支援 -->
+        <section class="bg-slate-950/60 border border-slate-800 rounded-xl p-3.5 space-y-3">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-cyan-400 flex items-center gap-1.5">
+              <i data-lucide="bookmark" class="w-3.5 h-3.5"></i>
+              お気に入りURL &amp; 参照
+            </h2>
+            <span id="bookmark-count" class="text-[10px] text-slate-500"></span>
           </div>
-        </div>
 
-        <!-- JSON URL -->
-        <div id="group-url" class="space-y-1">
-          <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
-            <i data-lucide="file-json" class="w-4 h-4"></i> JSON URL
-          </label>
-          <input
-            type="url"
-            id="input-url"
-            placeholder="https://example.com/data.json"
-            class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-shadow"
-          />
-        </div>
+          <div class="space-y-2">
+            <select id="select-bookmark"
+              class="w-full px-2.5 py-2 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-cyan-500/60">
+              <option value="">-- お気に入りURLを選択 --</option>
+            </select>
 
-        <!-- JSON Text -->
-        <div id="group-text" class="space-y-1 hidden">
-          <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
-            <i data-lucide="file-code-2" class="w-4 h-4"></i> JSON テキスト
-          </label>
-          <textarea
-            id="input-text"
-            placeholder='{"root": {"data": [...]}}'
-            rows="6"
-            class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow font-mono text-xs resize-y"
-          ></textarea>
-        </div>
+            <input type="text" id="input-bookmark-name" placeholder="登録名 (例: イオシス ジャンク)"
+              class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-cyan-500/60" />
 
-        <!-- List Path -->
-        <div class="space-y-1">
-          <label class="text-sm font-semibold text-slate-700 flex items-center gap-1">
-            <i data-lucide="layout-list" class="w-4 h-4"></i> リストのパス
-          </label>
-          <input
-            type="text"
-            id="input-list-path"
-            placeholder="例: root.data"
-            class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
-          />
-          <p class="text-xs text-slate-500">配列が存在する場所を指定します。</p>
-        </div>
+            <input type="url" id="input-bookmark-url" placeholder="https://example.com/api/data.json"
+              class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 font-mono focus:outline-none focus:ring-2 focus:ring-cyan-500/60" />
 
-        <!-- Fields -->
-        <div class="space-y-1">
-          <label class="text-sm font-semibold text-slate-700">表示フィールド (複数指定)</label>
-          <textarea
-            id="input-fields"
-            placeholder="例: root.data.name, root.data.comment"
-            rows="3"
-            class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow resize-none"
-          >
-        </textarea>
-          <p class="text-xs text-slate-500">カンマ区切りで入力。最初の項目がタイトルとして強調されます。</p>
-        </div>
-
-        <!-- Sort -->
-        <div class="space-y-3 pt-2 border-t border-slate-100">
-          <div class="space-y-1">
-            <label class="text-sm font-semibold text-slate-700">ソート対象パス</label>
-            <input
-              type="text"
-              id="input-sort-field"
-              placeholder="例: root.data.id"
-              class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow"
-              value="root.data.arrival_at"
-            />
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="btn-save-bookmark"
+                class="flex-1 px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center justify-center gap-1 transition-colors">
+                <i data-lucide="star" class="w-3.5 h-3.5 text-amber-400"></i>
+                <span>保存</span>
+              </button>
+              <button type="button" id="btn-delete-bookmark"
+                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/70 text-slate-400 hover:text-rose-300 border border-slate-700 hover:border-rose-800/70 text-xs font-medium flex items-center justify-center gap-1 transition-colors disabled:opacity-40 disabled:pointer-events-none"
+                title="選択中のお気に入りを削除">
+                <i data-lucide="trash-2" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
           </div>
-          
+
+          <div class="grid grid-cols-2 gap-2 pt-1 border-t border-slate-800/80">
+            <button type="button" id="btn-open-iframe"
+              class="px-2.5 py-2 rounded-lg bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+              <i data-lucide="panel-top" class="w-3.5 h-3.5"></i>
+              <span>iframeで開く</span>
+            </button>
+            <button type="button" id="btn-open-newtab"
+              class="px-2.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors">
+              <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              <span>別タブで開く</span>
+            </button>
+          </div>
+        </section>
+
+        <!-- 2. JSONデータ入力 -->
+        <section class="space-y-2.5">
+          <div class="flex items-center justify-between">
+            <label class="text-xs font-bold uppercase tracking-wider text-blue-400 flex items-center gap-1.5">
+              <i data-lucide="file-code-2" class="w-3.5 h-3.5"></i>
+              JSON データ入力
+            </label>
+            <div class="flex items-center gap-1.5">
+              <button type="button" id="btn-format-json"
+                class="text-[11px] text-slate-400 hover:text-slate-200 px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-800 transition-colors"
+                title="JSONを整形">
+                整形
+              </button>
+              <button type="button" id="btn-clear-json"
+                class="text-[11px] text-slate-400 hover:text-rose-300 px-1.5 py-0.5 rounded bg-slate-800/80 hover:bg-slate-800 transition-colors"
+                title="入力をクリア">
+                クリア
+              </button>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-2">
+            <button type="button" id="btn-paste-clipboard"
+              class="px-2.5 py-2 rounded-lg bg-blue-600/20 hover:bg-blue-600/30 text-blue-300 border border-blue-500/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors">
+              <i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i>
+              <span>貼付して表示</span>
+            </button>
+            <label for="input-json-file"
+              class="cursor-pointer px-2.5 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium flex items-center justify-center gap-1.5 transition-colors">
+              <i data-lucide="folder-open" class="w-3.5 h-3.5 text-amber-400"></i>
+              <span>ファイル読込</span>
+            </label>
+            <input type="file" id="input-json-file" accept=".json,application/json,text/plain" class="hidden" />
+          </div>
+
+          <div id="json-dropzone" class="relative">
+            <textarea id="input-text" placeholder='{"data": [...]}&#10;ここにJSONを貼り付けるか、ファイルをドロップ' rows="5"
+              class="w-full px-3 py-2 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 font-mono resize-y transition-colors"></textarea>
+          </div>
+        </section>
+
+        <!-- 3. パス & 表示フィールド設定 (3層構造) -->
+        <section class="space-y-3 pt-2 border-t border-slate-800">
+          <div class="flex items-center justify-between">
+            <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+              <i data-lucide="layout-list" class="w-3.5 h-3.5 text-indigo-400"></i>
+              表示レイアウト設定
+            </h2>
+            <div class="flex items-center gap-1">
+              <button type="button" id="btn-preset-rich"
+                class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                title="タイトル + サブ情報 + メイン情報">
+                標準
+              </button>
+              <button type="button" id="btn-preset-simple"
+                class="text-[10px] px-2 py-0.5 rounded bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                title="サブ情報を空にしてタイトル+メインのみの従来表示にする">
+                シンプル
+              </button>
+            </div>
+          </div>
+
+          <!-- List Path -->
           <div class="space-y-1">
-            <label class="text-sm font-semibold text-slate-700">並び順</label>
-            <select
-              id="input-sort-order"
-              class="w-full px-3 py-2 border border-slate-300 rounded-md text-sm focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow bg-white"
-            >
-              <option value="asc">昇順 (A → Z, 1 → 9)</option>
-              <option value="desc">降順 (Z → A, 9 → 1)</option>
+            <label for="input-list-path" class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+              <span>リストのパス</span>
+              <span class="text-[10px] text-slate-500 font-normal">例: data / root.data</span>
+            </label>
+            <input type="text" id="input-list-path" placeholder="data (空ならルート配列)"
+              class="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+
+          <!-- Title Field -->
+          <div class="space-y-1">
+            <label for="input-title-field" class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-blue-400"></span>
+              <span>タイトル項目</span>
+            </label>
+            <input type="text" id="input-title-field" placeholder="例: name"
+              class="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+          </div>
+
+          <!-- Sub Fields -->
+          <div class="space-y-1">
+            <label for="input-sub-fields"
+              class="text-xs font-semibold text-slate-300 flex items-center justify-between">
+              <span class="flex items-center gap-1.5">
+                <span class="w-2 h-2 rounded-full bg-emerald-400"></span>
+                <span>サブ情報 (価格・ランク等)</span>
+              </span>
+              <button type="button" id="btn-clear-sub"
+                class="text-[10px] text-slate-400 hover:text-slate-200 underline">空にする</button>
+            </label>
+            <textarea id="input-sub-fields" rows="2"
+              placeholder="空にすると従来風のシンプル表示になります&#10;例: price, rank, arrival_at, genre.name, maker.name"
+              class="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+          </div>
+
+          <!-- Main Fields -->
+          <div class="space-y-1">
+            <label for="input-main-fields" class="text-xs font-semibold text-slate-300 flex items-center gap-1.5">
+              <span class="w-2 h-2 rounded-full bg-violet-400"></span>
+              <span>メイン情報 (Detail等)</span>
+            </label>
+            <textarea id="input-main-fields" rows="2" placeholder="例: detail, accessory, comment"
+              class="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500 resize-y"></textarea>
+          </div>
+
+          <!-- Smart Spec Format Toggle -->
+          <label class="flex items-center gap-2 cursor-pointer pt-1 select-none">
+            <input type="checkbox" id="input-smart-format"
+              class="w-4 h-4 rounded bg-slate-950 border-slate-700 text-blue-500 focus:ring-blue-500/50 focus:ring-offset-slate-900" />
+            <span class="text-xs text-slate-300">スペック文字列 (Key:Value) を表形式に整形</span>
+          </label>
+
+          <!-- Auto-detected Fields Picker -->
+          <div id="field-picker-wrapper"
+            class="hidden bg-slate-950/60 border border-slate-800 rounded-xl p-2.5 space-y-2">
+            <div class="flex items-center justify-between gap-2">
+              <span class="text-[11px] font-semibold text-slate-400 flex items-center gap-1">
+                <i data-lucide="sparkles" class="w-3 h-3 text-amber-400"></i>
+                フィールド候補 (クリックで追加)
+              </span>
+              <select id="select-picker-target"
+                class="px-1.5 py-0.5 bg-slate-900 border border-slate-700 rounded text-[11px] text-slate-200 focus:outline-none">
+                <option value="sub">サブに追加</option>
+                <option value="main">メインに追加</option>
+                <option value="title">タイトルに設定</option>
+                <option value="sort">ソートに設定</option>
+              </select>
+            </div>
+            <div id="field-picker-chips" class="flex flex-wrap gap-1 max-h-28 overflow-y-auto pr-1"></div>
+          </div>
+        </section>
+
+        <!-- 4. ソート設定 -->
+        <section class="space-y-2.5 pt-2 border-t border-slate-800">
+          <h2 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+            <i data-lucide="arrow-up-down" class="w-3.5 h-3.5 text-emerald-400"></i>
+            初期ソート設定
+          </h2>
+          <div class="grid grid-cols-1 gap-2">
+            <input type="text" id="input-sort-field" placeholder="例: arrival_at / price"
+              class="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 placeholder-slate-500 font-mono focus:outline-none focus:ring-2 focus:ring-blue-500" />
+            <select id="input-sort-order"
+              class="w-full px-3 py-1.5 bg-slate-950 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500">
+              <option value="desc">降順 (Z → A, 9 → 1, 新着順)</option>
+              <option value="asc">昇順 (A → Z, 1 → 9, 安い順)</option>
             </select>
           </div>
-        </div>
+        </section>
 
-        <div class="pt-4 flex flex-col gap-3">
-          <button
-            type="submit"
-            class="w-full bg-blue-600 hover:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-lg flex items-center justify-center gap-2 transition-colors shadow-sm"
-          >
-            <i data-lucide="play" class="w-4 h-4 text-white fill-white"></i>
-            データを表示
-          </button>
-          <button
-            type="button"
-            id="btn-sample"
-            class="w-full bg-white hover:bg-slate-50 text-slate-700 border border-slate-300 font-medium py-2 px-4 rounded-lg transition-colors text-sm"
-          >
-            サンプルデータを試す
-          </button>
-        </div>
       </form>
+
+      <!-- サイドバーフッター実行ボタン -->
+      <div class="p-3.5 border-t border-slate-800 bg-slate-900/95 space-y-2 shrink-0">
+        <button type="submit" form="settings-form"
+          class="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 text-white font-semibold py-2.5 px-4 rounded-xl flex items-center justify-center gap-2 transition-colors shadow-lg shadow-blue-950/50 text-sm">
+          <i data-lucide="play" class="w-4 h-4 fill-current"></i>
+          <span>データを表示・更新</span>
+        </button>
+        <button type="button" id="btn-sample"
+          class="w-full bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 font-medium py-2 px-4 rounded-xl transition-colors text-xs flex items-center justify-center gap-1.5">
+          <i data-lucide="flask-conical" class="w-3.5 h-3.5 text-amber-400"></i>
+          <span>サンプルデータを試す</span>
+        </button>
+      </div>
     </aside>
 
-    <!-- メインコンテンツ (データ表示) -->
-    <main id="main-content" class="flex-1 p-6 md:p-8 overflow-y-auto">
-      <!-- JavaScriptでコンテンツがここにレンダリングされます -->
+    <!-- メインコンテンツ -->
+    <main id="main-content" class="flex-1 min-w-0 p-3.5 sm:p-6 lg:p-8">
+      <div class="max-w-5xl mx-auto space-y-4">
+
+        <!-- 埋め込み iframe パネル (必要時に表示・状態維持) -->
+        <section id="iframe-panel"
+          class="hidden bg-slate-900 border border-cyan-500/30 rounded-2xl overflow-hidden shadow-xl shadow-black/30">
+          <div
+            class="px-4 py-3 bg-slate-900 border-b border-slate-800 flex flex-wrap items-center justify-between gap-2">
+            <div class="flex items-center gap-2 min-w-0 flex-1">
+              <i data-lucide="globe" class="w-4 h-4 text-cyan-400 shrink-0"></i>
+              <span class="text-xs font-bold text-slate-200 shrink-0">URL プレビュー</span>
+              <span id="iframe-current-url" class="text-[11px] font-mono text-slate-400 truncate"></span>
+            </div>
+            <div class="flex flex-wrap items-center gap-1.5">
+              <button type="button" id="btn-iframe-paste"
+                class="px-3 py-1.5 rounded-lg bg-blue-600 hover:bg-blue-500 text-white text-xs font-semibold flex items-center gap-1.5 transition-colors shadow-sm">
+                <i data-lucide="clipboard-paste" class="w-3.5 h-3.5"></i>
+                <span>クリップボードから貼り付けて反映</span>
+              </button>
+              <button type="button" id="btn-iframe-read"
+                class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1 transition-colors"
+                title="同一オリジンの場合のみiframe内テキストを直接読み取れます">
+                <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">直接読込を試す</span>
+              </button>
+              <button type="button" id="btn-iframe-invert"
+                class="px-2 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 text-xs font-medium flex items-center gap-1 transition-colors"
+                title="外部サイトが白背景の場合に色を反転します">
+                <i data-lucide="contrast" class="w-3.5 h-3.5"></i>
+                <span class="hidden sm:inline">色反転</span>
+              </button>
+              <button type="button" id="btn-iframe-reload"
+                class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                title="再読み込み">
+                <i data-lucide="refresh-cw" class="w-3.5 h-3.5"></i>
+              </button>
+              <button type="button" id="btn-iframe-resize"
+                class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                title="高さを切り替え">
+                <i data-lucide="maximize-2" class="w-3.5 h-3.5"></i>
+              </button>
+              <button type="button" id="btn-iframe-newtab"
+                class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition-colors"
+                title="別タブで開く">
+                <i data-lucide="external-link" class="w-3.5 h-3.5"></i>
+              </button>
+              <button type="button" id="btn-iframe-close"
+                class="p-1.5 rounded-lg bg-slate-800 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-slate-700 transition-colors"
+                title="閉じる">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+          </div>
+
+          <div
+            class="px-4 py-2 bg-cyan-950/30 border-b border-slate-800 text-[11px] sm:text-xs text-cyan-200/90 flex flex-col sm:flex-row sm:items-center justify-between gap-1.5">
+            <p class="leading-relaxed">
+              <span class="font-semibold text-cyan-300">手順:</span>
+              下の枠内をクリックして全選択コピー (<kbd
+                class="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px]">Ctrl+A</kbd> →
+              <kbd class="px-1 py-0.5 rounded bg-slate-800 border border-slate-700 font-mono text-[10px]">Ctrl+C</kbd>)
+              し、「クリップボードから貼り付けて反映」を押してください。
+              <span class="text-slate-400">※拒否されるサイトは「別タブで開く」をご利用ください。</span>
+            </p>
+            <span id="iframe-status-note" class="text-[11px] text-amber-300 shrink-0 hidden"></span>
+          </div>
+
+          <div class="bg-slate-950">
+            <iframe id="url-preview-iframe" class="w-full h-64 bg-slate-950 transition-all duration-200"
+              style="color-scheme: dark;"
+              referrerpolicy="no-referrer"></iframe>
+          </div>
+        </section>
+
+        <!-- 検索・フィルター・ソート ツールバー (データ読込後に表示) -->
+        <section id="toolbar"
+          class="hidden bg-slate-900/95 border border-slate-800 rounded-2xl p-3 sm:p-4 space-y-3 shadow-lg shadow-black/20">
+          <div class="flex flex-col lg:flex-row lg:items-center gap-2.5">
+            <!-- 検索ボックス -->
+            <div class="relative flex-1 min-w-0">
+              <i data-lucide="search"
+                class="w-4 h-4 text-slate-400 absolute left-3 top-1/2 -translate-y-1/2 pointer-events-none"></i>
+              <input type="text" id="input-search" placeholder="JSON内を検索 (スペース区切りAND / -除外語)..."
+                class="w-full pl-9 pr-9 py-2 bg-slate-950 border border-slate-700 rounded-xl text-sm text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 transition-shadow" />
+              <button type="button" id="btn-clear-search"
+                class="hidden absolute right-2.5 top-1/2 -translate-y-1/2 p-1 rounded-md text-slate-400 hover:text-slate-100 hover:bg-slate-800"
+                title="検索をクリア">
+                <i data-lucide="x" class="w-3.5 h-3.5"></i>
+              </button>
+            </div>
+
+            <!-- 検索対象・クイックソート・フィルター切替 -->
+            <div class="flex flex-wrap items-center gap-2">
+              <select id="select-search-scope"
+                class="px-2.5 py-2 bg-slate-950 border border-slate-700 rounded-xl text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                title="検索範囲">
+                <option value="all">全データ検索</option>
+                <option value="visible">表示項目のみ</option>
+              </select>
+
+              <!-- クイックソート -->
+              <div class="flex items-center bg-slate-950 border border-slate-700 rounded-xl overflow-hidden">
+                <select id="quick-sort-field"
+                  class="px-2.5 py-2 bg-slate-950 text-xs text-slate-200 focus:outline-none max-w-[140px] sm:max-w-[180px]"
+                  title="ソート対象">
+                  <option value="">ソートなし</option>
+                </select>
+                <button type="button" id="btn-quick-sort-order"
+                  class="px-2.5 py-2 border-l border-slate-700 hover:bg-slate-800 text-slate-200 text-xs flex items-center gap-1 transition-colors"
+                  title="昇順 / 降順を切り替え">
+                  <i id="quick-sort-icon" data-lucide="arrow-down-wide-narrow" class="w-3.5 h-3.5 text-emerald-400"></i>
+                  <span id="quick-sort-order-label">降順</span>
+                </button>
+              </div>
+
+              <!-- フィルタパネル展開ボタン -->
+              <button type="button" id="btn-toggle-filters"
+                class="px-3 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-semibold flex items-center gap-1.5 transition-colors">
+                <i data-lucide="filter" class="w-3.5 h-3.5 text-blue-400"></i>
+                <span>フィルター</span>
+                <span id="filter-active-badge"
+                  class="hidden px-1.5 py-0.2 rounded-full bg-blue-500 text-white text-[10px] font-bold">0</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- 件数・アクティブ条件バー -->
+          <div class="flex flex-wrap items-center justify-between gap-2 pt-1 border-t border-slate-800/80 text-xs">
+            <div class="flex items-center gap-2 text-slate-400">
+              <span class="font-semibold text-slate-200" id="results-count-text">0 件</span>
+              <span id="results-total-text" class="text-slate-500"></span>
+            </div>
+            <div class="flex items-center gap-2">
+              <button type="button" id="btn-reset-all-filters"
+                class="hidden text-xs text-amber-400 hover:text-amber-300 flex items-center gap-1 px-2 py-0.5 rounded-lg bg-amber-500/10 border border-amber-500/20 transition-colors">
+                <i data-lucide="rotate-ccw" class="w-3 h-3"></i>
+                <span>検索・フィルターをリセット</span>
+              </button>
+            </div>
+          </div>
+        </section>
+
+        <!-- 折りたたみ式フィルターパネル -->
+        <section id="filter-panel"
+          class="hidden bg-slate-900 border border-slate-800 rounded-2xl p-4 space-y-4 shadow-xl shadow-black/25">
+          <!-- 自動ファセット & 数値範囲フィルター -->
+          <div id="facet-filters" class="space-y-3"></div>
+
+          <!-- カスタム条件ビルダー -->
+          <div class="pt-3 border-t border-slate-800 space-y-2.5">
+            <div class="flex items-center justify-between">
+              <h3 class="text-xs font-bold uppercase tracking-wider text-slate-300 flex items-center gap-1.5">
+                <i data-lucide="sliders" class="w-3.5 h-3.5 text-violet-400"></i>
+                カスタム条件フィルター (AND)
+              </h3>
+              <button type="button" id="btn-add-custom-rule"
+                class="px-2.5 py-1 rounded-lg bg-violet-600/20 hover:bg-violet-600/30 text-violet-300 border border-violet-500/30 text-xs font-medium flex items-center gap-1 transition-colors">
+                <i data-lucide="plus" class="w-3.5 h-3.5"></i>
+                <span>条件を追加</span>
+              </button>
+            </div>
+            <div id="custom-filters-list" class="space-y-2">
+              <p class="text-xs text-slate-500">「条件を追加」から任意のJSONキーに対する絞り込みを追加できます。</p>
+            </div>
+          </div>
+        </section>
+
+        <!-- データ表示エリア -->
+        <div id="results-container"></div>
+
+      </div>
     </main>
   </div>
 
+  <!-- トースト通知 -->
+  <div id="toast-container"
+    class="fixed bottom-4 right-4 z-50 flex flex-col gap-2 pointer-events-none max-w-xs sm:max-w-sm"></div>
+
   <script>
-    // --- ユーティリティ関数 ---
+    // =========================================================================
+    // 定数・デフォルトデータ
+    // =========================================================================
+    const BOOKMARKS_STORAGE_KEY = 'jsonDataViewer_bookmarks_v1';
 
-    // パス文字列を配列に変換する (先頭の 'root.' は無視する)
-    const getPathArray = (pathString) => {
-      if (!pathString) return [];
-      let p = pathString.trim();
-      if (p.startsWith('root.')) {
-        p = p.substring(5);
-      } else if (p === 'root') {
-        return [];
+    const DEFAULT_BOOKMARKS = [
+      {
+        id: 'iosys_gaming',
+        name: 'イオシス ジャンク ゲーミング',
+        url: 'https://iosys.co.jp/api/junk/items?id=&category=20&genre=&maker=&name=&places=8&rank=&page=1&sort=arrival_desc'
+      },
+      {
+        id: 'iosys_ipad',
+        name: 'イオシス ジャンク iPad',
+        url: 'https://iosys.co.jp/api/junk/items?id=&category=2&genre=&maker=18&name=&places=8&rank=&page=1&sort=arrival_desc'
+      },
+      {
+        id: 'iosys_macbook',
+        name: 'イオシス ジャンク MacBook',
+        url: 'https://iosys.co.jp/api/junk/items?id=&category=6&genre=&maker=18&name=&places=8&rank=&page=1&sort=arrival_desc'
       }
-      return p.split('.').filter(Boolean);
+    ];
+
+    const DEFAULT_FIELD_PRESET = {
+      listPath: 'data',
+      titleField: 'name',
+      subFields: 'price, rank, arrival_at, genre.name, maker.name, support.name',
+      mainFields: 'detail, accessory, comment',
+      sortField: 'arrival_at',
+      sortOrder: 'desc'
     };
 
-    // 指定したパスの値をオブジェクトから取得する
-    const getValue = (obj, pathArray) => {
-      let current = obj;
-      for (let key of pathArray) {
-        if (current === null || current === undefined) return undefined;
-        current = current[key];
-      }
-      return current;
+    const getSampleJsonString = () => {
+      const sampleJson = {
+        current_page: 1,
+        data: [
+          {
+            id: 384883,
+            name: "ROG Ally RC71L-Z1E512【Ryzen Z1 Extreme(3.3GHz)/16GB/512GB SSD/Win11Home】",
+            accessory: "ACアダプター",
+            detail: "CPU:Ryzen Z1 Extreme 3.3GHz メモリ:16GB SSD:512GB ドライブ:なし ディスプレイ:7.0インチ(1920x1080/120Hz) 通信:LAN(非搭載)/Wi-Fi(a/b/g/n/ac/ax) USB:Type-C(3.2 Gen2)x1 その他:Bluetooth5.4/microSDXCスロット/指紋認証/タッチパネル サイズ:約280(W)x111.38(D)x21.22～32.43(H)mm 重量:約608g OS:Windows11 Home(64bit/インストール済み)",
+            comment: "※症状は本体に記載",
+            price: 61000,
+            stock: 1,
+            rank: "D",
+            category_id: 20,
+            genre_id: 67,
+            maker_id: 70,
+            support_id: 3,
+            has_photo: false,
+            arrival_at: "2026-11-12",
+            category: { id: 20, name: "ゲーミング" },
+            genre: { id: 67, name: "ポータブルPC" },
+            maker: { id: 70, name: "ASUS" },
+            support: { id: 3, name: "当社１週間保証" },
+            places: [{ place: { id: 8, name: "アキバ路地裏店" }, stock: 1 }]
+          },
+          {
+            id: 441931,
+            name: "【ジャンク】raytrek R5-RL5【Core i7(2.4GHz)/32GB/1TB SSD/Win11Home】",
+            accessory: "箱/電源アダプタ",
+            detail: "CPU:Core i7 13700H 2.4GHz メモリ:32GB SSD:1TB ドライブ:非搭載 ディスプレイ:15.6インチ(2560x1440/165Hz) グラフィックス:GeForce RTX 4050 Laptop GPU(6GB) 通信:LAN(1000BASE-T)/Wi-Fi(a/b/g/n/ac/ax) USB:Type-C(3.2 Gen2)x1/Type-A(3.2 Gen1)x2/Type-A(2.0)x1 その他:Webカメラ/Bluetooth5.4/HDMI/SDXCスロット/顔認証 OS:Windows11 Home(64bit/インストール済)",
+            comment: "※症状は本体に記載\r\n",
+            price: 81000,
+            stock: 1,
+            rank: "J",
+            category_id: 20,
+            genre_id: 66,
+            maker_id: 290,
+            support_id: 1,
+            has_photo: false,
+            arrival_at: "2026-11-10",
+            category: { id: 20, name: "ゲーミング" },
+            genre: { id: 66, name: "ノートPC" },
+            maker: { id: 290, name: "DOS/PARA" },
+            support: { id: 1, name: "無保証" },
+            places: [{ place: { id: 8, name: "アキバ路地裏店" }, stock: 1 }]
+          },
+          {
+            id: 441942,
+            name: "MSI Cyborg 15 A13VFK Cyborg-15-A13VFK-4075JP【Core i7(2.4GHz)/16GB/512GB SSD/Win11Home】",
+            accessory: "ACアダプタ",
+            detail: "CPU:Core i7 13620H 2.4GHz メモリ:16GB SSD:512GB ドライブ:非搭載 ディスプレイ:15.6インチ(1920x1080/144Hz) グラフィックス:GeForce RTX 4060 Laptop(8GB) 通信:LAN(1000BASE-T)/Wi-Fi(a/b/g/n/ac/ax) USB:Type-C(3.2 Gen1)x1/Type-A(3.2 Gen1)x2 その他:Webカメラ/Bluetooth5.4/HDMI/テンキー OS:Windows11 Home(64bit/インストール済)",
+            comment: "※症状は本体に記載\r\n",
+            price: 88000,
+            stock: 1,
+            rank: "D",
+            category_id: 20,
+            genre_id: 66,
+            maker_id: 158,
+            support_id: 3,
+            has_photo: false,
+            arrival_at: "2026-11-10",
+            category: { id: 20, name: "ゲーミング" },
+            genre: { id: 66, name: "ノートPC" },
+            maker: { id: 158, name: "MSI" },
+            support: { id: 3, name: "当社１週間保証" },
+            places: [{ place: { id: 8, name: "アキバ路地裏店" }, stock: 1 }]
+          },
+          {
+            id: 440854,
+            name: "mouse G-Tune P5-ADLABW11【Core i5(2.5GHz)/32GB/1TB SSD+1TB SSD/Win11Pro】",
+            accessory: "ACアダプタ",
+            detail: "CPU:Core i5 12500H 2.5GHz メモリ:32GB ストレージ:1TB(SSD)+1TB(SSD)  ドライブ:非搭載 ディスプレイ:15.6インチ(1920x1080) グラフィックス:GeForce GTX 1650(4GB) 通信:LAN(1000BASE-T)/Wi-Fi(a/b/g/n/ac) USB:Type-C(3.1)x2/Type-A(3.0)x1/Type-A(2.0)x1 その他:Webカメラ/Bluetooth5.0/HDMI OS:Windows11 Pro(64bit/インストール済)",
+            comment: "※症状は本体に記載",
+            price: 61000,
+            stock: 1,
+            rank: "D",
+            category_id: 20,
+            genre_id: 66,
+            maker_id: 519,
+            support_id: 3,
+            has_photo: true,
+            arrival_at: "2026-11-05",
+            category: { id: 20, name: "ゲーミング" },
+            genre: { id: 66, name: "ノートPC" },
+            maker: { id: 519, name: "マウスコンピューター" },
+            support: { id: 3, name: "当社１週間保証" },
+            places: [{ place: { id: 8, name: "アキバ路地裏店" }, stock: 1 }]
+          },
+          {
+            id: 437938,
+            name: "DAIV 5P 21015P-CML【Core i7(2.6GHz)/16GB/512GB SSD/Win11Pro】",
+            accessory: "ACアダプタ",
+            detail: "CPU:Core i7 10750H 2.6GHz メモリ:16GB SSD:512GB ドライブ:非搭載 ディスプレイ:15.6インチ(1920x1080) グラフィックス:GeForce GTX 1650 Ti(4GB) 通信:LAN(1000BASE-T)/Wi-Fi(a/b/g/n/ac/ax) USB:Type-C(3.0)x1/Type-A(3.0)x2/Type-A(2.0)x1 その他:Webカメラ/Bluetooth5.2/HDMI/microSDXCスロット/顔認証 OS:Windows11 Pro(64bit/インストール済)",
+            comment: "※症状は本体に記載",
+            price: 52000,
+            stock: 1,
+            rank: "D",
+            category_id: 20,
+            genre_id: 66,
+            maker_id: 519,
+            support_id: 3,
+            has_photo: false,
+            arrival_at: "2026-10-15",
+            category: { id: 20, name: "ゲーミング" },
+            genre: { id: 66, name: "ノートPC" },
+            maker: { id: 519, name: "マウスコンピューター" },
+            support: { id: 3, name: "当社１週間保証" },
+            places: [{ place: { id: 8, name: "アキバ路地裏店" }, stock: 1 }]
+          },
+          {
+            id: 413586,
+            name: "WLMOUSE Beast X  8K Red OMRONモデル WL-8K-O-RED",
+            accessory: "箱/USB-Cケーブル/8K dongle/PTFE Skates/1K Nano Dongle/Black Grip Tape/White Grip Tape/キャリーケース",
+            detail: "接続:有線/2.4GHz無線 センサー:オプティカル(光学式) 解像度:〇DPI ポーリングレート:125-8000Hz ボタン数:5個 対応OS:windows サイズ:122x62x37mm 重量:39±1g",
+            comment: "※症状は本体に記載",
+            price: 8980,
+            stock: 1,
+            rank: "D",
+            category_id: 20,
+            genre_id: 19,
+            maker_id: 646,
+            support_id: 3,
+            has_photo: false,
+            arrival_at: "2026-09-08",
+            category: { id: 20, name: "ゲーミング" },
+            genre: { id: 19, name: "マウス" },
+            maker: { id: 646, name: "WLMOUSE" },
+            support: { id: 3, name: "当社１週間保証" },
+            places: [{ place: { id: 8, name: "アキバ路地裏店" }, stock: 1 }]
+          },
+          {
+            id: 416331,
+            name: "【ジャンク】【OS無し】G-GEAR note N1589J-710/T【Core i7(2.3GHz)/32GB/+1TB SSD】",
+            accessory: "ACアダプタ",
+            detail: "CPU:Core i7 10875H 2.3GHz メモリ:32GB SSD:1TB ドライブ:非搭載 モニタ:15.6インチ(1920x1080/144Hz) グラフィックス:GeForce RTX 2070 SUPER(8GB) 通信:LAM(1000BASE-T)/W-LAN(a/b/g/n/ac/ax) USB:Type-Cx2/Type-A(3.0)x3 その他:Webカメラ/Bluetooth5.2/HDMI/Mini DisplayPort/SDスロット OS:無し",
+            comment: "※症状は本体に記載",
+            price: 75000,
+            stock: 1,
+            rank: "J",
+            category_id: 20,
+            genre_id: 66,
+            maker_id: 453,
+            support_id: 1,
+            has_photo: false,
+            arrival_at: "2026-08-10",
+            category: { id: 20, name: "ゲーミング" },
+            genre: { id: 66, name: "ノートPC" },
+            maker: { id: 453, name: "TSUKUMO" },
+            support: { id: 1, name: "無保証" },
+            places: [{ place: { id: 8, name: "アキバ路地裏店" }, stock: 1 }]
+          },
+          {
+            id: 408549,
+            name: "【ジャンク】AULA Forest S2056 FG-F2056 ブラック 【英語(US)配列】",
+            accessory: "本体のみ",
+            detail: "接続:有線 インターフェイス:USB キー配列:英語(US) キーストローク:4.0mm スイッチ:メンブレン ホットスワップ:非対応 バックライト:RGB テンキー:あり その他:- サイズ:440(W)x135(H)x36(D)mm 重量:698g 発売日:2022/-",
+            comment: "",
+            price: 980,
+            stock: 1,
+            rank: "J",
+            category_id: 20,
+            genre_id: 20,
+            maker_id: 543,
+            support_id: 1,
+            has_photo: false,
+            arrival_at: "2026-06-26",
+            category: { id: 20, name: "ゲーミング" },
+            genre: { id: 20, name: "キーボード" },
+            maker: { id: 543, name: "その他メーカー" },
+            support: { id: 1, name: "無保証" },
+            places: [{ place: { id: 8, name: "アキバ路地裏店" }, stock: 1 }]
+          }
+        ],
+        first_page_url: "https://iosys.co.jp/api/junk/items?page=1",
+        from: 1,
+        next_page_url: null,
+        path: "https://iosys.co.jp/api/junk/items",
+        per_page: 24,
+        prev_page_url: null,
+        to: 8
+      };
+      return JSON.stringify(sampleJson, null, 2);
     };
 
-    // フィールドパスを正規化する
-    const normalizeFieldPath = (fieldPath, listPath) => {
-      let fp = fieldPath.trim();
-      let lp = listPath.trim();
-      
-      if (lp && fp.startsWith(lp + '.')) {
-        return fp.substring(lp.length + 1);
-      }
-      if (fp.startsWith('root.')) {
-        return fp.substring(5);
-      }
-      return fp;
+    // =========================================================================
+    // アプリケーション状態
+    // =========================================================================
+    const state = {
+      config: {
+        jsonText: '',
+        listPath: DEFAULT_FIELD_PRESET.listPath,
+        titleField: DEFAULT_FIELD_PRESET.titleField,
+        subFields: DEFAULT_FIELD_PRESET.subFields,
+        mainFields: DEFAULT_FIELD_PRESET.mainFields,
+        sortField: DEFAULT_FIELD_PRESET.sortField,
+        sortOrder: DEFAULT_FIELD_PRESET.sortOrder,
+        smartFormat: true
+      },
+      bookmarks: [],
+      selectedBookmarkId: '',
+      iframeOpen: false,
+      iframeExpanded: false,
+      iframeInverted: false,
+      iframeUrl: '',
+      filterPanelOpen: false,
+      searchQuery: '',
+      searchScope: 'all', // 'all' | 'visible'
+      filters: {
+        numeric: {},    // { [fieldPath]: { min: '', max: '' } }
+        categorical: {}, // { [fieldPath]: Set<string> }
+        custom: []      // [{ id, field, op, value }]
+      },
+      rawData: null,
+      detectedFields: [],
+      expandedJsonIds: new Set(),
+      error: null
     };
 
-    // HTMLエスケープ処理
+    // =========================================================================
+    // DOM参照
+    // =========================================================================
+    const els = {
+      // Mobile drawer
+      sidebarDrawer: document.getElementById('sidebar-drawer'),
+      mobileBackdrop: document.getElementById('mobile-backdrop'),
+      btnMobileDrawerOpen: document.getElementById('btn-mobile-drawer-open'),
+      btnMobileDrawerClose: document.getElementById('btn-mobile-drawer-close'),
+      btnMobileIframe: document.getElementById('btn-mobile-iframe'),
+      mobileCountBadge: document.getElementById('mobile-count-badge'),
+
+      // Bookmarks & iframe
+      selectBookmark: document.getElementById('select-bookmark'),
+      inputBookmarkName: document.getElementById('input-bookmark-name'),
+      inputBookmarkUrl: document.getElementById('input-bookmark-url'),
+      bookmarkCount: document.getElementById('bookmark-count'),
+      btnSaveBookmark: document.getElementById('btn-save-bookmark'),
+      btnDeleteBookmark: document.getElementById('btn-delete-bookmark'),
+      btnOpenIframe: document.getElementById('btn-open-iframe'),
+      btnOpenNewtab: document.getElementById('btn-open-newtab'),
+
+      iframePanel: document.getElementById('iframe-panel'),
+      iframeCurrentUrl: document.getElementById('iframe-current-url'),
+      iframeStatusNote: document.getElementById('iframe-status-note'),
+      urlPreviewIframe: document.getElementById('url-preview-iframe'),
+      btnIframePaste: document.getElementById('btn-iframe-paste'),
+      btnIframeRead: document.getElementById('btn-iframe-read'),
+      btnIframeInvert: document.getElementById('btn-iframe-invert'),
+      btnIframeReload: document.getElementById('btn-iframe-reload'),
+      btnIframeResize: document.getElementById('btn-iframe-resize'),
+      btnIframeNewtab: document.getElementById('btn-iframe-newtab'),
+      btnIframeClose: document.getElementById('btn-iframe-close'),
+
+      // Form & JSON input
+      form: document.getElementById('settings-form'),
+      text: document.getElementById('input-text'),
+      jsonDropzone: document.getElementById('json-dropzone'),
+      inputJsonFile: document.getElementById('input-json-file'),
+      btnPasteClipboard: document.getElementById('btn-paste-clipboard'),
+      btnFormatJson: document.getElementById('btn-format-json'),
+      btnClearJson: document.getElementById('btn-clear-json'),
+
+      // Field settings
+      listPath: document.getElementById('input-list-path'),
+      titleField: document.getElementById('input-title-field'),
+      subFields: document.getElementById('input-sub-fields'),
+      mainFields: document.getElementById('input-main-fields'),
+      smartFormat: document.getElementById('input-smart-format'),
+      sortField: document.getElementById('input-sort-field'),
+      sortOrder: document.getElementById('input-sort-order'),
+      btnPresetRich: document.getElementById('btn-preset-rich'),
+      btnPresetSimple: document.getElementById('btn-preset-simple'),
+      btnClearSub: document.getElementById('btn-clear-sub'),
+      btnSample: document.getElementById('btn-sample'),
+
+      // Field picker
+      fieldPickerWrapper: document.getElementById('field-picker-wrapper'),
+      selectPickerTarget: document.getElementById('select-picker-target'),
+      fieldPickerChips: document.getElementById('field-picker-chips'),
+
+      // Toolbar & Filters
+      toolbar: document.getElementById('toolbar'),
+      inputSearch: document.getElementById('input-search'),
+      btnClearSearch: document.getElementById('btn-clear-search'),
+      selectSearchScope: document.getElementById('select-search-scope'),
+      quickSortField: document.getElementById('quick-sort-field'),
+      btnQuickSortOrder: document.getElementById('btn-quick-sort-order'),
+      quickSortIcon: document.getElementById('quick-sort-icon'),
+      quickSortOrderLabel: document.getElementById('quick-sort-order-label'),
+      btnToggleFilters: document.getElementById('btn-toggle-filters'),
+      filterActiveBadge: document.getElementById('filter-active-badge'),
+      resultsCountText: document.getElementById('results-count-text'),
+      resultsTotalText: document.getElementById('results-total-text'),
+      btnResetAllFilters: document.getElementById('btn-reset-all-filters'),
+
+      filterPanel: document.getElementById('filter-panel'),
+      facetFilters: document.getElementById('facet-filters'),
+      btnAddCustomRule: document.getElementById('btn-add-custom-rule'),
+      customFiltersList: document.getElementById('custom-filters-list'),
+
+      // Results
+      resultsContainer: document.getElementById('results-container'),
+      toastContainer: document.getElementById('toast-container')
+    };
+
+    // =========================================================================
+    // ユーティリティ関数
+    // =========================================================================
     const escapeHTML = (str) => {
       if (str === null || str === undefined) return '';
       return String(str)
@@ -190,358 +856,1683 @@
         .replace(/'/g, '&#039;');
     };
 
-    // --- サンプルデータ生成 ---
-    const getSampleJsonString = () => {
-      const sampleJson = {
-        status: 200,
-        root: {
-          data: [
-            {
-              id: 1,
-              name: "夏目漱石",
-              details: {
-                comment: "吾輩は猫である。名前はまだ無い。\n\nどこで生れたかとんと見当がつかぬ。何でも薄暗いじめじめした所でニャーニャー泣いていた事だけは記憶している。吾輩はここで始めて人間というものを見た。しかもあとで聞くとそれは書生という人間中で一番獰悪な種族であったそうだ。"
-              }
-            },
-            {
-              id: 2,
-              name: "宮沢賢治",
-              details: {
-                comment: "「ではみなさんは、そういうふうに川だと云われたり、乳の流れたあとだと云われたりしていたこのぼんやりと白いものがほんとうは何かご承知ですか。」\n\n先生は、黒板に吊した大きな黒い星座の図の、上から下へ白くけぶった銀河帯のようなところを指しながら、みんなに問をかけました。"
-              }
-            },
-            {
-              id: 3,
-              name: "芥川龍之介",
-              details: {
-                 comment: "ある日の暮方の事である。一人の下人が、羅生門の下で雨やみを待っていた。\n\n広い門の下には、この男のほかに誰もいない。ただ、所々丹塗の剥げた、大きな円柱に、蟋蟀が一匹とまっている。羅生門が、朱雀大路にある以上は、この男のほかにも、雨やみをする市女笠や揉烏帽子が、もう二三人はありそうなものである。"
-              }
-            }
-          ]
+    const escapeRegExp = (str) => str.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+
+    const getPathArray = (pathString, rawObj = null) => {
+      if (!pathString) return [];
+      const p = pathString.trim();
+      if (!p || p === 'root') return [];
+      const parts = p.split('.').filter(Boolean);
+      // 先頭が 'root' で、実データに 'root' キーが無い場合は仮想ルートとして除去する
+      if (parts[0] === 'root') {
+        if (rawObj && typeof rawObj === 'object' && Object.prototype.hasOwnProperty.call(rawObj, 'root')) {
+          return parts;
         }
+        return parts.slice(1);
+      }
+      return parts;
+    };
+
+    const getValue = (obj, pathArray) => {
+      let current = obj;
+      for (const key of pathArray) {
+        if (current === null || current === undefined) return undefined;
+        current = current[key];
+      }
+      return current;
+    };
+
+    const stripVirtualRoot = (p) => {
+      const s = (p || '').trim();
+      if (s === 'root') return '';
+      if (s.startsWith('root.')) return s.substring(5);
+      return s;
+    };
+
+    const normalizeFieldPath = (fieldPath, listPath) => {
+      const fp = stripVirtualRoot(fieldPath);
+      const lp = stripVirtualRoot(listPath);
+      if (lp && fp.startsWith(lp + '.')) {
+        return fp.substring(lp.length + 1);
+      }
+      return fp;
+    };
+
+    const parseFieldList = (str) => {
+      if (!str) return [];
+      return str.split(',').map(s => s.trim()).filter(Boolean);
+    };
+
+    const showToast = (message, type = 'info') => {
+      const palette = {
+        info: 'bg-slate-800 border-slate-700 text-slate-100',
+        success: 'bg-emerald-950/95 border-emerald-700/70 text-emerald-200',
+        warn: 'bg-amber-950/95 border-amber-700/70 text-amber-200',
+        error: 'bg-rose-950/95 border-rose-700/70 text-rose-200'
       };
-      return JSON.stringify(sampleJson, null, 2);
+      const iconName = {
+        info: 'info',
+        success: 'check-circle-2',
+        warn: 'alert-triangle',
+        error: 'alert-circle'
+      }[type] || 'info';
+
+      const toast = document.createElement('div');
+      toast.className = `pointer-events-auto flex items-center gap-2 px-3.5 py-2.5 rounded-xl border shadow-xl text-xs font-medium backdrop-blur transition-all duration-200 ${palette[type] || palette.info}`;
+      toast.innerHTML = `<i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i><span class="leading-snug">${escapeHTML(message)}</span>`;
+      els.toastContainer.appendChild(toast);
+      lucide.createIcons({ nodes: [toast] });
+
+      setTimeout(() => {
+        toast.style.opacity = '0';
+        toast.style.transform = 'translateY(6px)';
+        setTimeout(() => toast.remove(), 220);
+      }, 2800);
     };
 
-
-    // --- アプリケーションの状態管理とメインロジック ---
-
-    const state = {
-      config: {
-        sourceType: 'url', // 'url' or 'text'
-        url: '',
-        jsonText: '',
-        listPath: 'root.data',
-        fields: 'root.data.name,root.data.price,root.data.detail,root.data.accessory,root.data.comment',
-        sortField: 'root.data.arrival_at',
-        sortOrder: 'asc'
-      },
-      rawData: null,
-      loading: false,
-      error: null
+    // =========================================================================
+    // モバイルドロワー制御
+    // =========================================================================
+    const openMobileDrawer = () => {
+      els.sidebarDrawer.classList.remove('-translate-x-full');
+      els.mobileBackdrop.classList.remove('hidden');
+      document.body.classList.add('overflow-hidden', 'md:overflow-auto');
     };
 
-    // DOM要素
-    const els = {
-      form: document.getElementById('settings-form'),
-      sourceRadios: document.getElementsByName('sourceType'),
-      groupUrl: document.getElementById('group-url'),
-      groupText: document.getElementById('group-text'),
-      url: document.getElementById('input-url'),
-      text: document.getElementById('input-text'),
-      listPath: document.getElementById('input-list-path'),
-      fields: document.getElementById('input-fields'),
-      sortField: document.getElementById('input-sort-field'),
-      sortOrder: document.getElementById('input-sort-order'),
-      btnSample: document.getElementById('btn-sample'),
-      main: document.getElementById('main-content')
+    const closeMobileDrawer = () => {
+      els.sidebarDrawer.classList.add('-translate-x-full');
+      els.mobileBackdrop.classList.add('hidden');
+      document.body.classList.remove('overflow-hidden', 'md:overflow-auto');
     };
 
-    // 初期化処理
-    const init = () => {
-      const params = new URLSearchParams(window.location.search);
-      
-      state.config.sourceType = params.get('source') === 'text' ? 'text' : 'url';
-      state.config.url = params.get('url') || 'https://iosys.co.jp/api/junk/items?id=&category=20&genre=&maker=&name=&places=8&rank=&page=1&sort=arrival_desc';
-      state.config.jsonText = params.get('text') || '';
-      state.config.listPath = params.get('list') ?? 'root.data';
-      state.config.fields = params.get('fields') || 'root.data.name,root.data.price,root.data.detail,root.data.accessory,root.data.comment';
-      state.config.sortField = params.get('sort') || 'root.data.arrival_at';
-      state.config.sortOrder = params.get('order') === 'desc' ? 'desc' : 'asc';
+    // =========================================================================
+    // お気に入りURL & iframe 制御
+    // =========================================================================
+    const loadBookmarks = () => {
+      try {
+        const raw = localStorage.getItem(BOOKMARKS_STORAGE_KEY);
+        if (!raw) {
+          state.bookmarks = [...DEFAULT_BOOKMARKS];
+          localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(state.bookmarks));
+        } else {
+          const parsed = JSON.parse(raw);
+          state.bookmarks = Array.isArray(parsed) && parsed.length > 0 ? parsed : [...DEFAULT_BOOKMARKS];
+        }
+      } catch {
+        state.bookmarks = [...DEFAULT_BOOKMARKS];
+      }
+      if (!state.selectedBookmarkId && state.bookmarks.length > 0) {
+        state.selectedBookmarkId = state.bookmarks[0].id;
+      }
+      renderBookmarksUI();
+    };
 
-      updateFormUI();
+    const saveBookmarksStorage = () => {
+      try {
+        localStorage.setItem(BOOKMARKS_STORAGE_KEY, JSON.stringify(state.bookmarks));
+      } catch (e) {
+        console.warn('localStorage save failed', e);
+      }
+    };
 
-      if ((state.config.sourceType === 'url' && state.config.url) || 
-          (state.config.sourceType === 'text' && state.config.jsonText)) {
-        //loadDataAndRender();
+    const renderBookmarksUI = () => {
+      els.bookmarkCount.textContent = `${state.bookmarks.length}件`;
+      let optionsHtml = '<option value="">-- 新規 / 選択解除 --</option>';
+      for (const bm of state.bookmarks) {
+        const selected = bm.id === state.selectedBookmarkId ? 'selected' : '';
+        optionsHtml += `<option value="${escapeHTML(bm.id)}" ${selected}>${escapeHTML(bm.name)}</option>`;
+      }
+      els.selectBookmark.innerHTML = optionsHtml;
+
+      const active = state.bookmarks.find(b => b.id === state.selectedBookmarkId);
+      if (active) {
+        els.inputBookmarkName.value = active.name;
+        els.inputBookmarkUrl.value = active.url;
+        els.btnDeleteBookmark.disabled = false;
       } else {
-        render(); // 初期画面の描画
+        els.btnDeleteBookmark.disabled = true;
+      }
+    };
+
+    const handleBookmarkSelectChange = () => {
+      state.selectedBookmarkId = els.selectBookmark.value;
+      const active = state.bookmarks.find(b => b.id === state.selectedBookmarkId);
+      if (active) {
+        els.inputBookmarkName.value = active.name;
+        els.inputBookmarkUrl.value = active.url;
+      }
+      els.btnDeleteBookmark.disabled = !active;
+    };
+
+    const handleSaveBookmark = () => {
+      const url = els.inputBookmarkUrl.value.trim();
+      let name = els.inputBookmarkName.value.trim();
+      if (!url) {
+        showToast('URLを入力してください。', 'warn');
+        return;
+      }
+      if (!name) {
+        try {
+          name = new URL(url).hostname;
+        } catch {
+          name = url.slice(0, 32);
+        }
       }
 
-      // イベントリスナーの登録
-      els.form.addEventListener('submit', handleApply);
-      els.btnSample.addEventListener('click', handleLoadSample);
-      
-      Array.from(els.sourceRadios).forEach(radio => {
-        radio.addEventListener('change', (e) => {
-          state.config.sourceType = e.target.value;
-          updateSourceUI();
+      const existingIdx = state.bookmarks.findIndex(b => b.id === state.selectedBookmarkId);
+      if (existingIdx >= 0) {
+        state.bookmarks[existingIdx] = { ...state.bookmarks[existingIdx], name, url };
+        showToast(`「${name}」を更新しました`, 'success');
+      } else {
+        const newId = 'bm-' + Date.now();
+        state.bookmarks.push({ id: newId, name, url });
+        state.selectedBookmarkId = newId;
+        showToast(`「${name}」をお気に入りに追加しました`, 'success');
+      }
+      saveBookmarksStorage();
+      renderBookmarksUI();
+    };
+
+    const handleDeleteBookmark = () => {
+      if (!state.selectedBookmarkId) return;
+      const target = state.bookmarks.find(b => b.id === state.selectedBookmarkId);
+      state.bookmarks = state.bookmarks.filter(b => b.id !== state.selectedBookmarkId);
+      state.selectedBookmarkId = state.bookmarks[0]?.id || '';
+      if (!state.selectedBookmarkId) {
+        els.inputBookmarkName.value = '';
+        els.inputBookmarkUrl.value = '';
+      }
+      saveBookmarksStorage();
+      renderBookmarksUI();
+      if (target) showToast(`「${target.name}」を削除しました`, 'info');
+    };
+
+    const openUrlInIframe = (customUrl = null) => {
+      const url = (customUrl ?? els.inputBookmarkUrl.value).trim();
+      if (!url) {
+        showToast('開くURLを入力または選択してください。', 'warn');
+        return;
+      }
+      state.iframeOpen = true;
+      state.iframeUrl = url;
+      els.iframeCurrentUrl.textContent = url;
+      els.iframeStatusNote.classList.add('hidden');
+      els.iframeStatusNote.textContent = '';
+      els.iframePanel.classList.remove('hidden');
+      els.urlPreviewIframe.src = url;
+      closeMobileDrawer();
+      els.iframePanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+    };
+
+    const openUrlInNewTab = () => {
+      const url = (els.inputBookmarkUrl.value || state.iframeUrl).trim();
+      if (!url) {
+        showToast('開くURLを入力または選択してください。', 'warn');
+        return;
+      }
+      window.open(url, '_blank', 'noopener,noreferrer');
+    };
+
+    const tryReadFromIframe = () => {
+      try {
+        const doc = els.urlPreviewIframe.contentDocument || els.urlPreviewIframe.contentWindow?.document;
+        if (!doc || !doc.body) {
+          throw new Error('クロスオリジン制限によりiframe内のテキストへ直接アクセスできません');
+        }
+        const text = (doc.body.innerText || doc.body.textContent || '').trim();
+        if (!text) {
+          showToast('iframe内からテキストを取得できませんでした。手動コピーをお試しください。', 'warn');
+          return;
+        }
+        applyJsonTextAndRender(text);
+        showToast('iframe内からJSONを読み込みました', 'success');
+      } catch (e) {
+        els.iframeStatusNote.textContent = '※外部サイトのため直接読込がブロックされています。枠内で全選択コピーし「クリップボードから貼り付けて反映」を押してください。';
+        els.iframeStatusNote.classList.remove('hidden');
+        showToast('外部サイトのため手動コピー＋貼付ボタンをご利用ください', 'warn');
+      }
+    };
+
+    // =========================================================================
+    // JSON読み込み・パース
+    // =========================================================================
+    const applyJsonTextAndRender = (text, closeDrawer = true) => {
+      els.text.value = text;
+      state.config.jsonText = text;
+      syncUrlParamsFromState();
+      parseAndRenderData();
+      if (closeDrawer) closeMobileDrawer();
+    };
+
+    const handlePasteFromClipboard = async () => {
+      if (!navigator.clipboard || !navigator.clipboard.readText) {
+        showToast('ブラウザがクリップボード読取に対応していません。下の入力欄に貼り付けてください。', 'warn');
+        els.text.focus();
+        return;
+      }
+      try {
+        const clipText = await navigator.clipboard.readText();
+        if (!clipText || !clipText.trim()) {
+          showToast('クリップボードが空です。JSONをコピーしてから再度お試しください。', 'warn');
+          return;
+        }
+        applyJsonTextAndRender(clipText);
+        if (!state.error) {
+          showToast('クリップボードのJSONを読み込みました', 'success');
+        }
+      } catch (err) {
+        showToast('クリップボードへのアクセスが許可されませんでした。入力欄にCtrl+Vで貼り付けてください。', 'warn');
+        els.text.focus();
+      }
+    };
+
+    const handleFileLoad = (file) => {
+      if (!file) return;
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        const content = String(e.target?.result || '');
+        applyJsonTextAndRender(content);
+        if (!state.error) {
+          showToast(`「${file.name}」を読み込みました`, 'success');
+        }
+      };
+      reader.onerror = () => {
+        showToast('ファイルの読み込みに失敗しました。', 'error');
+      };
+      reader.readAsText(file, 'utf-8');
+    };
+
+    // =========================================================================
+    // データ解析・フィールド自動検出
+    // =========================================================================
+    const resolveList = (rawData, listPath) => {
+      if (!rawData) return null;
+      const pathArr = getPathArray(listPath, rawData);
+      if (pathArr.length === 0) return rawData;
+      return getValue(rawData, pathArr);
+    };
+
+    const findArrayPaths = (obj, prefix = '', depth = 0, out = []) => {
+      if (depth > 3 || obj === null || obj === undefined || typeof obj !== 'object') return out;
+      if (Array.isArray(obj)) {
+        out.push({ path: prefix || 'root', count: obj.length });
+        return out;
+      }
+      for (const [k, v] of Object.entries(obj)) {
+        const nextPath = prefix ? `${prefix}.${k}` : k;
+        if (Array.isArray(v)) {
+          out.push({ path: nextPath, count: v.length });
+        } else if (v && typeof v === 'object') {
+          findArrayPaths(v, nextPath, depth + 1, out);
+        }
+      }
+      return out;
+    };
+
+    const collectFieldPaths = (list) => {
+      const pathSet = new Set();
+      const sampleCount = Math.min(list.length, 25);
+
+      const walk = (val, prefix, depth) => {
+        if (depth > 3 || val === null || val === undefined) return;
+        if (Array.isArray(val)) {
+          if (prefix) pathSet.add(prefix);
+          if (val.length > 0 && typeof val[0] === 'object' && val[0] !== null) {
+            walk(val[0], `${prefix}.0`, depth + 1);
+          }
+          return;
+        }
+        if (typeof val === 'object') {
+          for (const [k, v] of Object.entries(val)) {
+            const p = prefix ? `${prefix}.${k}` : k;
+            if (v === null || v === undefined || typeof v !== 'object') {
+              pathSet.add(p);
+            } else {
+              walk(v, p, depth + 1);
+            }
+          }
+        } else if (prefix) {
+          pathSet.add(prefix);
+        }
+      };
+
+      for (let i = 0; i < sampleCount; i++) {
+        if (list[i] && typeof list[i] === 'object') {
+          walk(list[i], '', 0);
+        }
+      }
+      return Array.from(pathSet);
+    };
+
+    const renderFieldPicker = () => {
+      if (!state.detectedFields.length) {
+        els.fieldPickerWrapper.classList.add('hidden');
+        return;
+      }
+      els.fieldPickerWrapper.classList.remove('hidden');
+      els.fieldPickerChips.innerHTML = state.detectedFields.map(path => `
+        <button
+          type="button"
+          data-field-chip="${escapeHTML(path)}"
+          class="px-2 py-0.5 rounded-md bg-slate-900 hover:bg-blue-600/30 text-slate-300 hover:text-blue-200 border border-slate-700 hover:border-blue-500/40 text-[11px] font-mono transition-colors"
+        >${escapeHTML(path)}</button>
+      `).join('');
+    };
+
+    const renderQuickSortOptions = () => {
+      const currentSort = normalizeFieldPath(state.config.sortField, state.config.listPath);
+      const candidates = new Set(state.detectedFields);
+      if (currentSort) candidates.add(currentSort);
+
+      let html = '<option value="">ソートなし</option>';
+      for (const field of candidates) {
+        const selected = field === currentSort ? 'selected' : '';
+        html += `<option value="${escapeHTML(field)}" ${selected}>${escapeHTML(field)}</option>`;
+      }
+      els.quickSortField.innerHTML = html;
+
+      const isAsc = state.config.sortOrder === 'asc';
+      els.quickSortOrderLabel.textContent = isAsc ? '昇順' : '降順';
+      els.quickSortIcon.setAttribute('data-lucide', isAsc ? 'arrow-up-narrow-wide' : 'arrow-down-wide-narrow');
+      lucide.createIcons({ nodes: [els.btnQuickSortOrder] });
+    };
+
+    // =========================================================================
+    // 検索・フィルタリングロジック
+    // =========================================================================
+    const parseSearchTerms = (query) => {
+      const tokens = (query || '').trim().split(/\s+/).filter(Boolean);
+      const positive = [];
+      const negative = [];
+      for (const token of tokens) {
+        if (token.startsWith('-') && token.length > 1) {
+          negative.push(token.slice(1).toLowerCase());
+        } else {
+          positive.push(token.toLowerCase());
+        }
+      }
+      return { positive, negative };
+    };
+
+    const collectAllPrimitiveValues = (val, bucket = []) => {
+      if (val === null || val === undefined) return bucket;
+      if (Array.isArray(val)) {
+        for (const item of val) collectAllPrimitiveValues(item, bucket);
+      } else if (typeof val === 'object') {
+        for (const v of Object.values(val)) collectAllPrimitiveValues(v, bucket);
+      } else {
+        bucket.push(String(val));
+      }
+      return bucket;
+    };
+
+    const getSearchableText = (item) => {
+      if (state.searchScope === 'visible') {
+        const fields = [
+          ...parseFieldList(state.config.titleField),
+          ...parseFieldList(state.config.subFields),
+          ...parseFieldList(state.config.mainFields)
+        ];
+        const parts = [];
+        for (const f of fields) {
+          const norm = normalizeFieldPath(f, state.config.listPath);
+          const val = getValue(item, getPathArray(norm));
+          if (val !== undefined && val !== null) {
+            collectAllPrimitiveValues(val, parts);
+          }
+        }
+        return parts.join(' ').toLowerCase();
+      }
+      return collectAllPrimitiveValues(item).join(' ').toLowerCase();
+    };
+
+    const matchesSearch = (item, terms) => {
+      if (terms.positive.length === 0 && terms.negative.length === 0) return true;
+      const haystack = getSearchableText(item);
+      for (const pos of terms.positive) {
+        if (!haystack.includes(pos)) return false;
+      }
+      for (const neg of terms.negative) {
+        if (haystack.includes(neg)) return false;
+      }
+      return true;
+    };
+
+    const stringifyForFilter = (val) => {
+      if (val === undefined || val === null) return '';
+      if (typeof val === 'object') return JSON.stringify(val);
+      return String(val);
+    };
+
+    const matchesFilters = (item) => {
+      // 1. Numeric range filters
+      for (const [fieldPath, range] of Object.entries(state.filters.numeric)) {
+        const hasMin = range.min !== '' && range.min !== null && range.min !== undefined;
+        const hasMax = range.max !== '' && range.max !== null && range.max !== undefined;
+        if (!hasMin && !hasMax) continue;
+
+        const norm = normalizeFieldPath(fieldPath, state.config.listPath);
+        const val = getValue(item, getPathArray(norm));
+        const num = Number(val);
+        if (val === null || val === undefined || val === '' || Number.isNaN(num)) return false;
+        if (hasMin && num < Number(range.min)) return false;
+        if (hasMax && num > Number(range.max)) return false;
+      }
+
+      // 2. Categorical chip filters
+      for (const [fieldPath, selectedSet] of Object.entries(state.filters.categorical)) {
+        if (!selectedSet || selectedSet.size === 0) continue;
+        const norm = normalizeFieldPath(fieldPath, state.config.listPath);
+        const val = getValue(item, getPathArray(norm));
+        const strVal = (val === null || val === undefined || val === '') ? '(空)' : String(val);
+        if (!selectedSet.has(strVal)) return false;
+      }
+
+      // 3. Custom rules
+      for (const rule of state.filters.custom) {
+        if (!rule.field) continue;
+        const norm = normalizeFieldPath(rule.field, state.config.listPath);
+        const rawVal = getValue(item, getPathArray(norm));
+        const strVal = stringifyForFilter(rawVal);
+        const target = (rule.value ?? '').trim();
+
+        switch (rule.op) {
+          case 'not_empty':
+            if (rawVal === undefined || rawVal === null || strVal.trim() === '') return false;
+            break;
+          case 'empty':
+            if (rawVal !== undefined && rawVal !== null && strVal.trim() !== '') return false;
+            break;
+          case 'contains':
+            if (target && !strVal.toLowerCase().includes(target.toLowerCase())) return false;
+            break;
+          case 'not_contains':
+            if (target && strVal.toLowerCase().includes(target.toLowerCase())) return false;
+            break;
+          case 'eq':
+            if (target && strVal.toLowerCase() !== target.toLowerCase()) return false;
+            break;
+          case 'neq':
+            if (target && strVal.toLowerCase() === target.toLowerCase()) return false;
+            break;
+          case 'gte': {
+            if (target === '') break;
+            const nVal = Number(rawVal);
+            const nTarget = Number(target);
+            if (!Number.isNaN(nVal) && !Number.isNaN(nTarget)) {
+              if (nVal < nTarget) return false;
+            } else if (strVal < target) {
+              return false;
+            }
+            break;
+          }
+          case 'lte': {
+            if (target === '') break;
+            const nVal = Number(rawVal);
+            const nTarget = Number(target);
+            if (!Number.isNaN(nVal) && !Number.isNaN(nTarget)) {
+              if (nVal > nTarget) return false;
+            } else if (strVal > target) {
+              return false;
+            }
+            break;
+          }
+        }
+      }
+
+      return true;
+    };
+
+    const countActiveFilters = () => {
+      let count = 0;
+      for (const range of Object.values(state.filters.numeric)) {
+        if ((range.min ?? '') !== '' || (range.max ?? '') !== '') count++;
+      }
+      for (const set of Object.values(state.filters.categorical)) {
+        if (set && set.size > 0) count++;
+      }
+      for (const rule of state.filters.custom) {
+        if (!rule.field) continue;
+        if (rule.op === 'empty' || rule.op === 'not_empty' || (rule.value ?? '').trim() !== '') {
+          count++;
+        }
+      }
+      return count;
+    };
+
+    // =========================================================================
+    // ファセット＆カスタムフィルターUI生成
+    // =========================================================================
+    const buildFacetMetadata = (list) => {
+      const subPaths = parseFieldList(state.config.subFields).map(f => normalizeFieldPath(f, state.config.listPath));
+      const numericFacets = [];
+      const categoricalFacets = [];
+
+      for (const fieldPath of subPaths) {
+        const pathArr = getPathArray(fieldPath);
+        const values = list.map(item => getValue(item, pathArr));
+        const nonNull = values.filter(v => v !== undefined && v !== null && v !== '');
+        if (nonNull.length === 0) continue;
+
+        const allNumbers = nonNull.every(v => typeof v === 'number' && !Number.isNaN(v));
+        if (allNumbers) {
+          const min = Math.min(...nonNull);
+          const max = Math.max(...nonNull);
+          // id/stockなど1種類しかない場合でも範囲表示可能だが、すべて同じ値ならスキップしてもよい
+          if (min !== max || fieldPath.toLowerCase().includes('price')) {
+            numericFacets.push({ fieldPath, min, max });
+            continue;
+          }
+        }
+
+        // カテゴリ判定 (オブジェクトは除外)
+        const allScalars = nonNull.every(v => typeof v !== 'object');
+        if (!allScalars) continue;
+
+        const counts = new Map();
+        for (const v of values) {
+          const key = (v === undefined || v === null || v === '') ? '(空)' : String(v);
+          counts.set(key, (counts.get(key) || 0) + 1);
+        }
+        const entries = Array.from(counts.entries());
+        const avgLen = entries.reduce((acc, [k]) => acc + k.length, 0) / entries.length;
+        if (entries.length >= 2 && entries.length <= 25 && avgLen <= 40) {
+          entries.sort((a, b) => b[1] - a[1] || a[0].localeCompare(b[0], 'ja'));
+          categoricalFacets.push({ fieldPath, entries });
+        }
+      }
+
+      return { numericFacets, categoricalFacets };
+    };
+
+    const renderFacetFilters = (list) => {
+      if (!Array.isArray(list) || list.length === 0) {
+        els.facetFilters.innerHTML = '<p class="text-xs text-slate-500">データを読み込むとクイックフィルターが表示されます。</p>';
+        return;
+      }
+
+      const { numericFacets, categoricalFacets } = buildFacetMetadata(list);
+      if (numericFacets.length === 0 && categoricalFacets.length === 0) {
+        els.facetFilters.innerHTML = '<p class="text-xs text-slate-500">サブ情報項目に価格やカテゴリを設定すると、自動クイックフィルターが表示されます。</p>';
+        return;
+      }
+
+      let html = '';
+
+      if (numericFacets.length > 0) {
+        html += `<div class="grid grid-cols-1 sm:grid-cols-2 gap-3">`;
+        for (const nf of numericFacets) {
+          const cur = state.filters.numeric[nf.fieldPath] || { min: '', max: '' };
+          html += `
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between text-xs">
+                <span class="font-semibold text-slate-200 font-mono">${escapeHTML(nf.fieldPath)}</span>
+                <span class="text-[11px] text-slate-500">${nf.min.toLocaleString()} 〜 ${nf.max.toLocaleString()}</span>
+              </div>
+              <div class="flex items-center gap-2">
+                <input
+                  type="number"
+                  data-num-filter="min"
+                  data-field="${escapeHTML(nf.fieldPath)}"
+                  value="${escapeHTML(cur.min)}"
+                  placeholder="最小 (${nf.min})"
+                  class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+                <span class="text-slate-500 text-xs">〜</span>
+                <input
+                  type="number"
+                  data-num-filter="max"
+                  data-field="${escapeHTML(nf.fieldPath)}"
+                  value="${escapeHTML(cur.max)}"
+                  placeholder="最大 (${nf.max})"
+                  class="w-full px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500"
+                />
+              </div>
+            </div>
+          `;
+        }
+        html += `</div>`;
+      }
+
+      if (categoricalFacets.length > 0) {
+        html += `<div class="space-y-2.5">`;
+        for (const cf of categoricalFacets) {
+          const selectedSet = state.filters.categorical[cf.fieldPath] || new Set();
+          html += `
+            <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-3 space-y-2">
+              <div class="flex items-center justify-between">
+                <span class="text-xs font-semibold text-slate-200 font-mono">${escapeHTML(cf.fieldPath)}</span>
+                ${selectedSet.size > 0
+              ? `<button type="button" data-clear-cat="${escapeHTML(cf.fieldPath)}" class="text-[11px] text-blue-400 hover:text-blue-300">選択解除 (${selectedSet.size})</button>`
+              : `<span class="text-[11px] text-slate-500">${cf.entries.length}種類</span>`
+            }
+              </div>
+              <div class="flex flex-wrap gap-1.5">
+                ${cf.entries.map(([val, cnt]) => {
+              const active = selectedSet.has(val);
+              const cls = active
+                ? 'bg-blue-600 text-white border-blue-500 shadow-sm'
+                : 'bg-slate-900 hover:bg-slate-800 text-slate-300 border-slate-700';
+              return `
+                    <button
+                      type="button"
+                      data-cat-field="${escapeHTML(cf.fieldPath)}"
+                      data-cat-val="${escapeHTML(val)}"
+                      class="px-2.5 py-1 rounded-lg border text-xs font-medium flex items-center gap-1.5 transition-colors ${cls}"
+                    >
+                      <span>${escapeHTML(val)}</span>
+                      <span class="text-[10px] ${active ? 'text-blue-100' : 'text-slate-500'}">(${cnt})</span>
+                    </button>
+                  `;
+            }).join('')}
+              </div>
+            </div>
+          `;
+        }
+        html += `</div>`;
+      }
+
+      els.facetFilters.innerHTML = html;
+    };
+
+    const renderCustomFilterRules = () => {
+      if (state.filters.custom.length === 0) {
+        els.customFiltersList.innerHTML = '<p class="text-xs text-slate-500">「条件を追加」から任意のJSONキーに対する絞り込みを追加できます。</p>';
+        return;
+      }
+
+      const fieldOptions = state.detectedFields;
+      const ops = [
+        { value: 'contains', label: '含む' },
+        { value: 'not_contains', label: '含まない' },
+        { value: 'eq', label: '等しい (=)' },
+        { value: 'neq', label: '等しくない (!=)' },
+        { value: 'gte', label: '以上 (>=)' },
+        { value: 'lte', label: '以下 (<=)' },
+        { value: 'not_empty', label: '空でない' },
+        { value: 'empty', label: '空である' }
+      ];
+
+      els.customFiltersList.innerHTML = state.filters.custom.map(rule => {
+        const hideValue = rule.op === 'empty' || rule.op === 'not_empty';
+        const optionsHtml = fieldOptions.map(f =>
+          `<option value="${escapeHTML(f)}" ${f === rule.field ? 'selected' : ''}>${escapeHTML(f)}</option>`
+        ).join('');
+        const opsHtml = ops.map(o =>
+          `<option value="${o.value}" ${o.value === rule.op ? 'selected' : ''}>${o.label}</option>`
+        ).join('');
+
+        return `
+          <div class="flex flex-col sm:flex-row items-stretch sm:items-center gap-2 bg-slate-950/70 border border-slate-800 rounded-xl p-2" data-rule-id="${rule.id}">
+            <select data-rule-prop="field" class="sm:w-48 px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 font-mono focus:outline-none focus:ring-2 focus:ring-violet-500">
+              <option value="">-- フィールド選択 --</option>
+              ${optionsHtml}
+            </select>
+            <select data-rule-prop="op" class="sm:w-36 px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-200 focus:outline-none focus:ring-2 focus:ring-violet-500">
+              ${opsHtml}
+            </select>
+            <input
+              type="text"
+              data-rule-prop="value"
+              value="${escapeHTML(rule.value)}"
+              placeholder="条件値..."
+              class="flex-1 px-2.5 py-1.5 bg-slate-900 border border-slate-700 rounded-lg text-xs text-slate-100 placeholder-slate-500 focus:outline-none focus:ring-2 focus:ring-violet-500 ${hideValue ? 'hidden' : ''}"
+            />
+            <button
+              type="button"
+              data-remove-rule="${rule.id}"
+              class="px-2 py-1.5 rounded-lg bg-slate-900 hover:bg-rose-950/60 text-slate-400 hover:text-rose-300 border border-slate-700 text-xs flex items-center justify-center transition-colors shrink-0"
+              title="条件を削除"
+            >
+              <i data-lucide="x" class="w-3.5 h-3.5"></i>
+            </button>
+          </div>
+        `;
+      }).join('');
+
+      lucide.createIcons({ nodes: [els.customFiltersList] });
+    };
+
+    // =========================================================================
+    // カード描画ヘルパー (ハイライト・スペック整形・価格/ランク装飾)
+    // =========================================================================
+    const highlightPlainText = (rawText, positiveTerms) => {
+      const str = String(rawText);
+      if (!positiveTerms || positiveTerms.length === 0) {
+        return escapeHTML(str);
+      }
+      const uniqueTerms = Array.from(new Set(positiveTerms.filter(Boolean)));
+      if (uniqueTerms.length === 0) return escapeHTML(str);
+
+      const pattern = new RegExp(`(${uniqueTerms.map(escapeRegExp).join('|')})`, 'gi');
+      let result = '';
+      let lastIndex = 0;
+      let match;
+
+      while ((match = pattern.exec(str)) !== null) {
+        if (match.index > lastIndex) {
+          result += escapeHTML(str.slice(lastIndex, match.index));
+        }
+        result += `<mark class="bg-amber-500/30 text-amber-200 px-0.5 rounded font-medium">${escapeHTML(match[0])}</mark>`;
+        lastIndex = pattern.lastIndex;
+        if (match[0].length === 0) break;
+      }
+      if (lastIndex < str.length) {
+        result += escapeHTML(str.slice(lastIndex));
+      }
+      return result;
+    };
+
+    const formatFieldRawValue = (val) => {
+      if (val === undefined || val === null) return null;
+      if (typeof val === 'object') {
+        return JSON.stringify(val, null, 2);
+      }
+      return String(val);
+    };
+
+    const parseSpecPairs = (text) => {
+      if (typeof text !== 'string') return null;
+      const trimmed = text.trim();
+      if (!trimmed || trimmed.includes('\n\n')) return null;
+
+      // Key:Value が空白区切りで3つ以上並んでいるかチェック
+      const regex = /(?:^|\s)([^\s:：/()\[\]]{1,24})[:：]/g;
+      const matches = [];
+      let m;
+      while ((m = regex.exec(trimmed)) !== null) {
+        const key = m[1];
+        const lower = key.toLowerCase();
+        // 時刻(12:30)やURLプロトコル(http/https/ftp)を除外
+        if (/^\d+$/.test(key) || lower === 'http' || lower === 'https' || lower === 'ftp') {
+          continue;
+        }
+        const keyStart = m.index + (m[0].startsWith(' ') || m[0].startsWith('\t') ? 1 : 0);
+        matches.push({
+          key,
+          keyStart,
+          valStart: regex.lastIndex
         });
-      });
-      
-      // 初回アイコン描画
-      lucide.createIcons();
+      }
+
+      if (matches.length < 3) return null;
+
+      const pairs = [];
+      for (let i = 0; i < matches.length; i++) {
+        const end = i + 1 < matches.length ? matches[i + 1].keyStart : trimmed.length;
+        const value = trimmed.slice(matches[i].valStart, end).trim();
+        pairs.push({ key: matches[i].key, value });
+      }
+      return pairs;
     };
 
-    // UIの表示切り替え（URL or テキスト）
-    const updateSourceUI = () => {
-      const isUrl = state.config.sourceType === 'url';
-      Array.from(els.sourceRadios).forEach(r => r.checked = (r.value === state.config.sourceType));
-      
-      els.groupUrl.classList.toggle('hidden', !isUrl);
-      els.groupText.classList.toggle('hidden', isUrl);
-      
-      els.url.required = isUrl;
-      els.text.required = !isUrl;
+    const isPriceField = (fieldPath, rawValue) => {
+      const leaf = fieldPath.split('.').pop().toLowerCase();
+      return (leaf === 'price' || leaf.endsWith('_price') || leaf.endsWith('price')) && typeof rawValue === 'number';
     };
 
-    // 状態をフォームUIに反映
-    const updateFormUI = () => {
-      updateSourceUI();
-      els.url.value = state.config.url;
+    const isRankField = (fieldPath) => {
+      const leaf = fieldPath.split('.').pop().toLowerCase();
+      return leaf === 'rank' || leaf.endsWith('_rank');
+    };
+
+    const getRankBadgeClasses = (rankVal) => {
+      const r = String(rankVal).trim().toUpperCase();
+      if (r === 'S' || r === 'A' || r === 'NEW') {
+        return 'bg-cyan-500/15 text-cyan-300 border-cyan-500/40';
+      }
+      if (r === 'B' || r === 'C') {
+        return 'bg-blue-500/15 text-blue-300 border-blue-500/40';
+      }
+      if (r === 'D') {
+        return 'bg-amber-500/15 text-amber-300 border-amber-500/40';
+      }
+      if (r === 'J' || r === 'JUNK') {
+        return 'bg-rose-500/15 text-rose-300 border-rose-500/40';
+      }
+      return 'bg-slate-800 text-slate-200 border-slate-700';
+    };
+
+    const renderMainFieldBlock = (item, fieldPath, positiveTerms) => {
+      const norm = normalizeFieldPath(fieldPath, state.config.listPath);
+      const val = getValue(item, getPathArray(norm));
+      const strVal = formatFieldRawValue(val);
+
+      let contentHtml = '';
+      if (strVal === null) {
+        contentHtml = '<span class="text-slate-600 italic text-xs">データなし</span>';
+      } else if (strVal.trim() === '') {
+        contentHtml = '<span class="text-slate-600 italic text-xs">（空）</span>';
+      } else {
+        const specPairs = state.config.smartFormat ? parseSpecPairs(strVal) : null;
+        if (specPairs) {
+          contentHtml = `
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-2">
+              ${specPairs.map(pair => `
+                <div class="bg-slate-950/75 border border-slate-800/90 rounded-lg px-3 py-2 flex flex-col gap-0.5">
+                  <span class="text-[10px] font-bold text-blue-400 tracking-wide">${highlightPlainText(pair.key, positiveTerms)}</span>
+                  <span class="text-xs text-slate-200 break-words leading-snug">${highlightPlainText(pair.value || '-', positiveTerms)}</span>
+                </div>
+              `).join('')}
+            </div>
+          `;
+        } else if (typeof val === 'object') {
+          contentHtml = `<pre class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed">${highlightPlainText(strVal, positiveTerms)}</pre>`;
+        } else {
+          contentHtml = `<div class="bg-slate-950/45 border border-slate-800/70 rounded-xl px-3.5 py-2.5 text-sm text-slate-300 leading-relaxed whitespace-pre-wrap break-words">${highlightPlainText(strVal, positiveTerms)}</div>`;
+        }
+      }
+
+      return `
+        <div>
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-1.5">
+            <span>${escapeHTML(norm || fieldPath)}</span>
+          </div>
+          ${contentHtml}
+        </div>
+      `;
+    };
+
+    const renderClassicMainFieldBlock = (item, fieldPath, positiveTerms) => {
+      const norm = normalizeFieldPath(fieldPath, state.config.listPath);
+      const val = getValue(item, getPathArray(norm));
+      const strVal = formatFieldRawValue(val);
+
+      let valueHtml = '';
+      if (strVal === null) {
+        valueHtml = '<span class="text-slate-600 italic text-sm">データなし</span>';
+      } else if (strVal.trim() === '') {
+        valueHtml = '<span class="text-slate-600 italic text-sm">（空）</span>';
+      } else if (typeof val === 'object') {
+        valueHtml = `<pre class="bg-slate-950/80 border border-slate-800 rounded-xl p-3 text-xs font-mono text-slate-300 overflow-x-auto leading-relaxed">${highlightPlainText(strVal, positiveTerms)}</pre>`;
+      } else {
+        valueHtml = `<div class="text-sm sm:text-base text-slate-300 leading-loose whitespace-pre-wrap break-words">${highlightPlainText(strVal, positiveTerms)}</div>`;
+      }
+
+      return `
+        <div>
+          <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+            ${escapeHTML(fieldPath)}
+          </div>
+          ${valueHtml}
+        </div>
+      `;
+    };
+
+    const renderCard = (item, index, positiveTerms) => {
+      const titleFields = parseFieldList(state.config.titleField);
+      const subFields = parseFieldList(state.config.subFields);
+      const mainFields = parseFieldList(state.config.mainFields);
+
+      const primaryTitlePath = titleFields[0] || '';
+      const normTitlePath = normalizeFieldPath(primaryTitlePath, state.config.listPath);
+      const titleVal = primaryTitlePath ? getValue(item, getPathArray(normTitlePath)) : undefined;
+      const titleHtml = (titleVal !== undefined && titleVal !== null)
+        ? highlightPlainText(String(titleVal), positiveTerms)
+        : '<span class="text-slate-500 italic text-base">タイトルなし</span>';
+
+      const itemKey = String(item?.id ?? index);
+      const isJsonExpanded = state.expandedJsonIds.has(itemKey);
+
+      const footerHtml = `
+        <div class="pt-3 mt-1 border-t border-slate-800/70 flex items-center justify-between gap-2 text-[11px] text-slate-500">
+          <div class="flex items-center gap-2 font-mono">
+            <span>#${index + 1}</span>
+            ${item?.id !== undefined ? `<span class="px-1.5 py-0.5 rounded bg-slate-800/70 text-slate-400">id: ${escapeHTML(item.id)}</span>` : ''}
+          </div>
+          <div class="flex items-center gap-1.5">
+            <button
+              type="button"
+              data-copy-json="${escapeHTML(itemKey)}"
+              class="px-2 py-1 rounded-lg bg-slate-800/70 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border border-slate-700/70 flex items-center gap-1 transition-colors"
+              title="この項目のJSONをコピー"
+            >
+              <i data-lucide="copy" class="w-3 h-3"></i>
+              <span>コピー</span>
+            </button>
+            <button
+              type="button"
+              data-toggle-json="${escapeHTML(itemKey)}"
+              class="px-2 py-1 rounded-lg ${isJsonExpanded ? 'bg-blue-600/20 text-blue-300 border-blue-500/40' : 'bg-slate-800/70 hover:bg-slate-800 text-slate-400 hover:text-slate-200 border-slate-700/70'} border font-mono flex items-center gap-1 transition-colors"
+            >
+              <span>{ } JSON</span>
+            </button>
+          </div>
+        </div>
+        ${isJsonExpanded ? `
+          <pre class="mt-2 bg-slate-950 border border-slate-800 rounded-xl p-3 text-[11px] font-mono text-slate-300 overflow-x-auto max-h-80 leading-relaxed">${escapeHTML(JSON.stringify(item, null, 2))}</pre>
+        ` : ''}
+      `;
+
+      // サブ情報なし -> 従来風のタイトル + メインのみシンプル表示
+      if (subFields.length === 0) {
+        return `
+          <article class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-2xl p-5 sm:p-7 shadow-lg shadow-black/20 transition-colors">
+            <div class="flex flex-col gap-5">
+              ${primaryTitlePath ? `
+                <div class="border-b border-slate-800 pb-4">
+                  <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5">
+                    ${escapeHTML(primaryTitlePath)}
+                  </div>
+                  <h3 class="text-lg sm:text-2xl font-bold text-slate-50 leading-snug break-words">
+                    ${titleHtml}
+                  </h3>
+                </div>
+              ` : ''}
+              ${mainFields.map(f => renderClassicMainFieldBlock(item, f, positiveTerms)).join('')}
+              ${footerHtml}
+            </div>
+          </article>
+        `;
+      }
+
+      // サブ情報あり -> タイトル + サブ情報(価格・ランク・属性ピル) + メイン情報(Detail等) の階層カード表示
+      const featuredMetrics = [];
+      const metaPills = [];
+
+      for (const sf of subFields) {
+        const norm = normalizeFieldPath(sf, state.config.listPath);
+        const val = getValue(item, getPathArray(norm));
+        if (val === undefined || val === null || val === '') continue;
+
+        if (isPriceField(norm, val)) {
+          const formatted = `¥${Number(val).toLocaleString('ja-JP')}`;
+          featuredMetrics.push(`
+            <div class="px-3 py-1 rounded-xl bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold text-lg sm:text-xl tabular-nums shrink-0">
+              ${highlightPlainText(formatted, positiveTerms)}
+            </div>
+          `);
+        } else if (isRankField(norm)) {
+          const badgeCls = getRankBadgeClasses(val);
+          featuredMetrics.push(`
+            <div class="px-2.5 py-1 rounded-xl border text-xs font-extrabold tracking-wider shrink-0 ${badgeCls}">
+              RANK ${highlightPlainText(String(val), positiveTerms)}
+            </div>
+          `);
+        } else {
+          const strVal = typeof val === 'object' ? JSON.stringify(val) : String(val);
+          metaPills.push(`
+            <div class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-lg bg-slate-800/80 border border-slate-700/70 text-xs">
+              <span class="text-slate-400 font-mono text-[11px]">${escapeHTML(norm)}:</span>
+              <span class="text-slate-200 font-medium break-all">${highlightPlainText(strVal, positiveTerms)}</span>
+            </div>
+          `);
+        }
+      }
+
+      return `
+        <article class="bg-slate-900/90 border border-slate-800 hover:border-slate-700 rounded-2xl p-4 sm:p-6 shadow-lg shadow-black/20 transition-colors">
+          <div class="flex flex-col gap-4">
+            <!-- カードヘッダー: タイトル + 価格/ランク + サブ情報ピル -->
+            <div class="pb-4 border-b border-slate-800/90 space-y-3">
+              <div class="flex flex-col sm:flex-row sm:items-start sm:justify-between gap-2.5">
+                <div class="min-w-0 flex-1">
+                  ${primaryTitlePath ? `<div class="text-[10px] font-mono uppercase tracking-wider text-slate-500 mb-1">${escapeHTML(normTitlePath || primaryTitlePath)}</div>` : ''}
+                  <h3 class="text-base sm:text-xl font-bold text-slate-50 leading-snug break-words">
+                    ${titleHtml}
+                  </h3>
+                </div>
+                ${featuredMetrics.length > 0 ? `
+                  <div class="flex flex-wrap items-center gap-2 shrink-0 sm:pt-1">
+                    ${featuredMetrics.join('')}
+                  </div>
+                ` : ''}
+              </div>
+
+              ${metaPills.length > 0 ? `
+                <div class="flex flex-wrap items-center gap-1.5">
+                  ${metaPills.join('')}
+                </div>
+              ` : ''}
+            </div>
+
+            <!-- カードボディ: メイン情報 -->
+            ${mainFields.length > 0 ? `
+              <div class="space-y-3.5">
+                ${mainFields.map(f => renderMainFieldBlock(item, f, positiveTerms)).join('')}
+              </div>
+            ` : ''}
+
+            ${footerHtml}
+          </div>
+        </article>
+      `;
+    };
+
+    // =========================================================================
+    // メインデータ処理＆レンダリング
+    // =========================================================================
+    let currentRenderedItems = []; // JSONコピー用に保持
+
+    const parseAndRenderData = () => {
+      state.error = null;
+      const text = state.config.jsonText.trim();
+
+      if (!text) {
+        state.rawData = null;
+        state.detectedFields = [];
+        renderFieldPicker();
+        renderResults();
+        return;
+      }
+
+      try {
+        state.rawData = JSON.parse(text);
+      } catch (e) {
+        state.rawData = null;
+        state.detectedFields = [];
+        state.error = `JSONのパースに失敗しました。構文が正しいか確認してください。\n(${e.message})`;
+        renderFieldPicker();
+        renderResults();
+        return;
+      }
+
+      const list = resolveList(state.rawData, state.config.listPath);
+      if (Array.isArray(list)) {
+        state.detectedFields = collectFieldPaths(list);
+        renderFieldPicker();
+        renderQuickSortOptions();
+        renderFacetFilters(list);
+        renderCustomFilterRules();
+      } else {
+        state.detectedFields = [];
+        renderFieldPicker();
+      }
+
+      renderResults();
+    };
+
+    const renderResults = () => {
+      // エラー表示
+      if (state.error) {
+        els.toolbar.classList.add('hidden');
+        els.filterPanel.classList.add('hidden');
+        els.mobileCountBadge.classList.add('hidden');
+        els.resultsContainer.innerHTML = `
+          <div class="bg-rose-950/40 border border-rose-800/70 rounded-2xl p-5 flex items-start gap-3.5 text-rose-200">
+            <i data-lucide="alert-circle" class="w-5 h-5 text-rose-400 shrink-0 mt-0.5"></i>
+            <div class="space-y-1 min-w-0">
+              <h3 class="font-bold text-sm">エラーが発生しました</h3>
+              <p class="text-xs text-rose-200/80 whitespace-pre-wrap leading-relaxed break-words">${escapeHTML(state.error)}</p>
+            </div>
+          </div>
+        `;
+        lucide.createIcons({ nodes: [els.resultsContainer] });
+        return;
+      }
+
+      // 未入力・ウェルカム表示
+      if (!state.rawData) {
+        els.toolbar.classList.add('hidden');
+        els.filterPanel.classList.add('hidden');
+        els.mobileCountBadge.classList.add('hidden');
+        els.resultsContainer.innerHTML = `
+          <div class="bg-slate-900/70 border border-slate-800 rounded-2xl p-6 sm:p-10 text-center space-y-6 my-4">
+            <div class="w-14 h-14 mx-auto rounded-2xl bg-blue-500/10 border border-blue-500/25 flex items-center justify-center">
+              <i data-lucide="file-json-2" class="w-7 h-7 text-blue-400"></i>
+            </div>
+            <div class="space-y-2 max-w-lg mx-auto">
+              <h2 class="text-lg sm:text-xl font-bold text-slate-100">JSON リストを見やすく可視化</h2>
+              <p class="text-xs sm:text-sm text-slate-400 leading-relaxed">
+                JSONを貼り付けるか、ファイル読み込み・お気に入りURLのiframe表示からJSONをコピーして読み込めます。タイトル・価格/ランク等のサブ情報・詳細スペックを整理して表示します。
+              </p>
+            </div>
+            <div class="flex flex-wrap items-center justify-center gap-2.5 pt-2">
+              <button type="button" id="welcome-btn-sample" class="px-4 py-2.5 rounded-xl bg-blue-600 hover:bg-blue-500 text-white text-xs sm:text-sm font-semibold flex items-center gap-2 transition-colors shadow-lg shadow-blue-950/40">
+                <i data-lucide="flask-conical" class="w-4 h-4"></i>
+                <span>サンプルデータを表示</span>
+              </button>
+              <button type="button" id="welcome-btn-paste" class="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium flex items-center gap-2 transition-colors">
+                <i data-lucide="clipboard-paste" class="w-4 h-4 text-blue-400"></i>
+                <span>クリップボードから読込</span>
+              </button>
+              <label for="input-json-file" class="cursor-pointer px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs sm:text-sm font-medium flex items-center gap-2 transition-colors">
+                <i data-lucide="folder-open" class="w-4 h-4 text-amber-400"></i>
+                <span>JSONファイルを開く</span>
+              </label>
+              <button type="button" id="welcome-btn-iframe" class="px-4 py-2.5 rounded-xl bg-cyan-600/20 hover:bg-cyan-600/30 text-cyan-300 border border-cyan-500/30 text-xs sm:text-sm font-medium flex items-center gap-2 transition-colors">
+                <i data-lucide="globe" class="w-4 h-4"></i>
+                <span>お気に入りURLをiframeで開く</span>
+              </button>
+            </div>
+          </div>
+        `;
+        lucide.createIcons({ nodes: [els.resultsContainer] });
+        document.getElementById('welcome-btn-sample')?.addEventListener('click', handleLoadSample);
+        document.getElementById('welcome-btn-paste')?.addEventListener('click', handlePasteFromClipboard);
+        document.getElementById('welcome-btn-iframe')?.addEventListener('click', () => openUrlInIframe());
+        return;
+      }
+
+      // リスト配列解決
+      const list = resolveList(state.rawData, state.config.listPath);
+      if (!Array.isArray(list)) {
+        els.toolbar.classList.add('hidden');
+        els.filterPanel.classList.add('hidden');
+        els.mobileCountBadge.classList.add('hidden');
+        const candidates = findArrayPaths(state.rawData);
+        const candidatesHtml = candidates.length > 0
+          ? `
+            <div class="pt-3 space-y-2">
+              <p class="text-xs text-amber-200/80 font-semibold">見つかった配列パス候補 (クリックで適用):</p>
+              <div class="flex flex-wrap gap-2">
+                ${candidates.map(c => `
+                  <button type="button" data-fix-list-path="${escapeHTML(c.path)}" class="px-3 py-1.5 rounded-lg bg-amber-500/20 hover:bg-amber-500/30 border border-amber-500/40 text-amber-200 text-xs font-mono transition-colors">
+                    ${escapeHTML(c.path)} (${c.count}件)
+                  </button>
+                `).join('')}
+              </div>
+            </div>
+          `
+          : '';
+
+        els.resultsContainer.innerHTML = `
+          <div class="bg-amber-950/35 border border-amber-700/60 rounded-2xl p-5 flex items-start gap-3.5 text-amber-200">
+            <i data-lucide="alert-triangle" class="w-5 h-5 text-amber-400 shrink-0 mt-0.5"></i>
+            <div class="min-w-0 flex-1">
+              <h3 class="font-bold text-sm">指定されたパス「${escapeHTML(state.config.listPath || '(ルート)')}」に配列が見つかりません</h3>
+              <p class="text-xs text-amber-200/80 mt-1">リストのパス設定を確認してください。</p>
+              ${candidatesHtml}
+            </div>
+          </div>
+        `;
+        lucide.createIcons({ nodes: [els.resultsContainer] });
+        els.resultsContainer.querySelectorAll('[data-fix-list-path]').forEach(btn => {
+          btn.addEventListener('click', () => {
+            const p = btn.getAttribute('data-fix-list-path');
+            state.config.listPath = p === 'root' ? '' : p;
+            els.listPath.value = state.config.listPath;
+            syncUrlParamsFromState();
+            parseAndRenderData();
+          });
+        });
+        return;
+      }
+
+      // ツールバー表示
+      els.toolbar.classList.remove('hidden');
+
+      // 検索＆フィルター適用
+      const terms = parseSearchTerms(state.searchQuery);
+      let filtered = list.filter(item => matchesSearch(item, terms) && matchesFilters(item));
+
+      // ソート処理
+      if (state.config.sortField) {
+        const normSort = normalizeFieldPath(state.config.sortField, state.config.listPath);
+        const sortPathArr = getPathArray(normSort);
+        filtered = [...filtered].sort((a, b) => {
+          const valA = getValue(a, sortPathArr);
+          const valB = getValue(b, sortPathArr);
+          if (valA === valB) return 0;
+          if (valA == null) return 1;
+          if (valB == null) return -1;
+
+          let cmp = 0;
+          if (typeof valA === 'number' && typeof valB === 'number') {
+            cmp = valA - valB;
+          } else {
+            cmp = String(valA).localeCompare(String(valB), 'ja', { numeric: true });
+          }
+          return state.config.sortOrder === 'asc' ? cmp : -cmp;
+        });
+      }
+
+      currentRenderedItems = filtered;
+
+      // 件数・アクティブフィルターバッジ更新
+      const activeFilterCount = countActiveFilters();
+      const hasSearch = Boolean(state.searchQuery.trim());
+      els.resultsCountText.textContent = `${filtered.length} 件表示`;
+      els.resultsTotalText.textContent = filtered.length !== list.length ? `(全 ${list.length} 件中)` : '';
+      els.mobileCountBadge.textContent = `${filtered.length}件`;
+      els.mobileCountBadge.classList.remove('hidden');
+
+      if (activeFilterCount > 0) {
+        els.filterActiveBadge.textContent = String(activeFilterCount);
+        els.filterActiveBadge.classList.remove('hidden');
+      } else {
+        els.filterActiveBadge.classList.add('hidden');
+      }
+
+      els.btnResetAllFilters.classList.toggle('hidden', !hasSearch && activeFilterCount === 0);
+      els.btnClearSearch.classList.toggle('hidden', !hasSearch);
+
+      // カードリスト描画
+      if (filtered.length === 0) {
+        els.resultsContainer.innerHTML = `
+          <div class="bg-slate-900/60 border border-dashed border-slate-700 rounded-2xl py-12 px-4 text-center space-y-3">
+            <i data-lucide="search-x" class="w-10 h-10 text-slate-600 mx-auto"></i>
+            <p class="text-sm text-slate-400">
+              ${list.length === 0 ? '指定された配列にデータが含まれていません。' : '検索またはフィルター条件に一致するデータがありません。'}
+            </p>
+            ${list.length > 0 ? `
+              <button type="button" id="btn-empty-reset" class="px-3.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 text-xs font-medium transition-colors">
+                検索・フィルターをリセット
+              </button>
+            ` : ''}
+          </div>
+        `;
+        lucide.createIcons({ nodes: [els.resultsContainer] });
+        document.getElementById('btn-empty-reset')?.addEventListener('click', resetSearchAndFilters);
+        return;
+      }
+
+      els.resultsContainer.innerHTML = `
+        <div class="space-y-4">
+          ${filtered.map((item, idx) => renderCard(item, idx, terms.positive)).join('')}
+        </div>
+      `;
+      lucide.createIcons({ nodes: [els.resultsContainer] });
+    };
+
+    // =========================================================================
+    // 状態・URLクエリ同期 & イベントハンドラ
+    // =========================================================================
+    const updateFormFromState = () => {
       els.text.value = state.config.jsonText;
       els.listPath.value = state.config.listPath;
-      els.fields.value = state.config.fields;
+      els.titleField.value = state.config.titleField;
+      els.subFields.value = state.config.subFields;
+      els.mainFields.value = state.config.mainFields;
+      els.smartFormat.checked = state.config.smartFormat;
       els.sortField.value = state.config.sortField;
       els.sortOrder.value = state.config.sortOrder;
     };
 
-    // フォームの入力を状態とURLに反映
     const syncStateFromForm = () => {
-      state.config.url = els.url.value;
       state.config.jsonText = els.text.value;
-      state.config.listPath = els.listPath.value;
-      state.config.fields = els.fields.value;
-      state.config.sortField = els.sortField.value;
+      state.config.listPath = els.listPath.value.trim();
+      state.config.titleField = els.titleField.value.trim();
+      state.config.subFields = els.subFields.value.trim();
+      state.config.mainFields = els.mainFields.value.trim();
+      state.config.smartFormat = els.smartFormat.checked;
+      state.config.sortField = els.sortField.value.trim();
       state.config.sortOrder = els.sortOrder.value;
+    };
 
+    const syncUrlParamsFromState = () => {
       const params = new URLSearchParams();
-      params.set('source', state.config.sourceType);
-      
-      if (state.config.sourceType === 'url' && state.config.url) {
-        params.set('url', state.config.url);
-      } else if (state.config.sourceType === 'text' && state.config.jsonText) {
-        // テキストは巨大になる可能性があるため、URLクエリへの反映は簡易的なものとする
-        //params.set('text', state.config.jsonText);
-      }
-
       if (state.config.listPath) params.set('list', state.config.listPath);
-      if (state.config.fields) params.set('fields', state.config.fields);
+      if (state.config.titleField) params.set('title', state.config.titleField);
+      params.set('sub', state.config.subFields);
+      if (state.config.mainFields) params.set('main', state.config.mainFields);
       if (state.config.sortField) params.set('sort', state.config.sortField);
       if (state.config.sortOrder) params.set('order', state.config.sortOrder);
-      
+      params.set('smart', state.config.smartFormat ? '1' : '0');
+
       const newUrl = `${window.location.pathname}?${params.toString()}`;
       window.history.replaceState({}, '', newUrl);
+    };
+
+    const resetSearchAndFilters = () => {
+      state.searchQuery = '';
+      els.inputSearch.value = '';
+      state.filters.numeric = {};
+      state.filters.categorical = {};
+      state.filters.custom = [];
+      const list = resolveList(state.rawData, state.config.listPath);
+      if (Array.isArray(list)) {
+        renderFacetFilters(list);
+      }
+      renderCustomFilterRules();
+      renderResults();
     };
 
     const handleApply = (e) => {
       e.preventDefault();
       syncStateFromForm();
-      loadDataAndRender();
+      syncUrlParamsFromState();
+      parseAndRenderData();
+      closeMobileDrawer();
     };
 
     const handleLoadSample = () => {
       state.config = {
-        sourceType: 'text',
-        url: '',
+        ...state.config,
         jsonText: getSampleJsonString(),
-        listPath: 'root.data',
-        fields: 'root.data.name, root.data.details.comment',
-        sortField: 'root.data.id',
-        sortOrder: 'asc'
+        listPath: DEFAULT_FIELD_PRESET.listPath,
+        titleField: DEFAULT_FIELD_PRESET.titleField,
+        subFields: DEFAULT_FIELD_PRESET.subFields,
+        mainFields: DEFAULT_FIELD_PRESET.mainFields,
+        sortField: DEFAULT_FIELD_PRESET.sortField,
+        sortOrder: DEFAULT_FIELD_PRESET.sortOrder,
+        smartFormat: true
       };
-      updateFormUI();
-      syncStateFromForm();
-      loadDataAndRender();
+      state.filters.numeric = {};
+      state.filters.categorical = {};
+      state.filters.custom = [];
+      state.searchQuery = '';
+      els.inputSearch.value = '';
+      updateFormFromState();
+      syncUrlParamsFromState();
+      parseAndRenderData();
+      closeMobileDrawer();
+      showToast('サンプルデータを読み込みました', 'success');
     };
 
-    const loadDataAndRender = async () => {
-      state.loading = true;
-      state.error = null;
-      render();
+    // =========================================================================
+    // 初期化
+    // =========================================================================
+    const init = () => {
+      const params = new URLSearchParams(window.location.search);
 
-      try {
-        if (state.config.sourceType === 'url') {
-          if (!state.config.url) throw new Error('URLを入力してください。');
-          const res = await fetch(state.config.url);
-          if (!res.ok) {
-            throw new Error(`HTTP Error: ${res.status}`);
-          }
-          state.rawData = await res.json();
-        } else {
-          if (!state.config.jsonText.trim()) throw new Error('JSONテキストを入力してください。');
-          try {
-            state.rawData = JSON.parse(state.config.jsonText);
-          } catch (e) {
-            throw new Error(`JSONのパースに失敗しました。構文が正しいか確認してください。\n(${e.message})`);
-          }
-        }
-      } catch (err) {
-        console.error(err);
-        state.error = err.message;
-        state.rawData = null;
-      } finally {
-        state.loading = false;
-        render();
-      }
-    };
+      state.config.listPath = params.has('list') ? params.get('list') : DEFAULT_FIELD_PRESET.listPath;
+      state.config.sortField = params.has('sort') ? params.get('sort') : DEFAULT_FIELD_PRESET.sortField;
+      state.config.sortOrder = params.get('order') === 'asc' ? 'asc' : 'desc';
+      state.config.smartFormat = params.get('smart') !== '0';
 
-    // 描画ロジック
-    const render = () => {
-      let html = '';
-
-      if (state.loading) {
-        html = `
-          <div class="h-full flex flex-col items-center justify-center text-slate-500 gap-4">
-            <i data-lucide="refresh-cw" class="w-8 h-8 animate-spin text-blue-500"></i>
-            <p>データを読み込んでいます...</p>
-          </div>
-        `;
-      } else if (state.error) {
-        html = `
-          <div class="bg-red-50 border border-red-200 rounded-xl p-6 flex items-start gap-4 text-red-700">
-            <i data-lucide="alert-circle" class="w-6 h-6 shrink-0 mt-0.5"></i>
-            <div>
-              <h3 class="font-bold mb-1">エラーが発生しました</h3>
-              <p class="text-sm opacity-90 leading-relaxed">${escapeHTML(state.error)}</p>
-            </div>
-          </div>
-        `;
-      } else if (!state.rawData) {
-        html = `
-          <div class="h-full flex flex-col items-center justify-center text-slate-400 gap-4">
-            <i data-lucide="settings" class="w-12 h-12 opacity-20"></i>
-            <p>左側のパネルからデータソースと設定を入力し、実行してください。</p>
-          </div>
-        `;
+      if (params.has('title') || params.has('sub') || params.has('main')) {
+        state.config.titleField = params.get('title') ?? DEFAULT_FIELD_PRESET.titleField;
+        state.config.subFields = params.get('sub') ?? '';
+        state.config.mainFields = params.get('main') ?? DEFAULT_FIELD_PRESET.mainFields;
+      } else if (params.has('fields')) {
+        // 旧 fields パラメータ互換 (先頭をタイトル、残りをメイン情報にして従来風レイアウトで表示)
+        const legacy = parseFieldList(params.get('fields'));
+        state.config.titleField = legacy[0] || '';
+        state.config.subFields = '';
+        state.config.mainFields = legacy.slice(1).join(', ');
       } else {
-        // データの処理
-        const listPathArray = getPathArray(state.config.listPath);
-        let list = listPathArray.length > 0 ? getValue(state.rawData, listPathArray) : state.rawData;
-
-        if (!Array.isArray(list)) {
-          html = `
-            <div class="bg-amber-50 border border-amber-200 rounded-xl p-6 flex items-start gap-4 text-amber-800">
-              <i data-lucide="alert-circle" class="w-6 h-6 shrink-0 mt-0.5"></i>
-              <p>指定されたパスに配列が見つかりません。パスの設定を確認してください。</p>
-            </div>
-          `;
-        } else {
-          let result = [...list];
-
-          // ソート処理
-          if (state.config.sortField) {
-            const normalizedSortPath = normalizeFieldPath(state.config.sortField, state.config.listPath);
-            const sortPathArray = getPathArray(normalizedSortPath);
-            
-            result.sort((a, b) => {
-              const valA = getValue(a, sortPathArray);
-              const valB = getValue(b, sortPathArray);
-              
-              if (valA === valB) return 0;
-              if (valA == null) return 1;
-              if (valB == null) return -1;
-
-              let compare = 0;
-              if (typeof valA === 'number' && typeof valB === 'number') {
-                compare = valA - valB;
-              } else {
-                compare = String(valA).localeCompare(String(valB));
-              }
-              return state.config.sortOrder === 'asc' ? compare : -compare;
-            });
-          }
-
-          // HTML組み立て
-          const sortIcon = state.config.sortOrder === 'asc' ? 'arrow-down-a-z' : 'arrow-up-z-a';
-          const sortLabelHtml = state.config.sortField ? `
-            <span class="flex items-center gap-1 bg-blue-50 text-blue-700 px-2 py-0.5 rounded-md border border-blue-100">
-              <i data-lucide="${sortIcon}" class="w-3.5 h-3.5"></i>
-              ${escapeHTML(normalizeFieldPath(state.config.sortField, state.config.listPath))}
-            </span>
-          ` : '';
-
-          html += `
-            <div class="max-w-4xl mx-auto">
-              <div class="flex justify-between items-end mb-6 pb-2 border-b border-slate-200">
-                <h2 class="text-xl font-bold text-slate-800">データ一覧</h2>
-                <div class="text-sm text-slate-500 flex items-center gap-2">
-                  <span class="bg-slate-200 px-2 py-0.5 rounded-full text-slate-700 font-medium">
-                    ${result.length} 件
-                  </span>
-                  ${sortLabelHtml}
-                </div>
-              </div>
-              <div class="space-y-6">
-          `;
-
-          if (result.length === 0) {
-            html += `
-              <div class="text-center py-12 text-slate-500 bg-white rounded-xl border border-dashed border-slate-300">
-                指定されたパスの配列にデータが含まれていません。
-              </div>
-            `;
-          } else {
-            const targetFields = state.config.fields.split(',').map(f => f.trim()).filter(Boolean);
-            
-            result.forEach(item => {
-              html += `<article class="bg-white rounded-2xl shadow-sm border border-slate-200/60 p-6 sm:p-8 transition-shadow hover:shadow-md">
-                        <div class="flex flex-col gap-5">`;
-              
-              targetFields.forEach((fieldPath, fieldIndex) => {
-                const isTitle = fieldIndex === 0;
-                const normalizedPath = normalizeFieldPath(fieldPath, state.config.listPath);
-                const pathArray = getPathArray(normalizedPath);
-                const value = getValue(item, pathArray);
-                
-                const valueHtml = (value !== undefined && value !== null) 
-                  ? escapeHTML(String(value)) 
-                  : '<span class="text-slate-300 italic text-sm">データなし</span>';
-
-                const titleClasses = isTitle 
-                  ? 'text-xl sm:text-2xl font-bold text-slate-900 leading-tight' 
-                  : 'text-base text-slate-700 leading-loose';
-                  
-                const borderClass = isTitle ? 'border-b border-slate-100 pb-4' : '';
-
-                html += `
-                  <div class="${borderClass}">
-                    <div class="text-[11px] font-bold text-slate-400 uppercase tracking-wider mb-1.5 flex items-center gap-2">
-                      ${escapeHTML(fieldPath)}
-                    </div>
-                    <div class="break-words ${titleClasses}">
-                      ${valueHtml}
-                    </div>
-                  </div>
-                `;
-              });
-              
-              html += `</div></article>`;
-            });
-          }
-          
-          html += `</div></div>`; // max-w-4xl, space-y-6 を閉じる
-        }
+        state.config.titleField = DEFAULT_FIELD_PRESET.titleField;
+        state.config.subFields = DEFAULT_FIELD_PRESET.subFields;
+        state.config.mainFields = DEFAULT_FIELD_PRESET.mainFields;
       }
 
-      els.main.innerHTML = html;
-      // 動的に生成したHTML内のアイコンを描画
+      if (params.has('text')) {
+        state.config.jsonText = params.get('text') || '';
+      }
+
+      loadBookmarks();
+      updateFormFromState();
+      parseAndRenderData();
+
+      // モバイルドロワーイベント
+      els.btnMobileDrawerOpen.addEventListener('click', openMobileDrawer);
+      els.btnMobileDrawerClose.addEventListener('click', closeMobileDrawer);
+      els.mobileBackdrop.addEventListener('click', closeMobileDrawer);
+      els.btnMobileIframe.addEventListener('click', () => openUrlInIframe());
+
+      // お気に入りURL・iframeイベント
+      els.selectBookmark.addEventListener('change', handleBookmarkSelectChange);
+      els.btnSaveBookmark.addEventListener('click', handleSaveBookmark);
+      els.btnDeleteBookmark.addEventListener('click', handleDeleteBookmark);
+      els.btnOpenIframe.addEventListener('click', () => openUrlInIframe());
+      els.btnOpenNewtab.addEventListener('click', openUrlInNewTab);
+
+      els.btnIframePaste.addEventListener('click', handlePasteFromClipboard);
+      els.btnIframeRead.addEventListener('click', tryReadFromIframe);
+      els.btnIframeInvert.addEventListener('click', () => {
+        state.iframeInverted = !state.iframeInverted;
+        els.urlPreviewIframe.style.filter = state.iframeInverted ? 'invert(0.9) hue-rotate(180deg)' : '';
+        els.btnIframeInvert.classList.toggle('bg-cyan-600/25', state.iframeInverted);
+        els.btnIframeInvert.classList.toggle('text-cyan-300', state.iframeInverted);
+        els.btnIframeInvert.classList.toggle('border-cyan-500/40', state.iframeInverted);
+        els.btnIframeInvert.classList.toggle('bg-slate-800', !state.iframeInverted);
+        els.btnIframeInvert.classList.toggle('text-slate-300', !state.iframeInverted);
+        els.btnIframeInvert.classList.toggle('border-slate-700', !state.iframeInverted);
+      });
+      els.btnIframeReload.addEventListener('click', () => {
+        if (state.iframeUrl) els.urlPreviewIframe.src = state.iframeUrl;
+      });
+      els.btnIframeResize.addEventListener('click', () => {
+        state.iframeExpanded = !state.iframeExpanded;
+        els.urlPreviewIframe.classList.toggle('h-64', !state.iframeExpanded);
+        els.urlPreviewIframe.classList.toggle('h-[460px]', state.iframeExpanded);
+      });
+      els.btnIframeNewtab.addEventListener('click', openUrlInNewTab);
+      els.btnIframeClose.addEventListener('click', () => {
+        state.iframeOpen = false;
+        els.iframePanel.classList.add('hidden');
+      });
+
+      // フォーム・JSON入力イベント
+      els.form.addEventListener('submit', handleApply);
+      els.btnSample.addEventListener('click', handleLoadSample);
+      els.btnPasteClipboard.addEventListener('click', handlePasteFromClipboard);
+      els.inputJsonFile.addEventListener('change', (e) => {
+        const file = e.target.files?.[0];
+        if (file) handleFileLoad(file);
+        e.target.value = '';
+      });
+
+      // ドラッグ＆ドロップ
+      ['dragenter', 'dragover'].forEach(evName => {
+        els.jsonDropzone.addEventListener(evName, (e) => {
+          e.preventDefault();
+          els.text.classList.add('drag-active');
+        });
+      });
+      ['dragleave', 'drop'].forEach(evName => {
+        els.jsonDropzone.addEventListener(evName, (e) => {
+          e.preventDefault();
+          els.text.classList.remove('drag-active');
+        });
+      });
+      els.jsonDropzone.addEventListener('drop', (e) => {
+        const file = e.dataTransfer?.files?.[0];
+        if (file) handleFileLoad(file);
+      });
+
+      els.btnFormatJson.addEventListener('click', () => {
+        try {
+          const parsed = JSON.parse(els.text.value);
+          els.text.value = JSON.stringify(parsed, null, 2);
+          state.config.jsonText = els.text.value;
+          showToast('JSONを整形しました', 'info');
+        } catch {
+          showToast('有効なJSONではないため整形できません', 'warn');
+        }
+      });
+
+      els.btnClearJson.addEventListener('click', () => {
+        els.text.value = '';
+        state.config.jsonText = '';
+        state.rawData = null;
+        state.error = null;
+        state.detectedFields = [];
+        renderFieldPicker();
+        renderResults();
+      });
+
+      // レイアウトプリセット・オプション
+      els.btnPresetRich.addEventListener('click', () => {
+        els.titleField.value = DEFAULT_FIELD_PRESET.titleField;
+        els.subFields.value = DEFAULT_FIELD_PRESET.subFields;
+        els.mainFields.value = DEFAULT_FIELD_PRESET.mainFields;
+        syncStateFromForm();
+        syncUrlParamsFromState();
+        parseAndRenderData();
+      });
+      els.btnPresetSimple.addEventListener('click', () => {
+        els.subFields.value = '';
+        syncStateFromForm();
+        syncUrlParamsFromState();
+        parseAndRenderData();
+      });
+      els.btnClearSub.addEventListener('click', () => {
+        els.subFields.value = '';
+        syncStateFromForm();
+        syncUrlParamsFromState();
+        parseAndRenderData();
+      });
+      els.smartFormat.addEventListener('change', () => {
+        state.config.smartFormat = els.smartFormat.checked;
+        syncUrlParamsFromState();
+        renderResults();
+      });
+
+      // フィールド候補クリック
+      els.fieldPickerChips.addEventListener('click', (e) => {
+        const btn = e.target.closest('[data-field-chip]');
+        if (!btn) return;
+        const field = btn.getAttribute('data-field-chip');
+        const target = els.selectPickerTarget.value;
+        if (target === 'title') {
+          els.titleField.value = field;
+        } else if (target === 'sort') {
+          els.sortField.value = field;
+        } else {
+          const inputEl = target === 'sub' ? els.subFields : els.mainFields;
+          const current = parseFieldList(inputEl.value);
+          if (!current.includes(field)) {
+            current.push(field);
+            inputEl.value = current.join(', ');
+          }
+        }
+        syncStateFromForm();
+        syncUrlParamsFromState();
+        parseAndRenderData();
+      });
+
+      // 検索・クイックソート・フィルターイベント
+      els.inputSearch.addEventListener('input', (e) => {
+        state.searchQuery = e.target.value;
+        renderResults();
+      });
+      els.btnClearSearch.addEventListener('click', () => {
+        state.searchQuery = '';
+        els.inputSearch.value = '';
+        els.inputSearch.focus();
+        renderResults();
+      });
+      els.selectSearchScope.addEventListener('change', (e) => {
+        state.searchScope = e.target.value;
+        renderResults();
+      });
+
+      els.quickSortField.addEventListener('change', (e) => {
+        state.config.sortField = e.target.value;
+        els.sortField.value = e.target.value;
+        syncUrlParamsFromState();
+        renderResults();
+      });
+      els.btnQuickSortOrder.addEventListener('click', () => {
+        state.config.sortOrder = state.config.sortOrder === 'asc' ? 'desc' : 'asc';
+        els.sortOrder.value = state.config.sortOrder;
+        renderQuickSortOptions();
+        syncUrlParamsFromState();
+        renderResults();
+      });
+
+      els.btnToggleFilters.addEventListener('click', () => {
+        state.filterPanelOpen = !state.filterPanelOpen;
+        els.filterPanel.classList.toggle('hidden', !state.filterPanelOpen);
+      });
+      els.btnResetAllFilters.addEventListener('click', resetSearchAndFilters);
+
+      // ファセットフィルターイベント (委譲)
+      els.facetFilters.addEventListener('input', (e) => {
+        const input = e.target.closest('[data-num-filter]');
+        if (!input) return;
+        const bound = input.getAttribute('data-num-filter');
+        const field = input.getAttribute('data-field');
+        if (!state.filters.numeric[field]) {
+          state.filters.numeric[field] = { min: '', max: '' };
+        }
+        state.filters.numeric[field][bound] = input.value;
+        renderResults();
+      });
+
+      els.facetFilters.addEventListener('click', (e) => {
+        const catBtn = e.target.closest('[data-cat-field]');
+        if (catBtn) {
+          const field = catBtn.getAttribute('data-cat-field');
+          const val = catBtn.getAttribute('data-cat-val');
+          if (!state.filters.categorical[field]) {
+            state.filters.categorical[field] = new Set();
+          }
+          const set = state.filters.categorical[field];
+          if (set.has(val)) set.delete(val);
+          else set.add(val);
+          const list = resolveList(state.rawData, state.config.listPath);
+          if (Array.isArray(list)) renderFacetFilters(list);
+          renderResults();
+          return;
+        }
+        const clearBtn = e.target.closest('[data-clear-cat]');
+        if (clearBtn) {
+          const field = clearBtn.getAttribute('data-clear-cat');
+          delete state.filters.categorical[field];
+          const list = resolveList(state.rawData, state.config.listPath);
+          if (Array.isArray(list)) renderFacetFilters(list);
+          renderResults();
+        }
+      });
+
+      // カスタム条件ルールイベント
+      els.btnAddCustomRule.addEventListener('click', () => {
+        state.filters.custom.push({
+          id: String(Date.now() + Math.random()),
+          field: state.detectedFields[0] || '',
+          op: 'contains',
+          value: ''
+        });
+        renderCustomFilterRules();
+        renderResults();
+      });
+
+      els.customFiltersList.addEventListener('change', (e) => {
+        const row = e.target.closest('[data-rule-id]');
+        if (!row) return;
+        const ruleId = row.getAttribute('data-rule-id');
+        const prop = e.target.getAttribute('data-rule-prop');
+        const rule = state.filters.custom.find(r => r.id === ruleId);
+        if (!rule || !prop) return;
+        rule[prop] = e.target.value;
+        if (prop === 'op') {
+          renderCustomFilterRules();
+        }
+        renderResults();
+      });
+
+      els.customFiltersList.addEventListener('input', (e) => {
+        if (e.target.getAttribute('data-rule-prop') !== 'value') return;
+        const row = e.target.closest('[data-rule-id]');
+        if (!row) return;
+        const ruleId = row.getAttribute('data-rule-id');
+        const rule = state.filters.custom.find(r => r.id === ruleId);
+        if (!rule) return;
+        rule.value = e.target.value;
+        renderResults();
+      });
+
+      els.customFiltersList.addEventListener('click', (e) => {
+        const rmBtn = e.target.closest('[data-remove-rule]');
+        if (!rmBtn) return;
+        const ruleId = rmBtn.getAttribute('data-remove-rule');
+        state.filters.custom = state.filters.custom.filter(r => r.id !== ruleId);
+        renderCustomFilterRules();
+        renderResults();
+      });
+
+      // カード内のJSONトグル・コピー (委譲)
+      els.resultsContainer.addEventListener('click', async (e) => {
+        const toggleBtn = e.target.closest('[data-toggle-json]');
+        if (toggleBtn) {
+          const key = toggleBtn.getAttribute('data-toggle-json');
+          if (state.expandedJsonIds.has(key)) state.expandedJsonIds.delete(key);
+          else state.expandedJsonIds.add(key);
+          renderResults();
+          return;
+        }
+        const copyBtn = e.target.closest('[data-copy-json]');
+        if (copyBtn) {
+          const key = copyBtn.getAttribute('data-copy-json');
+          const targetItem = currentRenderedItems.find((it, i) => String(it?.id ?? i) === key);
+          if (!targetItem) return;
+          try {
+            await navigator.clipboard.writeText(JSON.stringify(targetItem, null, 2));
+            showToast('アイテムのJSONをコピーしました', 'success');
+          } catch {
+            showToast('クリップボードへのコピーに失敗しました', 'warn');
+          }
+        }
+      });
+
       lucide.createIcons();
     };
 
-    // 実行
     document.addEventListener('DOMContentLoaded', init);
-
   </script>
 </body>
+
 </html>
