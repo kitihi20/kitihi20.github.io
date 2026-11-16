@@ -1,12 +1,14 @@
 struct ForcesUniforms {
-  gridSize: u32,
+  gridSize: vec3<u32>,
   shapeType: u32,
   emissionMode: u32, // 0=BurstOnly, 1=Continuous, 2=Burst+Continuous
   dt: f32,
   time: f32,
+  simAge: f32,
   buoyancy: f32,
   gravity: f32,
   noiseTurbulence: f32,
+  afterburnSec: f32,
   radius: f32,
   posY: f32,
   density: f32,
@@ -14,7 +16,11 @@ struct ForcesUniforms {
   velY: f32,
   radialVel: f32,
   swirlVel: f32,
-  pad: f32,
+  pad0: f32,
+  spaceX: f32,
+  spaceY: f32,
+  spaceZ: f32,
+  pad1: f32,
 };
 
 @group(0) @binding(0) var<uniform> params: ForcesUniforms;
@@ -69,24 +75,30 @@ fn evalShapeMask(pos: vec3<f32>, shapeType: u32, radius: f32, posY: f32, nVal: f
     let tubeR = max(r * 0.35, 0.06);
     let torusDist = length(vec2<f32>(length(rel.xz) - ringR, rel.y));
     return smoothstep(tubeR, tubeR * 0.15, torusDist + nVal * tubeR * 0.25);
-  } else {
+  } else if (shapeType == 3u) {
     let radial = length(rel.xz);
     let halfH = max(r * 0.35, 0.08);
     let yMask = smoothstep(-halfH, -halfH * 0.2, rel.y) * smoothstep(halfH, halfH * 0.2, rel.y);
     return smoothstep(r * 1.4, r * 0.3, radial + nVal * r * 0.2) * yMask;
+  } else {
+    // 4: Afterburn central stem feeding the rising fireball
+    let radial = length(rel.xz);
+    let stemR = r * 0.65;
+    let yMask = smoothstep(-r * 0.5, 0.0, rel.y) * smoothstep(r * 1.1, r * 0.2, rel.y);
+    return smoothstep(stemR, stemR * 0.15, radial + nVal * stemR * 0.3) * yMask;
   }
 }
 
 @compute @workgroup_size(4, 4, 4)
 fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let n = params.gridSize;
-  if (gid.x >= n || gid.y >= n || gid.z >= n) {
+  if (gid.x >= n.x || gid.y >= n.y || gid.z >= n.z) {
     return;
   }
 
-  let nF = f32(n);
-  let uvw = (vec3<f32>(gid) + 0.5) / nF;
-  let pos = uvw * 2.0 - 1.0;
+  let uvw = (vec3<f32>(gid) + 0.5) / vec3<f32>(n);
+  let space = vec3<f32>(params.spaceX, params.spaceY, params.spaceZ);
+  let pos = (uvw * 2.0 - 1.0) * space;
 
   var vel = textureLoad(velSrc, vec3<i32>(gid), 0).xyz;
   let sc = textureLoad(scalarSrc, vec3<i32>(gid), 0);
@@ -100,26 +112,27 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     noise3(pos * 5.0 + vec3<f32>(9.1, 3.3, -params.time))
   );
 
-  // Continuous emission if emissionMode == 1 (Continuous) or 2 (Burst+Continuous)
-  if (params.emissionMode != 0u) {
-    let mask = evalShapeMask(pos, params.shapeType, params.radius, params.posY, nVal);
+  let scaledPosY = params.posY * params.spaceY;
+  let inAfterburn = (params.afterburnSec > 0.001) && (params.simAge < params.afterburnSec);
+  let shouldEmit = (params.emissionMode != 0u) || inAfterburn;
+
+  if (shouldEmit) {
+    let afterburnFade = select(1.0, 1.0 - params.simAge / max(params.afterburnSec, 0.01), params.emissionMode == 0u);
+    let mask = evalShapeMask(pos, params.shapeType, params.radius, scaledPosY, nVal) * afterburnFade;
     if (mask > 0.005) {
       let rate = mask * params.dt * 6.0;
-      outDensity = min(2.5, outDensity + params.density * rate);
-      outTemp = min(1.5, outTemp + params.temp * rate);
+      outDensity = min(12.0, outDensity + params.density * rate);
+      outTemp = min(12.0, outTemp + params.temp * rate);
 
-      let rel = pos - vec3<f32>(0.0, params.posY, 0.0);
+      let rel = pos - vec3<f32>(0.0, scaledPosY, 0.0);
       let dir = select(vec3<f32>(0.0, 1.0, 0.0), normalize(rel), length(rel) > 0.001);
       let swirl = vec3<f32>(-rel.z, 0.0, rel.x);
       vel += (vec3<f32>(0.0, params.velY, 0.0) + dir * params.radialVel + swirl * params.swirlVel) * (mask * params.dt * 3.0);
     }
   }
 
-  // Thermal buoyancy & gravity
   vel.y += (params.buoyancy * outTemp - params.gravity * outDensity) * params.dt;
-
-  // Ambient turbulence in dense regions
-  vel += turb * (params.noiseTurbulence * min(outDensity, 1.0) * params.dt);
+  vel += turb * (params.noiseTurbulence * min(outDensity, 2.0) * params.dt);
 
   textureStore(velDst, vec3<i32>(gid), vec4<f32>(vel, 0.0));
   textureStore(scalarDst, vec3<i32>(gid), vec4<f32>(outDensity, outTemp, sc.b, 1.0));

@@ -4,9 +4,9 @@ struct RaymarchUniforms {
   cameraRight: vec4<f32>,
   cameraUp: vec4<f32>,
   lightDir: vec4<f32>,
-  params: vec4<f32>, // x: aspect, y: fovTanHalf, z: densityMult, w: emissiveIntensity
-  domainScale: vec4<f32>, // xyz: box size, w: packed flags (bit 0: showBounds, bit 1: showGrid)
-  gridInfo: vec4<f32>, // x: gridResolution (e.g. 64), yzw: unused
+  params: vec4<f32>,      // x: aspect, y: fovTanHalf, z: densityMult, w: emissiveIntensity
+  domainScale: vec4<f32>, // xyz: box size in world space, w: flags (bit 0: showBounds, bit 1: showGrid)
+  gridInfo: vec4<f32>,    // xyz: gridResolution, w: sootDarkness (0..1)
 };
 
 @group(0) @binding(0) var<uniform> u: RaymarchUniforms;
@@ -44,22 +44,25 @@ fn intersectBox(ro: vec3<f32>, rd: vec3<f32>, boxMin: vec3<f32>, boxMax: vec3<f3
 }
 
 fn fireRamp(t: f32) -> vec3<f32> {
-  let c1 = vec3<f32>(0.9, 0.18, 0.02);
-  let c2 = vec3<f32>(1.0, 0.55, 0.08);
-  let c3 = vec3<f32>(1.0, 0.95, 0.72);
-  if (t < 0.5) {
-    return mix(c1, c2, t * 2.0);
+  let c0 = vec3<f32>(0.45, 0.04, 0.01);
+  let c1 = vec3<f32>(0.98, 0.24, 0.02);
+  let c2 = vec3<f32>(1.00, 0.68, 0.12);
+  let c3 = vec3<f32>(1.00, 0.98, 0.85);
+  let x = clamp(t, 0.0, 2.0);
+  if (x < 0.35) {
+    return mix(c0, c1, x / 0.35);
   }
-  return mix(c2, c3, (t - 0.5) * 2.0);
+  if (x < 0.85) {
+    return mix(c1, c2, (x - 0.35) / 0.50);
+  }
+  return mix(c2, c3, clamp((x - 0.85) / 0.80, 0.0, 1.0));
 }
 
-// Interleaved Gradient Noise to eliminate raymarching & shadow slicing/banding
 fn interleavedGradientNoise(pixelCoord: vec2<f32>) -> f32 {
   let magic = vec3<f32>(0.06711056, 0.00583715, 52.9829189);
   return fract(magic.z * fract(dot(pixelCoord, magic.xy)));
 }
 
-// Henyey-Greenstein phase function for realistic silver-lining forward scattering
 fn hgPhase(cosTheta: f32, g: f32) -> f32 {
   let g2 = g * g;
   return (1.0 - g2) / (4.0 * 3.14159265 * pow(max(1.0 + g2 - 2.0 * g * cosTheta, 0.001), 1.5));
@@ -91,7 +94,6 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
   let showBounds = (flags & 1u) != 0u;
   let showGrid = (flags & 2u) != 0u;
 
-  // Background gradient
   var bgColor = mix(vec3<f32>(0.05, 0.06, 0.09), vec3<f32>(0.11, 0.14, 0.20), in.uv.y * 0.5 + 0.5);
 
   let boxSize = max(u.domainScale.xyz, vec3<f32>(0.05));
@@ -100,35 +102,37 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
   let hasBoxHit = (hit.x <= hit.y && hit.y >= 0.0);
 
   // Floor spatial grid at y = -boxHalf.y (compute fwidth in uniform control flow)
+  let maxBox = max(boxSize.x, max(boxSize.y, boxSize.z));
   let safeRdY = select(sign(rd.y) * 1e-4, rd.y, abs(rd.y) > 1e-4);
   let tPlane = (-boxHalf.y - ro.y) / safeRdY;
   let gp = ro + rd * tPlane;
-  let cellSize = max(boxSize.x / 8.0, 0.05);
+  let cellSize = max(0.25, maxBox * 0.125);
   let gridUV = gp.xz / cellSize;
   let gridFW = max(fwidth(gridUV), vec2<f32>(1e-4));
+  let gridExtent = max(boxHalf.x, boxHalf.z) + max(2.0, maxBox * 1.5);
+  let maxPlaneDist = max(35.0, maxBox * 10.0);
 
-  if (showGrid && abs(rd.y) > 1e-4 && tPlane > 0.0 && tPlane < 18.0) {
-    if (abs(gp.x) <= 2.5 && abs(gp.z) <= 2.5) {
+  if (showGrid && abs(rd.y) > 1e-4 && tPlane > 0.0 && tPlane < maxPlaneDist) {
+    if (abs(gp.x) <= gridExtent && abs(gp.z) <= gridExtent) {
       let gridDeriv = max(abs(fract(gridUV - 0.5) - 0.5) / gridFW, vec2<f32>(0.0));
       let line = 1.0 - min(min(gridDeriv.x, gridDeriv.y), 1.0);
 
-      let insideBox = abs(gp.x) <= boxHalf.x + 0.002 && abs(gp.z) <= boxHalf.z + 0.002;
-      let distFade = exp(-tPlane * 0.28);
+      let insideBox = abs(gp.x) <= boxHalf.x + 0.004 && abs(gp.z) <= boxHalf.z + 0.004;
+      let distFade = exp(-tPlane / max(6.5, maxBox * 3.5));
       let gridAlpha = line * select(0.18, 0.45, insideBox) * distFade;
       var gridCol = select(vec3<f32>(0.30, 0.36, 0.48), vec3<f32>(0.35, 0.62, 0.95), insideBox);
 
-      // X/Z axis tint
-      if (abs(gp.z) < 0.012) { gridCol = vec3<f32>(0.85, 0.3, 0.3); }
-      if (abs(gp.x) < 0.012) { gridCol = vec3<f32>(0.3, 0.55, 0.95); }
+      let axisThick = 0.015 * max(1.0, maxBox * 0.4);
+      if (abs(gp.z) < axisThick) { gridCol = vec3<f32>(0.85, 0.3, 0.3); }
+      if (abs(gp.x) < axisThick) { gridCol = vec3<f32>(0.3, 0.55, 0.95); }
       bgColor = mix(bgColor, gridCol, gridAlpha);
     }
   }
 
-  // Back-face bounds edge
   var frontEdge = 0.0;
   var backEdge = 0.0;
   if (showBounds && hasBoxHit) {
-    let edgeThick = 0.0075 * max(boxSize.x, 0.6);
+    let edgeThick = 0.008 * max(boxSize.x, max(boxSize.y, boxSize.z));
     if (hit.x > 0.0) {
       frontEdge = boxEdgeFactor(ro + rd * hit.x, boxHalf, edgeThick);
     }
@@ -151,6 +155,7 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
 
   var transmittance = 1.0;
   var scatteredLight = vec3<f32>(0.0);
+  let avgBox = (boxSize.x + boxSize.y + boxSize.z) / 3.0;
 
   for (var i = 0; i < steps; i = i + 1) {
     if (transmittance < 0.008) {
@@ -168,10 +173,9 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     let temp = sampleVal.g;
 
     if (density > 0.002) {
-      // Smooth jittered exponential-step shadow march (eliminates shadow banding)
       var shadowDensity = 0.0;
       var prevDist = 0.0;
-      let maxShadowDist = 0.65 * max(boxSize.x, max(boxSize.y, boxSize.z));
+      let maxShadowDist = 0.65 * avgBox;
       for (var s = 1; s <= 6; s = s + 1) {
         let frac = (f32(s) - 0.5 + jitter * 0.5) / 6.0;
         let currDist = frac * frac * maxShadowDist;
@@ -180,22 +184,23 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
         let sPos = pos + lightDir * currDist;
         let sUvw = (sPos + boxHalf) / boxSize;
         if (all(sUvw >= vec3<f32>(0.0)) && all(sUvw <= vec3<f32>(1.0))) {
-          shadowDensity += textureSampleLevel(volumeTex, volumeSampler, sUvw, 0.0).r * densityMult * ds;
+          shadowDensity += textureSampleLevel(volumeTex, volumeSampler, sUvw, 0.0).r * densityMult * ds / avgBox;
         }
       }
 
-      // Beer-Powder scattering for realistic dark creases and bright sunlit edges
       let beer = exp(-shadowDensity * 2.0);
       let powder = 1.0 - exp(-shadowDensity * 3.5) * 0.55;
       let lightEnergy = mix(beer, beer * powder * 1.6, 0.5) * (0.75 + phase * 1.4);
 
       let heightNorm = clamp(uvw.y, 0.0, 1.0);
+      let sootDarkness = clamp(u.gridInfo.w, 0.0, 1.0);
       let skyAmbient = mix(vec3<f32>(0.15, 0.19, 0.30), vec3<f32>(0.28, 0.36, 0.50), heightNorm);
       let directColor = vec3<f32>(1.45, 1.36, 1.24) * lightEnergy;
-      let smokeAlbedo = vec3<f32>(0.94, 0.95, 0.98);
-      let emissive = fireRamp(temp) * (temp * temp) * emissiveIntensity;
+      let smokeAlbedo = mix(vec3<f32>(0.94, 0.95, 0.98), vec3<f32>(0.08, 0.08, 0.09), sootDarkness);
+      let burnMask = smoothstep(0.14, 1.10, temp);
+      let emissive = fireRamp(temp) * burnMask * (0.5 + temp * 0.85) * emissiveIntensity;
 
-      let stepSigma = density * stepSize;
+      let stepSigma = density * (stepSize / avgBox);
       let stepAlpha = 1.0 - exp(-stepSigma * 2.5);
       let radiance = smokeAlbedo * (skyAmbient + directColor) + emissive;
 

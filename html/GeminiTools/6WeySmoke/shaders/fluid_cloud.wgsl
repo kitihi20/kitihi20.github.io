@@ -1,12 +1,18 @@
 struct CloudPhysicsUniforms {
-  gridSize: u32,
+  gridSize: vec3<u32>,
   dt: f32,
   time: f32,
-  condensationLevel: f32, // Normalized Y [-0.8..0.4] where saturation drops sharply
-  humidity: f32,          // Ground moisture supply strength
-  latentHeat: f32,        // Latent heat released on condensation (drives convective towers)
-  tropopauseY: f32,       // Altitude where thermal inversion caps updrafts (forms anvil)
-  windShear: f32,         // Upper-level horizontal wind shear
+  condensationLevel: f32,
+  humidity: f32,
+  latentHeat: f32,
+  tropopauseY: f32,
+  windShear: f32,
+  spaceX: f32,
+  spaceY: f32,
+  spaceZ: f32,
+  pad0: f32,
+  pad1: f32,
+  pad2: f32,
 };
 
 @group(0) @binding(0) var<uniform> params: CloudPhysicsUniforms;
@@ -46,41 +52,40 @@ fn noise3(p: vec3<f32>) -> f32 {
 @compute @workgroup_size(4, 4, 4)
 fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let n = params.gridSize;
-  if (gid.x >= n || gid.y >= n || gid.z >= n) {
+  if (gid.x >= n.x || gid.y >= n.y || gid.z >= n.z) {
     return;
   }
 
-  let nF = f32(n);
-  let uvw = (vec3<f32>(gid) + 0.5) / nF;
-  let pos = uvw * 2.0 - 1.0; // [-1, 1]^3
+  let uvw = (vec3<f32>(gid) + 0.5) / vec3<f32>(n);
+  let posNorm = uvw * 2.0 - 1.0; // [-1, 1]^3 normalized
+  let space = vec3<f32>(params.spaceX, params.spaceY, params.spaceZ);
+  let pos = posNorm * space;
 
   var vel = textureLoad(velSrc, vec3<i32>(gid), 0).xyz;
   let sc = textureLoad(scalarSrc, vec3<i32>(gid), 0);
-  var qc = sc.r;   // Cloud liquid water (visible)
-  var temp = sc.g; // Potential temperature anomaly
-  var qv = sc.b;   // Water vapor (invisible)
+  var qc = sc.r;
+  var temp = sc.g;
+  var qv = sc.b;
 
   // 1. Ground solar heating & moisture evaporation near the bottom boundary
-  // Keep radialMask well inside [-0.75, 0.75] so cloud never hits side walls
-  if (pos.y < -0.52) {
-    let groundMask = 1.0 - smoothstep(-0.90, -0.52, pos.y);
-    let radialMask = 1.0 - smoothstep(0.18, 0.75, length(pos.xz));
+  if (posNorm.y < -0.52) {
+    let groundMask = 1.0 - smoothstep(-0.90, -0.52, posNorm.y);
+    let radialMask = 1.0 - smoothstep(0.18, 0.78, length(posNorm.xz));
     let thermalPatch = clamp(0.70 + 0.65 * noise3(vec3<f32>(pos.x * 4.5, params.time * 0.25, pos.z * 4.5)), 0.0, 1.45);
     let flux = groundMask * radialMask * thermalPatch * params.dt * 4.2;
     qv = min(2.4, qv + params.humidity * flux);
     temp = min(1.5, temp + 0.85 * flux);
-    vel.y += 0.42 * flux;
+    vel.y += 0.42 * params.spaceY * flux;
   }
 
   // 2. Altitude-dependent saturation mixing ratio q_vs(y) with 3D turbulent perturbation
-  // Perturbing q_vs with multi-scale 3D noise breaks smooth smoke swirls into crisp cloud billows!
   let nDetail = noise3(pos * 6.5 + vec3<f32>(0.0, -params.time * 0.3, 0.0)) * 0.14
               + noise3(pos * 13.0 + vec3<f32>(3.1, params.time * 0.4, 1.7)) * 0.07;
-  let heightAboveLCL = pos.y - params.condensationLevel;
+  let heightAboveLCL = posNorm.y - params.condensationLevel;
   let qvsBase = mix(1.30, 0.10, smoothstep(-0.18, 0.30, heightAboveLCL));
   let qvs = max(0.05, qvsBase + nDetail);
 
-  // 3. Condensation (qv -> qc + latent heat) & Evaporation (qc -> qv + evaporative cooling)
+  // 3. Condensation (qv -> qc + latent heat) & Evaporation
   if (qv > qvs) {
     let condense = (qv - qvs) * min(1.0, params.dt * 7.0);
     qv -= condense;
@@ -93,28 +98,28 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
     temp = max(-0.4, temp - evap * params.latentHeat * 0.45);
   }
 
-  // 4. Tropopause thermal inversion layer: smoothly halt updrafts BEFORE hitting top ceiling
-  if (pos.y > params.tropopauseY - 0.12) {
-    let invStrength = smoothstep(params.tropopauseY - 0.12, params.tropopauseY + 0.18, pos.y);
+  // 4. Tropopause thermal inversion layer
+  if (posNorm.y > params.tropopauseY - 0.12) {
+    let invStrength = smoothstep(params.tropopauseY - 0.12, params.tropopauseY + 0.18, posNorm.y);
     temp = mix(temp, -0.25, invStrength * min(1.0, params.dt * 6.0));
     vel.y *= (1.0 - invStrength * min(0.92, params.dt * 6.0));
   }
 
-  // 5. Soft side/top boundary cushion so cloud never flattens against box walls
-  let radialXZ = length(pos.xz);
+  // 5. Soft side/top boundary cushion
+  let radialXZ = length(posNorm.xz);
   if (radialXZ > 0.72) {
     let sideFade = smoothstep(0.72, 0.94, radialXZ);
     qc *= (1.0 - sideFade * min(0.9, params.dt * 5.0));
     vel.x *= (1.0 - sideFade * 0.5);
     vel.z *= (1.0 - sideFade * 0.5);
   }
-  if (pos.y > params.tropopauseY + 0.22) {
-    let topFade = smoothstep(params.tropopauseY + 0.22, 0.94, pos.y);
+  if (posNorm.y > params.tropopauseY + 0.22) {
+    let topFade = smoothstep(params.tropopauseY + 0.22, 0.94, posNorm.y);
     qc *= (1.0 - topFade * min(0.9, params.dt * 6.0));
   }
 
-  // 6. Upper-altitude wind shear (gentle, contained within domain)
-  let shearFactor = smoothstep(params.condensationLevel, params.tropopauseY, pos.y)
+  // 6. Upper-altitude wind shear
+  let shearFactor = smoothstep(params.condensationLevel, params.tropopauseY, posNorm.y)
                   * (1.0 - smoothstep(0.60, 0.90, radialXZ));
   vel.x += params.windShear * shearFactor * params.dt * 1.1;
 

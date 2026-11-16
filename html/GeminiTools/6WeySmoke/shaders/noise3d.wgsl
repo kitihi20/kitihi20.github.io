@@ -1,5 +1,5 @@
 struct NoiseParams {
-  volumeSize: u32,
+  gridSize: vec3<u32>,
   cloudType: u32, // 0=Puffy, 1=ToweringCumulus, 2=Cumulonimbus, 3=Cirrus, 4=FogLayer
   time: f32,
   seed: f32,
@@ -11,6 +11,12 @@ struct NoiseParams {
   windY: f32,
   windZ: f32,
   coreGlow: f32,
+  spaceX: f32,
+  spaceY: f32,
+  spaceZ: f32,
+  pad0: f32,
+  pad1: f32,
+  pad2: f32,
 };
 
 @group(0) @binding(0) var<uniform> params: NoiseParams;
@@ -62,7 +68,6 @@ fn perlinFbm(p: vec3<f32>) -> f32 {
   return value * 0.5 + 0.5;
 }
 
-// Inverted 3D Worley (Cellular) Noise -> rounded cauliflower lobes
 fn worley3D(p: vec3<f32>) -> f32 {
   let id = floor(p);
   let f = fract(p);
@@ -96,23 +101,19 @@ fn remap(val: f32, inMin: f32, inMax: f32, outMin: f32, outMax: f32) -> f32 {
 
 fn evalCloudEnvelope(wp: vec3<f32>, centered: vec3<f32>, cloudType: u32) -> f32 {
   if (cloudType == 0u) {
-    // 0: Puffy Cumulus - flat condensation base, broad organic dome
     let baseCut = smoothstep(-0.46, -0.22, centered.y);
     let topFade = smoothstep(0.88, 0.35, centered.y);
     let radial = length(wp * vec3<f32>(0.95, 1.35, 0.95) - vec3<f32>(0.0, -0.05, 0.0));
     return smoothstep(0.88, 0.18, radial) * baseCut * topFade;
   } else if (cloudType == 1u) {
-    // 1: Towering Cumulus (入道雲) - wide flat base tapering upward into high convective peaks
     let hNorm = clamp((centered.y + 0.78) / 1.65, 0.0, 1.0);
     let baseCut = smoothstep(-0.82, -0.58, centered.y);
     let topFade = smoothstep(0.95, 0.65, centered.y);
-    // Broad base, narrower high turrets, slightly wind-tilted
     let width = mix(0.85, 0.36, pow(hNorm, 0.85));
     let tiltX = hNorm * 0.14;
     let radial = length(wp.xz - vec2<f32>(tiltX, 0.0)) / width;
     return smoothstep(1.0, 0.22, radial) * baseCut * topFade;
   } else if (cloudType == 2u) {
-    // 2: Cumulonimbus (積乱雲) - wide base, convective core, asymmetrical wind-sheared anvil
     let hNorm = clamp((centered.y + 0.82) / 1.72, 0.0, 1.0);
     let baseCut = smoothstep(-0.86, -0.62, centered.y);
     let topFade = smoothstep(0.96, 0.68, centered.y);
@@ -123,12 +124,10 @@ fn evalCloudEnvelope(wp: vec3<f32>, centered: vec3<f32>, cloudType: u32) -> f32 
     let radial = length((wp.xz - vec2<f32>(shearX, 0.0)) * vec2<f32>(0.9, 1.15)) / width;
     return smoothstep(1.0, 0.20, radial) * baseCut * topFade;
   } else if (cloudType == 3u) {
-    // 3: Cirrus / Wispy (筋雲・巻雲)
     let yMask = smoothstep(-0.48, -0.05, centered.y) * smoothstep(0.55, 0.08, centered.y);
     let xzMask = smoothstep(0.98, 0.25, length(wp.xz * vec2<f32>(0.85, 1.2)));
     return yMask * xzMask;
   } else {
-    // 4: Fog / Mist Layer (霧・靄)
     let yMask = smoothstep(-0.95, -0.68, centered.y) * smoothstep(0.22, -0.45, centered.y);
     let xzMask = smoothstep(1.0, 0.28, length(wp.xz * 0.85));
     return yMask * xzMask;
@@ -137,19 +136,19 @@ fn evalCloudEnvelope(wp: vec3<f32>, centered: vec3<f32>, cloudType: u32) -> f32 
 
 @compute @workgroup_size(4, 4, 4)
 fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
-  if (gid.x >= params.volumeSize || gid.y >= params.volumeSize || gid.z >= params.volumeSize) {
+  let n = params.gridSize;
+  if (gid.x >= n.x || gid.y >= n.y || gid.z >= n.z) {
     return;
   }
 
-  let sizeF = f32(params.volumeSize);
-  let uvw = (vec3<f32>(gid) + 0.5) / sizeF;
+  let uvw = (vec3<f32>(gid) + 0.5) / vec3<f32>(n);
   let centered = uvw * 2.0 - 1.0;
+  let space = vec3<f32>(params.spaceX, params.spaceY, params.spaceZ);
 
   let windOffset = vec3<f32>(params.windX, params.windY, params.windZ) * params.time;
   let seedOffset = vec3<f32>(params.seed * 7.13, params.seed * 3.71, params.seed * 11.47);
 
-  // Multi-scale Domain Warping so silhouette has rich organic clusters instead of simple spheres
-  let warpCoord = centered * 1.45 - windOffset * 0.35 + seedOffset * 0.3;
+  let warpCoord = centered * space * 1.45 - windOffset * 0.35 + seedOffset * 0.3;
   let warpVec = vec3<f32>(
     perlinFbm(warpCoord + vec3<f32>(0.0, 0.0, 0.0)) - 0.5,
     perlinFbm(warpCoord + vec3<f32>(5.2, 1.3, 2.8)) - 0.5,
@@ -160,14 +159,13 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   let macroShape = evalCloudEnvelope(warpedPos, centered, params.cloudType);
 
-  var noiseCoord = centered;
+  var noiseCoord = centered * space;
   if (params.cloudType == 3u) {
-    noiseCoord = vec3<f32>(centered.x * 0.32 + centered.y * 0.95, centered.y * 2.4, centered.z * 1.3);
+    noiseCoord = vec3<f32>(noiseCoord.x * 0.32 + noiseCoord.y * 0.95, noiseCoord.y * 2.4, noiseCoord.z * 1.3);
   } else if (params.cloudType == 4u) {
-    noiseCoord = vec3<f32>(centered.x * 0.65, centered.y * 1.8, centered.z * 0.65);
+    noiseCoord = vec3<f32>(noiseCoord.x * 0.65, noiseCoord.y * 1.8, noiseCoord.z * 0.65);
   }
 
-  // Higher base spatial frequency so Worley creates dozens of cauliflower lobes, not 3 big ones
   let samplePos = noiseCoord * (params.scale * 1.45) - windOffset + seedOffset;
   let pFbm = perlinFbm(samplePos);
   let wFbm = worleyFbm4(samplePos * 1.25);
@@ -177,7 +175,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
 
   let baseCloud = remap(macroShape * (0.35 + 0.95 * baseNoise), 1.0 - params.coverage, 1.0, 0.0, 1.0);
 
-  // Fine high-frequency cauliflower erosion
   let detailWorley = worleyFbm4(samplePos * 2.3 + warpVec * 1.4);
   let erodeStrength = select(0.45 * params.billow, 0.14, params.cloudType >= 3u);
   let eroded = remap(baseCloud, detailWorley * erodeStrength, 1.0, 0.0, 1.0);

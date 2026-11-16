@@ -37,6 +37,12 @@
             <button id="btn-reset-sim" class="btn btn-primary">Restart / Respawn</button>
             <button id="btn-toggle-anim" class="btn btn-secondary">Pause</button>
           </div>
+          <div class="button-row">
+            <button id="btn-unlimited" class="btn btn-secondary btn-unlimited" title="Remove upper/lower limits on all sliders & numeric inputs">Unlimited Mode: OFF</button>
+          </div>
+          <div id="unlimited-warning" class="unlimited-warning hidden">
+            ⚠ 無制限モード: 高い解像度や極端な数値はGPU負荷・VRAM消費が急増する場合があります。
+          </div>
         </section>
 
         <!-- Functional Category Tabs -->
@@ -57,6 +63,8 @@
               <select id="preset-select" class="select-input">
                 <option value="smoke">Smoke (煙 - 連続上昇)</option>
                 <option value="explosion">Explosion (爆発 - 初期バースト)</option>
+                <option value="cinema_explosion">Cinema Explosion (映画風・大爆発)</option>
+                <option value="tokusatsu_napalm">Tokusatsu Napalm (特撮・ナパーム爆発)</option>
                 <option value="dust">Dust (砂埃 - 地面拡散)</option>
                 <option value="steam">Steam (蒸気 - 細柱)</option>
                 <option value="cloud_cumulus">Cumulus (積雲 - 雲物理)</option>
@@ -83,6 +91,7 @@
                 <option value="1">Column (円柱)</option>
                 <option value="2">Torus / Ring (リング)</option>
                 <option value="3">Ground Layer (地面層)</option>
+                <option value="4">Fireball + Shockwave (火球＋爆風)</option>
               </select>
             </div>
             <div class="control-row">
@@ -94,7 +103,7 @@
               <input id="emit-pos-y" type="range" min="-0.85" max="0.85" step="0.05" value="-0.60" />
             </div>
             <div class="control-row">
-              <label for="emit-density">Spawn Density (濃さ) <span id="emit-density-val">1.3</span></label>
+              <label for="emit-density">Spawn Density (濃さ) <span id="emit-density-val">1.30</span></label>
               <input id="emit-density" type="range" min="0.1" max="2.5" step="0.05" value="1.3" />
             </div>
             <div class="control-row">
@@ -113,6 +122,10 @@
               <label for="emit-swirl-vel">Swirl Speed <span id="emit-swirl-vel-val">0.00</span></label>
               <input id="emit-swirl-vel" type="range" min="-6.0" max="6.0" step="0.05" value="0.00" />
             </div>
+            <div class="control-row">
+              <label for="emit-afterburn">Afterburn Stem (追焚き sec) <span id="emit-afterburn-val">0.00</span></label>
+              <input id="emit-afterburn" type="range" min="0.0" max="1.5" step="0.02" value="0.00" />
+            </div>
           </section>
 
           <section id="cloud-physics-panel" class="panel">
@@ -128,16 +141,16 @@
               <input id="cp-lcl" type="range" min="-0.70" max="0.30" step="0.05" value="-0.25" />
             </div>
             <div class="control-row">
-              <label for="cp-humidity">Ground Humidity (水蒸気量) <span id="cp-humidity-val">1.15</span></label>
-              <input id="cp-humidity" type="range" min="0.30" max="2.00" step="0.05" value="1.15" />
+              <label for="cp-humidity">Ground Humidity (水蒸気量) <span id="cp-humidity-val">1.35</span></label>
+              <input id="cp-humidity" type="range" min="0.30" max="2.40" step="0.05" value="1.35" />
             </div>
             <div class="control-row">
               <label for="cp-latent">Latent Heat (潜熱対流) <span id="cp-latent-val">1.80</span></label>
               <input id="cp-latent" type="range" min="0.00" max="4.00" step="0.10" value="1.80" />
             </div>
             <div class="control-row">
-              <label for="cp-tropo">Tropopause Cap (圏界面高度) <span id="cp-tropo-val">0.65</span></label>
-              <input id="cp-tropo" type="range" min="0.20" max="0.95" step="0.05" value="0.65" />
+              <label for="cp-tropo">Tropopause Cap (圏界面高度) <span id="cp-tropo-val">0.45</span></label>
+              <input id="cp-tropo" type="range" min="0.10" max="0.90" step="0.05" value="0.45" />
             </div>
             <div class="control-row">
               <label for="cp-shear">Upper Wind Shear (上空の風) <span id="cp-shear-val">0.25</span></label>
@@ -164,28 +177,28 @@
               </select>
             </div>
             <div class="control-row">
-              <label for="cloud-coverage">Coverage (雲量・密度) <span id="cloud-coverage-val">0.65</span></label>
-              <input id="cloud-coverage" type="range" min="0.10" max="1.00" step="0.02" value="0.65" />
+              <label for="cloud-coverage">Coverage (雲量・密度) <span id="cloud-coverage-val">0.68</span></label>
+              <input id="cloud-coverage" type="range" min="0.10" max="1.00" step="0.02" value="0.68" />
             </div>
             <div class="control-row">
-              <label for="cloud-softness">Edge Softness (輪郭の柔らかさ) <span id="cloud-softness-val">0.28</span></label>
-              <input id="cloud-softness" type="range" min="0.04" max="0.85" step="0.02" value="0.28" />
+              <label for="cloud-softness">Edge Softness (輪郭の柔らかさ) <span id="cloud-softness-val">0.12</span></label>
+              <input id="cloud-softness" type="range" min="0.03" max="0.85" step="0.02" value="0.12" />
             </div>
             <div class="control-row">
-              <label for="cloud-billow">Billow / Fluffiness (もくもく感) <span id="cloud-billow-val">0.45</span></label>
-              <input id="cloud-billow" type="range" min="0.0" max="1.0" step="0.05" value="0.45" />
+              <label for="cloud-billow">Billow / Fluffiness (もくもく感) <span id="cloud-billow-val">0.80</span></label>
+              <input id="cloud-billow" type="range" min="0.0" max="1.0" step="0.05" value="0.80" />
             </div>
             <div class="control-row">
-              <label for="noise-scale">Noise Detail Scale <span id="noise-scale-val">3.0</span></label>
-              <input id="noise-scale" type="range" min="1.0" max="8.0" step="0.1" value="3.0" />
+              <label for="noise-scale">Noise Detail Scale <span id="noise-scale-val">2.6</span></label>
+              <input id="noise-scale" type="range" min="1.0" max="8.0" step="0.1" value="2.6" />
             </div>
           </section>
 
           <section class="panel">
             <h2>Wind Flow &amp; Glow (風向き・内部光)</h2>
             <div class="control-row">
-              <label for="noise-speed">Flow Speed (流れ速度) <span id="noise-speed-val">0.40</span></label>
-              <input id="noise-speed" type="range" min="0.0" max="2.0" step="0.05" value="0.40" />
+              <label for="noise-speed">Flow Speed (流れ速度) <span id="noise-speed-val">0.35</span></label>
+              <input id="noise-speed" type="range" min="0.0" max="2.0" step="0.05" value="0.35" />
             </div>
             <div class="control-row">
               <label for="wind-x">Wind X <span id="wind-x-val">0.30</span></label>
@@ -212,23 +225,77 @@
         <!-- Category 2: Grid, Space & Forces -->
         <div id="cat-space" class="cat-pane">
           <section class="panel">
-            <h2>Simulation Grid &amp; Space (グリッド・空間)</h2>
+            <h2>Grid Resolution (非立方体・128対応)</h2>
+            <div id="grid-standard-controls">
+              <div class="control-row">
+                <label for="grid-preset">Grid Preset</label>
+                <select id="grid-preset" class="select-input">
+                  <option value="32,32,32">32 x 32 x 32 (Fast)</option>
+                  <option value="48,48,48">48 x 48 x 48 (Balanced)</option>
+                  <option value="64,64,64" selected>64 x 64 x 64 (Standard)</option>
+                  <option value="96,96,96">96 x 96 x 96 (High Detail)</option>
+                  <option value="128,128,128">128 x 128 x 128 (Ultra)</option>
+                  <option value="64,128,64">64 x 128 x 64 (Tall Plume)</option>
+                  <option value="128,64,128">128 x 64 x 128 (Wide Cloud)</option>
+                </select>
+              </div>
+              <div class="grid-xyz-row">
+                <div class="control-row">
+                  <label for="grid-x">X</label>
+                  <select id="grid-x" class="select-input">
+                    <option value="32">32</option>
+                    <option value="48">48</option>
+                    <option value="64" selected>64</option>
+                    <option value="96">96</option>
+                    <option value="128">128</option>
+                  </select>
+                </div>
+                <div class="control-row">
+                  <label for="grid-y">Y</label>
+                  <select id="grid-y" class="select-input">
+                    <option value="32">32</option>
+                    <option value="48">48</option>
+                    <option value="64" selected>64</option>
+                    <option value="96">96</option>
+                    <option value="128">128</option>
+                  </select>
+                </div>
+                <div class="control-row">
+                  <label for="grid-z">Z</label>
+                  <select id="grid-z" class="select-input">
+                    <option value="32">32</option>
+                    <option value="48">48</option>
+                    <option value="64" selected>64</option>
+                    <option value="96">96</option>
+                    <option value="128">128</option>
+                  </select>
+                </div>
+              </div>
+            </div>
+            <div id="grid-unlimited-controls" class="hidden">
+              <div class="control-row">
+                <label for="grid-custom-textarea">Custom Grid (X, Y, Z) <span id="grid-cur-label">64x64x64</span></label>
+                <textarea id="grid-custom-textarea" class="grid-textarea" rows="2" placeholder="例: 160, 192, 160 または 160x160x160 または 160">64, 64, 64</textarea>
+              </div>
+              <div class="button-row">
+                <button id="btn-apply-grid" class="btn btn-secondary">Apply Grid Size</button>
+              </div>
+            </div>
+          </section>
+
+          <section class="panel">
+            <h2>Simulation Space Size (空間の広さ)</h2>
             <div class="control-row">
-              <label for="grid-resolution">Fluid Grid Resolution</label>
-              <select id="grid-resolution" class="select-input">
-                <option value="32">32 x 32 x 32 (Fast)</option>
-                <option value="48">48 x 48 x 48 (Balanced)</option>
-                <option value="64" selected>64 x 64 x 64 (Standard)</option>
-                <option value="96">96 x 96 x 96 (High Detail)</option>
-              </select>
+              <label for="space-x">Space Width (X) <span id="space-x-val">1.00</span></label>
+              <input id="space-x" type="range" min="0.5" max="5.0" step="0.1" value="1.0" />
             </div>
             <div class="control-row">
-              <label for="domain-scale">Space Scale (拡大・縮小) <span id="domain-scale-val">1.00x</span></label>
-              <input id="domain-scale" type="range" min="0.4" max="2.0" step="0.05" value="1.0" />
+              <label for="space-y">Space Height (Y) <span id="space-y-val">1.00</span></label>
+              <input id="space-y" type="range" min="0.5" max="5.0" step="0.1" value="1.0" />
             </div>
             <div class="control-row">
-              <label for="domain-stretch-y">Vertical Stretch (Y) <span id="domain-stretch-y-val">1.00x</span></label>
-              <input id="domain-stretch-y" type="range" min="0.6" max="2.0" step="0.05" value="1.0" />
+              <label for="space-z">Space Depth (Z) <span id="space-z-val">1.00</span></label>
+              <input id="space-z" type="range" min="0.5" max="5.0" step="0.1" value="1.0" />
             </div>
             <div class="toggle-row">
               <label class="checkbox-label">
@@ -279,6 +346,10 @@
               <label for="emissive-intensity">Emissive Glow <span id="emissive-intensity-val">0.15</span></label>
               <input id="emissive-intensity" type="range" min="0.0" max="4.0" step="0.05" value="0.15" />
             </div>
+            <div class="control-row">
+              <label for="soot-darkness">Soot Darkness (煤の黒さ) <span id="soot-darkness-val">0.25</span></label>
+              <input id="soot-darkness" type="range" min="0.0" max="1.0" step="0.02" value="0.25" />
+            </div>
           </section>
 
           <section class="panel">
@@ -313,6 +384,24 @@
 
         <!-- Category 4: Export (Still & Flipbook) -->
         <div id="cat-export" class="cat-pane">
+          <section class="panel">
+            <h2>Bake Camera Angle (出力アングル)</h2>
+            <div class="angle-btn-row">
+              <button id="angle-front" class="btn btn-secondary angle-btn">Front (-Z)</button>
+              <button id="angle-side" class="btn btn-secondary angle-btn">Side (+X)</button>
+              <button id="angle-top" class="btn btn-secondary angle-btn">Top (上)</button>
+              <button id="angle-match" class="btn btn-secondary angle-btn">Match 3D</button>
+            </div>
+            <div class="control-row">
+              <label for="bake-azimuth">Camera Azimuth <span id="bake-azimuth-val">0°</span></label>
+              <input id="bake-azimuth" type="range" min="-180" max="180" step="1" value="0" />
+            </div>
+            <div class="control-row">
+              <label for="bake-elevation">Camera Elevation <span id="bake-elevation-val">0°</span></label>
+              <input id="bake-elevation" type="range" min="-89" max="89" step="1" value="0" />
+            </div>
+          </section>
+
           <section class="panel">
             <h2>Still Image Export (静止画出力)</h2>
             <div class="control-row">
