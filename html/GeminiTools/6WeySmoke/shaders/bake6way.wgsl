@@ -3,7 +3,7 @@ struct BakeUniforms {
   camRight: vec4<f32>,
   camUp: vec4<f32>,
   boxSize: vec4<f32>,
-  params: vec4<f32>, // x: tileSize (bitcast/f32), y: densityMult, z: emissiveIntensity, w: lightAbsorption
+  params: vec4<f32>, // x: tileSize, y: densityMult, z: emissiveIntensity, w: lightAbsorption
 };
 
 @group(0) @binding(0) var<uniform> u: BakeUniforms;
@@ -23,21 +23,67 @@ fn intersectBox(ro: vec3<f32>, rd: vec3<f32>, boxMin: vec3<f32>, boxMax: vec3<f3
   return vec2<f32>(tNear, tFar);
 }
 
-fn traceLightDir(startPos: vec3<f32>, dir: vec3<f32>, boxSize: vec3<f32>, avgBox: f32, densityMult: f32, absorption: f32) -> f32 {
-  var opticalDepth = 0.0;
-  let steps = 16;
-  let stepLen = 0.055 * avgBox;
-  let boxHalf = boxSize * 0.5;
-  for (var i = 1; i <= steps; i = i + 1) {
-    let p = startPos + dir * (f32(i) * stepLen);
-    let uvw = (p + boxHalf) / boxSize;
-    if (any(uvw < vec3<f32>(0.0)) || any(uvw > vec3<f32>(1.0))) {
-      break;
-    }
-    let d = textureSampleLevel(volumeTex, volumeSampler, uvw, 0.0).r * densityMult;
-    opticalDepth += d * (stepLen / avgBox);
+fn sampleDensity(pos: vec3<f32>, boxSize: vec3<f32>, boxHalf: vec3<f32>, densityMult: f32) -> f32 {
+  let uvw = (pos + boxHalf) / boxSize;
+  if (any(uvw < vec3<f32>(0.0)) || any(uvw > vec3<f32>(1.0))) {
+    return 0.0;
   }
-  return exp(-opticalDepth * absorption);
+  return textureSampleLevel(volumeTex, volumeSampler, uvw, 0.0).r * densityMult;
+}
+
+fn computeDensityNormal(pos: vec3<f32>, boxSize: vec3<f32>, boxHalf: vec3<f32>, avgBox: f32, densityMult: f32) -> vec4<f32> {
+  let eps = 0.022 * avgBox;
+  let gx = sampleDensity(pos + vec3<f32>(eps, 0.0, 0.0), boxSize, boxHalf, densityMult)
+         - sampleDensity(pos - vec3<f32>(eps, 0.0, 0.0), boxSize, boxHalf, densityMult);
+  let gy = sampleDensity(pos + vec3<f32>(0.0, eps, 0.0), boxSize, boxHalf, densityMult)
+         - sampleDensity(pos - vec3<f32>(0.0, eps, 0.0), boxSize, boxHalf, densityMult);
+  let gz = sampleDensity(pos + vec3<f32>(0.0, 0.0, eps), boxSize, boxHalf, densityMult)
+         - sampleDensity(pos - vec3<f32>(0.0, 0.0, eps), boxSize, boxHalf, densityMult);
+  let grad = -vec3<f32>(gx, gy, gz);
+  let len = length(grad);
+  let n = select(vec3<f32>(0.0), grad / len, len > 1e-4);
+  return vec4<f32>(n, len);
+}
+
+fn traceLightDir(
+  startPos: vec3<f32>,
+  dir: vec3<f32>,
+  normal: vec3<f32>,
+  normalStrength: f32,
+  boxSize: vec3<f32>,
+  boxHalf: vec3<f32>,
+  avgBox: f32,
+  densityMult: f32,
+  absorption: f32
+) -> f32 {
+  // Offset start slightly along outward normal so dense surface lobes don't self-shadow on step 1
+  let marchStart = startPos + normal * (0.018 * avgBox * normalStrength);
+  var opticalDepth = 0.0;
+  let steps = 14;
+  let maxDist = 0.85 * avgBox;
+  var prevDist = 0.0;
+
+  // Compress extreme densityMult in shadow rays so dense smoke retains volumetric multi-scatter wrap
+  let shadowDensityScale = min(densityMult, 3.5 + log2(max(densityMult - 2.5, 1.0)));
+  let densityRatio = shadowDensityScale / max(densityMult, 1e-4);
+
+  for (var i = 1; i <= steps; i = i + 1) {
+    let frac = f32(i) / f32(steps);
+    let currDist = frac * frac * maxDist;
+    let ds = currDist - prevDist;
+    prevDist = currDist;
+    let d = sampleDensity(marchStart + dir * currDist, boxSize, boxHalf, densityMult) * densityRatio;
+    opticalDepth += d * (ds / avgBox);
+  }
+
+  let directT = exp(-opticalDepth * absorption);
+  let multiScatterT = exp(-opticalDepth * absorption * 0.28) * 0.35;
+  let transmittance = clamp(mix(directT, max(directT, multiScatterT), 0.55), 0.0, 1.0);
+
+  // Directional Lambert-wrap modulation from density gradient normal (creates crisp 3D relief on dense lobes)
+  let ndl = clamp(dot(normal, dir) * 0.65 + 0.35, 0.0, 1.0);
+  let directionalFactor = mix(1.0, ndl, normalStrength * 0.72);
+  return clamp(transmittance * directionalFactor, 0.0, 1.0);
 }
 
 @compute @workgroup_size(8, 8, 1)
@@ -61,7 +107,6 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   let right = normalize(u.camRight.xyz);
   let up = normalize(u.camUp.xyz);
 
-  // Orthographic ray spanning [-maxSpan/2, maxSpan/2] across the tile
   let ro = right * ((uv.x - 0.5) * maxSpan) + up * ((0.5 - uv.y) * maxSpan) - fwd * (maxSpan * 2.0);
   let hit = intersectBox(ro, fwd, -boxHalf, boxHalf);
 
@@ -81,11 +126,15 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
   var negAcc = vec3<f32>(0.0);
   var emissiveAcc = 0.0;
 
-  // Tangent-space 6-way basis aligned with the bake camera:
-  // +X = right, +Y = up, +Z = -fwd (toward camera)
-  let dirXP = right;
-  let dirYP = up;
-  let dirZP = -fwd;
+  // Unity VFX Graph Six-Way Smoke Lit channel convention (left-handed tangent space):
+  // Lightmap A (Pos): R = Right (+X), G = Top (+Y),    B = Back (+Z, away from camera = fwd),  A = Alpha
+  // Lightmap B (Neg): R = Left (-X),  G = Bottom (-Y), B = Front (-Z, toward camera = -fwd),  A = Emissive
+  let dirRight  = right;
+  let dirLeft   = -right;
+  let dirTop    = up;
+  let dirBottom = -up;
+  let dirBack   = fwd;
+  let dirFront  = -fwd;
 
   for (var i = 0; i < steps; i = i + 1) {
     if (transmittance < 0.005) {
@@ -103,16 +152,20 @@ fn main(@builtin(global_invocation_id) gid: vec3<u32>) {
       let stepAlpha = 1.0 - exp(-density * (stepSize / avgBox) * 2.4);
       let weight = transmittance * stepAlpha;
 
-      let txP = traceLightDir(pos,  dirXP, boxSize, avgBox, densityMult, lightAbsorption);
-      let tyP = traceLightDir(pos,  dirYP, boxSize, avgBox, densityMult, lightAbsorption);
-      let tzP = traceLightDir(pos,  dirZP, boxSize, avgBox, densityMult, lightAbsorption);
+      let nInfo = computeDensityNormal(pos, boxSize, boxHalf, avgBox, densityMult);
+      let normal = nInfo.xyz;
+      let normalStrength = clamp(nInfo.w * 1.2, 0.0, 1.0);
 
-      let txN = traceLightDir(pos, -dirXP, boxSize, avgBox, densityMult, lightAbsorption);
-      let tyN = traceLightDir(pos, -dirYP, boxSize, avgBox, densityMult, lightAbsorption);
-      let tzN = traceLightDir(pos, -dirZP, boxSize, avgBox, densityMult, lightAbsorption);
+      let lRight  = traceLightDir(pos, dirRight,  normal, normalStrength, boxSize, boxHalf, avgBox, densityMult, lightAbsorption);
+      let lTop    = traceLightDir(pos, dirTop,    normal, normalStrength, boxSize, boxHalf, avgBox, densityMult, lightAbsorption);
+      let lBack   = traceLightDir(pos, dirBack,   normal, normalStrength, boxSize, boxHalf, avgBox, densityMult, lightAbsorption);
 
-      posAcc += vec3<f32>(txP, tyP, tzP) * weight;
-      negAcc += vec3<f32>(txN, tyN, tzN) * weight;
+      let lLeft   = traceLightDir(pos, dirLeft,   normal, normalStrength, boxSize, boxHalf, avgBox, densityMult, lightAbsorption);
+      let lBottom = traceLightDir(pos, dirBottom, normal, normalStrength, boxSize, boxHalf, avgBox, densityMult, lightAbsorption);
+      let lFront  = traceLightDir(pos, dirFront,  normal, normalStrength, boxSize, boxHalf, avgBox, densityMult, lightAbsorption);
+
+      posAcc += vec3<f32>(lRight, lTop, lBack) * weight;
+      negAcc += vec3<f32>(lLeft, lBottom, lFront) * weight;
       emissiveAcc += temp * temp * emissiveIntensity * weight;
 
       transmittance *= (1.0 - stepAlpha);

@@ -453,6 +453,16 @@ input[type="range"] {
   line-height: 1.4;
 }
 
+.unity-note {
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--text-secondary);
+  background: rgba(79, 140, 255, 0.08);
+  border: 1px solid rgba(79, 140, 255, 0.25);
+  border-radius: 6px;
+  padding: 6px 8px;
+}
+
 .log-box {
   background: #0b0e14;
   border: 1px solid var(--border);
