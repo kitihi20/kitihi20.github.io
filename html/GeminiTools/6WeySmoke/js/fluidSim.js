@@ -1,8 +1,8 @@
 export class FluidSim {
-  constructor(gpu, gridSize = 64) {
+  constructor(gpu, gridDims = [64, 64, 64]) {
     this.gpu = gpu;
     this.device = gpu.device;
-    this.gridSize = gridSize;
+    this.gridDims = [...gridDims];
     this.simAge = 0;
     this.time = 0;
 
@@ -23,10 +23,11 @@ export class FluidSim {
     this.textures = {};
     this.views = {};
 
+    const [gx, gy, gz] = this.gridDims;
     const createVolTex = (label) =>
       this.device.createTexture({
         label,
-        size: [this.gridSize, this.gridSize, this.gridSize],
+        size: [gx, gy, gz],
         dimension: '3d',
         format: 'rgba16float',
         usage:
@@ -37,11 +38,11 @@ export class FluidSim {
       });
 
     for (const name of ['velA', 'velB', 'scalarA', 'scalarB', 'curl', 'div', 'pressureA', 'pressureB']) {
-      this.textures[name] = createVolTex(`Fluid_${name}_${this.gridSize}`);
+      this.textures[name] = createVolTex(`Fluid_${name}_${gx}x${gy}x${gz}`);
       this.views[name] = this.textures[name].createView({ dimension: '3d' });
     }
 
-    this.device.queue.writeBuffer(this.uniforms.grid, 0, new Uint32Array([this.gridSize, 0, 0, 0]));
+    this.device.queue.writeBuffer(this.uniforms.grid, 0, new Uint32Array([gx, gy, gz, 0]));
 
     this.initBindGroup = this.device.createBindGroup({
       layout: this.bgls.init,
@@ -55,11 +56,17 @@ export class FluidSim {
     });
   }
 
-  resize(newSize, fluidParams) {
-    if (this.gridSize === newSize) return;
-    this.gridSize = newSize;
+  resize(newDims, fluidParams, spaceSize) {
+    if (
+      this.gridDims[0] === newDims[0] &&
+      this.gridDims[1] === newDims[1] &&
+      this.gridDims[2] === newDims[2]
+    ) {
+      return;
+    }
+    this.gridDims = [...newDims];
     this.createTextures();
-    this.reset(fluidParams);
+    this.reset(fluidParams, spaceSize);
   }
 
   async init() {
@@ -89,25 +96,24 @@ export class FluidSim {
       const storage3d = { access: 'write-only', format: 'rgba16float', viewDimension: '3d' };
       const tex3d = { sampleType: 'float', viewDimension: '3d' };
 
-      // Uniform buffers
       this.uniforms.init = device.createBuffer({
-        size: 48,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-      });
-      this.uniforms.advect = device.createBuffer({
-        size: 32,
-        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
-      });
-      this.uniforms.forces = device.createBuffer({
         size: 64,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
+      this.uniforms.advect = device.createBuffer({
+        size: 48,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      });
+      this.uniforms.forces = device.createBuffer({
+        size: 96,
+        usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
+      });
       this.uniforms.cloud = device.createBuffer({
-        size: 32,
+        size: 64,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
       this.uniforms.vort = device.createBuffer({
-        size: 16,
+        size: 32,
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
       this.uniforms.grid = device.createBuffer({
@@ -146,7 +152,7 @@ export class FluidSim {
         compute: { module: advectMod, entryPoint: 'main' },
       });
 
-      // 2. Forces
+      // 2. Forces & Cloud
       this.bgls.forces = device.createBindGroupLayout({
         entries: [
           { binding: 0, visibility: GPUShaderStage.COMPUTE, buffer: { type: 'uniform' } },
@@ -160,7 +166,6 @@ export class FluidSim {
         layout: device.createPipelineLayout({ bindGroupLayouts: [this.bgls.forces] }),
         compute: { module: forcesMod, entryPoint: 'main' },
       });
-
       this.pipelines.cloud = device.createComputePipeline({
         layout: device.createPipelineLayout({ bindGroupLayouts: [this.bgls.forces] }),
         compute: { module: cloudMod, entryPoint: 'main' },
@@ -214,24 +219,29 @@ export class FluidSim {
     });
   }
 
-  reset(fluidParams) {
+  reset(fluidParams, spaceSize = [1, 1, 1]) {
     this.simAge = 0;
+    const [gx, gy, gz] = this.gridDims;
     const p = fluidParams || {};
-    const buf = new ArrayBuffer(48);
+    const buf = new ArrayBuffer(64);
     const u32 = new Uint32Array(buf);
     const f32 = new Float32Array(buf);
-    u32[0] = this.gridSize;
-    u32[1] = p.shapeType ?? 0;
-    u32[2] = p.emissionMode ?? 1;
-    f32[3] = p.seed ?? 1.0;
-    f32[4] = p.radius ?? 0.25;
-    f32[5] = p.posY ?? -0.5;
-    f32[6] = p.density ?? 1.3;
-    f32[7] = p.temp ?? 0.6;
-    f32[8] = p.velY ?? 0.35;
-    f32[9] = p.radialVel ?? 0.1;
-    f32[10] = p.swirlVel ?? 0.0;
-    f32[11] = 0;
+    u32[0] = gx;
+    u32[1] = gy;
+    u32[2] = gz;
+    u32[3] = p.shapeType ?? 0;
+    u32[4] = p.emissionMode ?? 1;
+    f32[5] = p.seed ?? 1.0;
+    f32[6] = p.radius ?? 0.25;
+    f32[7] = p.posY ?? -0.5;
+    f32[8] = p.density ?? 1.3;
+    f32[9] = p.temp ?? 0.6;
+    f32[10] = p.velY ?? 0.35;
+    f32[11] = p.radialVel ?? 0.1;
+    f32[12] = p.swirlVel ?? 0.0;
+    f32[13] = spaceSize[0];
+    f32[14] = spaceSize[1];
+    f32[15] = spaceSize[2];
 
     this.device.queue.writeBuffer(this.uniforms.init, 0, buf);
 
@@ -239,8 +249,7 @@ export class FluidSim {
     const pass = encoder.beginComputePass({ label: 'FluidInitPass' });
     pass.setPipeline(this.pipelines.init);
     pass.setBindGroup(0, this.initBindGroup);
-    const wg = Math.ceil(this.gridSize / 4);
-    pass.dispatchWorkgroups(wg, wg, wg);
+    pass.dispatchWorkgroups(Math.ceil(gx / 4), Math.ceil(gy / 4), Math.ceil(gz / 4));
     pass.end();
     this.device.queue.submit([encoder.finish()]);
   }
@@ -249,20 +258,30 @@ export class FluidSim {
     return this.views.scalarA;
   }
 
-  step(encoder, dt, fluidParams) {
+  step(encoder, dt, fluidParams, spaceSize = [1, 1, 1]) {
     this.simAge += dt;
     this.time += dt;
-    const wg = Math.ceil(this.gridSize / 4);
+    const [gx, gy, gz] = this.gridDims;
+    const wgx = Math.ceil(gx / 4);
+    const wgy = Math.ceil(gy / 4);
+    const wgz = Math.ceil(gz / 4);
 
     // 1. Advect
     {
-      const buf = new ArrayBuffer(32);
-      new Uint32Array(buf)[0] = this.gridSize;
+      const buf = new ArrayBuffer(48);
+      const u = new Uint32Array(buf);
       const f = new Float32Array(buf);
-      f[1] = dt;
-      f[2] = fluidParams.velDissipation;
-      f[3] = fluidParams.densityDissipation;
-      f[4] = fluidParams.tempDissipation;
+      u[0] = gx;
+      u[1] = gy;
+      u[2] = gz;
+      f[3] = dt;
+      f[4] = fluidParams.velDissipation;
+      f[5] = fluidParams.densityDissipation;
+      f[6] = fluidParams.tempDissipation;
+      f[7] = 0;
+      f[8] = spaceSize[0];
+      f[9] = spaceSize[1];
+      f[10] = spaceSize[2];
       this.device.queue.writeBuffer(this.uniforms.advect, 0, buf);
 
       const bg = this.device.createBindGroup({
@@ -279,31 +298,39 @@ export class FluidSim {
       const pass = encoder.beginComputePass({ label: 'FluidAdvect' });
       pass.setPipeline(this.pipelines.advect);
       pass.setBindGroup(0, bg);
-      pass.dispatchWorkgroups(wg, wg, wg);
+      pass.dispatchWorkgroups(wgx, wgy, wgz);
       pass.end();
     }
 
     // 2. Forces & Emission
     {
-      const buf = new ArrayBuffer(64);
+      const buf = new ArrayBuffer(96);
       const u = new Uint32Array(buf);
       const f = new Float32Array(buf);
-      u[0] = this.gridSize;
-      u[1] = fluidParams.shapeType;
-      u[2] = fluidParams.emissionMode;
-      f[3] = dt;
-      f[4] = this.time;
-      f[5] = fluidParams.buoyancy;
-      f[6] = fluidParams.gravity;
-      f[7] = fluidParams.noiseTurbulence;
-      f[8] = fluidParams.radius;
-      f[9] = fluidParams.posY;
-      f[10] = fluidParams.density;
-      f[11] = fluidParams.temp;
-      f[12] = fluidParams.velY;
-      f[13] = fluidParams.radialVel;
-      f[14] = fluidParams.swirlVel;
-      f[15] = 0;
+      u[0] = gx;
+      u[1] = gy;
+      u[2] = gz;
+      u[3] = fluidParams.shapeType;
+      u[4] = fluidParams.emissionMode;
+      f[5] = dt;
+      f[6] = this.time;
+      f[7] = this.simAge;
+      f[8] = fluidParams.buoyancy;
+      f[9] = fluidParams.gravity;
+      f[10] = fluidParams.noiseTurbulence;
+      f[11] = fluidParams.afterburnSec ?? 0.0;
+      f[12] = fluidParams.radius;
+      f[13] = fluidParams.posY;
+      f[14] = fluidParams.density;
+      f[15] = fluidParams.temp;
+      f[16] = fluidParams.velY;
+      f[17] = fluidParams.radialVel;
+      f[18] = fluidParams.swirlVel;
+      f[19] = 0;
+      f[20] = spaceSize[0];
+      f[21] = spaceSize[1];
+      f[22] = spaceSize[2];
+      f[23] = 0;
       this.device.queue.writeBuffer(this.uniforms.forces, 0, buf);
 
       const bg = this.device.createBindGroup({
@@ -319,22 +346,28 @@ export class FluidSim {
       const pass = encoder.beginComputePass({ label: 'FluidForces' });
       pass.setPipeline(this.pipelines.forces);
       pass.setBindGroup(0, bg);
-      pass.dispatchWorkgroups(wg, wg, wg);
+      pass.dispatchWorkgroups(wgx, wgy, wgz);
       pass.end();
     }
 
-    // 2B. Physical Cloud Thermodynamics (Condensation, Latent Heat, Tropopause Inversion)
+    // 2B. Physical Cloud Thermodynamics
     if (fluidParams.cloudPhysics) {
-      const buf = new ArrayBuffer(32);
-      new Uint32Array(buf)[0] = this.gridSize;
+      const buf = new ArrayBuffer(64);
+      const u = new Uint32Array(buf);
       const f = new Float32Array(buf);
-      f[1] = dt;
-      f[2] = this.time;
-      f[3] = fluidParams.condensationLevel ?? -0.25;
-      f[4] = fluidParams.humidity ?? 1.15;
-      f[5] = fluidParams.latentHeat ?? 2.0;
-      f[6] = fluidParams.tropopauseY ?? 0.65;
-      f[7] = fluidParams.windShear ?? 0.35;
+      u[0] = gx;
+      u[1] = gy;
+      u[2] = gz;
+      f[3] = dt;
+      f[4] = this.time;
+      f[5] = fluidParams.condensationLevel ?? -0.25;
+      f[6] = fluidParams.humidity ?? 1.35;
+      f[7] = fluidParams.latentHeat ?? 1.8;
+      f[8] = fluidParams.tropopauseY ?? 0.45;
+      f[9] = fluidParams.windShear ?? 0.25;
+      f[10] = spaceSize[0];
+      f[11] = spaceSize[1];
+      f[12] = spaceSize[2];
       this.device.queue.writeBuffer(this.uniforms.cloud, 0, buf);
 
       const bg = this.device.createBindGroup({
@@ -350,21 +383,24 @@ export class FluidSim {
       const pass = encoder.beginComputePass({ label: 'FluidCloudPhysics' });
       pass.setPipeline(this.pipelines.cloud);
       pass.setBindGroup(0, bg);
-      pass.dispatchWorkgroups(wg, wg, wg);
+      pass.dispatchWorkgroups(wgx, wgy, wgz);
       pass.end();
 
-      const volSize = [this.gridSize, this.gridSize, this.gridSize];
+      const volSize = [gx, gy, gz];
       encoder.copyTextureToTexture({ texture: this.textures.velB }, { texture: this.textures.velA }, volSize);
       encoder.copyTextureToTexture({ texture: this.textures.scalarB }, { texture: this.textures.scalarA }, volSize);
     }
 
     // 3. Vorticity Confinement
     {
-      const buf = new ArrayBuffer(16);
-      new Uint32Array(buf)[0] = this.gridSize;
+      const buf = new ArrayBuffer(32);
+      const u = new Uint32Array(buf);
       const f = new Float32Array(buf);
-      f[1] = dt;
-      f[2] = fluidParams.vorticity;
+      u[0] = gx;
+      u[1] = gy;
+      u[2] = gz;
+      f[3] = dt;
+      f[4] = fluidParams.vorticity;
       this.device.queue.writeBuffer(this.uniforms.vort, 0, buf);
 
       const curlBG = this.device.createBindGroup({
@@ -389,10 +425,10 @@ export class FluidSim {
       const pass = encoder.beginComputePass({ label: 'FluidVorticity' });
       pass.setPipeline(this.pipelines.curl);
       pass.setBindGroup(0, curlBG);
-      pass.dispatchWorkgroups(wg, wg, wg);
+      pass.dispatchWorkgroups(wgx, wgy, wgz);
       pass.setPipeline(this.pipelines.confinement);
       pass.setBindGroup(0, confBG);
-      pass.dispatchWorkgroups(wg, wg, wg);
+      pass.dispatchWorkgroups(wgx, wgy, wgz);
       pass.end();
     }
 
@@ -409,7 +445,7 @@ export class FluidSim {
       const pass = encoder.beginComputePass({ label: 'FluidDivergence' });
       pass.setPipeline(this.pipelines.div);
       pass.setBindGroup(0, bg);
-      pass.dispatchWorkgroups(wg, wg, wg);
+      pass.dispatchWorkgroups(wgx, wgy, wgz);
       pass.end();
     }
 
@@ -438,7 +474,7 @@ export class FluidSim {
       pass.setPipeline(this.pipelines.jacobi);
       for (let i = 0; i < 16; i++) {
         pass.setBindGroup(0, i % 2 === 0 ? bgAB : bgBA);
-        pass.dispatchWorkgroups(wg, wg, wg);
+        pass.dispatchWorkgroups(wgx, wgy, wgz);
       }
       pass.end();
     }
@@ -457,7 +493,7 @@ export class FluidSim {
       const pass = encoder.beginComputePass({ label: 'FluidProject' });
       pass.setPipeline(this.pipelines.project);
       pass.setBindGroup(0, bg);
-      pass.dispatchWorkgroups(wg, wg, wg);
+      pass.dispatchWorkgroups(wgx, wgy, wgz);
       pass.end();
     }
   }

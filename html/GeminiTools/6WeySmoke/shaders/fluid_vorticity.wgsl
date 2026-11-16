@@ -1,8 +1,10 @@
 struct VorticityUniforms {
-  gridSize: u32,
+  gridSize: vec3<u32>,
   dt: f32,
   vorticityStrength: f32,
-  pad: f32,
+  pad0: f32,
+  pad1: f32,
+  pad2: f32,
 };
 
 @group(0) @binding(0) var<uniform> params: VorticityUniforms;
@@ -12,17 +14,17 @@ struct VorticityUniforms {
 
 @compute @workgroup_size(4, 4, 4)
 fn compute_curl(@builtin(global_invocation_id) gid: vec3<u32>) {
-  let n = i32(params.gridSize);
+  let n = vec3<i32>(params.gridSize);
   let p = vec3<i32>(gid);
-  if (p.x >= n || p.y >= n || p.z >= n) {
+  if (p.x >= n.x || p.y >= n.y || p.z >= n.z) {
     return;
   }
 
-  let xp = min(p.x + 1, n - 1);
+  let xp = min(p.x + 1, n.x - 1);
   let xm = max(p.x - 1, 0);
-  let yp = min(p.y + 1, n - 1);
+  let yp = min(p.y + 1, n.y - 1);
   let ym = max(p.y - 1, 0);
-  let zp = min(p.z + 1, n - 1);
+  let zp = min(p.z + 1, n.z - 1);
   let zm = max(p.z - 1, 0);
 
   let vR = textureLoad(velSrc, vec3<i32>(xp, p.y, p.z), 0).xyz;
@@ -43,17 +45,17 @@ fn compute_curl(@builtin(global_invocation_id) gid: vec3<u32>) {
 
 @compute @workgroup_size(4, 4, 4)
 fn apply_confinement(@builtin(global_invocation_id) gid: vec3<u32>) {
-  let n = i32(params.gridSize);
+  let n = vec3<i32>(params.gridSize);
   let p = vec3<i32>(gid);
-  if (p.x >= n || p.y >= n || p.z >= n) {
+  if (p.x >= n.x || p.y >= n.y || p.z >= n.z) {
     return;
   }
 
-  let xp = min(p.x + 1, n - 1);
+  let xp = min(p.x + 1, n.x - 1);
   let xm = max(p.x - 1, 0);
-  let yp = min(p.y + 1, n - 1);
+  let yp = min(p.y + 1, n.y - 1);
   let ym = max(p.y - 1, 0);
-  let zp = min(p.z + 1, n - 1);
+  let zp = min(p.z + 1, n.z - 1);
   let zm = max(p.z - 1, 0);
 
   let cR = textureLoad(curlTex, vec3<i32>(xp, p.y, p.z), 0).w;

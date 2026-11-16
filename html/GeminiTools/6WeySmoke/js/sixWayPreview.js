@@ -57,7 +57,7 @@ export class SixWayPreview {
     data.set([lightState.dir[0], lightState.dir[1], lightState.dir[2], 0], 0);
     data.set([1.0, 0.94, 0.85, lightState.intensity], 4);
     data.set([0.16, 0.20, 0.27, lightState.emissiveIntensity], 8);
-    data.set([aspect, lightState.debugMode, 0, 0], 12);
+    data.set([aspect, lightState.debugMode, lightState.sootDarkness ?? 0.0, 0], 12);
     this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
 
     const bindGroup = this.device.createBindGroup({

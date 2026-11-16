@@ -39,13 +39,11 @@ document.querySelectorAll('.cat-btn').forEach((btn) => {
   });
 });
 
-// View mode: 'raymarch' | 'sixway' | 'atlas', Source mode: 'fluid' | 'noise'
 let viewMode = 'raymarch';
 let sourceMode = 'fluid';
 let isBaking = false;
 let pendingPreviewDownload = false;
 
-// Orbit camera state
 const cameraState = {
   yaw: 0.65,
   pitch: 0.25,
@@ -55,7 +53,6 @@ const cameraState = {
   lastY: 0,
 };
 
-// Virtual light state
 const lightState = {
   azimuthDeg: 40,
   elevationDeg: 35,
@@ -146,59 +143,162 @@ canvas.addEventListener(
   (e) => {
     if (viewMode !== 'raymarch') return;
     e.preventDefault();
-    cameraState.distance = Math.max(0.7, Math.min(5.0, cameraState.distance + e.deltaY * 0.0015));
+    const maxSpace = Math.max(params.spaceX, params.spaceY, params.spaceZ, 0.5);
+    const minDist = Math.max(0.35, maxSpace * 0.25);
+    const maxDist = Math.max(12.0, maxSpace * 6.0);
+    const step = e.deltaY * 0.0014 * Math.max(1.0, cameraState.distance * 0.55);
+    cameraState.distance = Math.max(minDist, Math.min(maxDist, cameraState.distance + step));
   },
   { passive: false }
 );
 
-// Render, Space & Fluid state
 const params = {
   densityMult: PRESETS.smoke.densityMult,
   emissiveIntensity: PRESETS.smoke.emissiveIntensity,
+  sootDarkness: PRESETS.smoke.sootDarkness,
   seed: 1.0,
   animating: true,
+  unlimitedMode: false,
   simSpeed: 1.0,
   simSubsteps: 2,
-  domainScale: 1.0,
-  domainStretchY: 1.0,
+  spaceX: 1.0,
+  spaceY: 1.0,
+  spaceZ: 1.0,
   showBounds: true,
   showGrid: true,
-  gridResolution: 64,
+  gridDims: [64, 64, 64],
+  bakeAzimuth: 0,
+  bakeElevation: 0,
 };
 
 const fluidParams = {
   ...PRESETS.smoke,
   cloudPhysics: false,
   condensationLevel: -0.25,
-  humidity: 1.15,
+  humidity: 1.35,
   latentHeat: 1.8,
-  tropopauseY: 0.65,
+  tropopauseY: 0.45,
   windShear: 0.25,
+  afterburnSec: 0.0,
   seed: 1.0,
 };
+
 const noiseParams = { ...CLOUD_PRESETS.puffy, seed: 1.0, time: 0 };
 
+const sliderRegistry = new Map();
+
 function setSliderValue(id, value, suffix = '', decimals = null) {
+  const entry = sliderRegistry.get(id);
   const el = document.getElementById(id);
-  const valEl = document.getElementById(`${id}-val`);
-  el.value = value;
-  valEl.textContent = `${decimals !== null ? Number(value).toFixed(decimals) : value}${suffix}`;
+  const numVal = Number(value);
+  if (entry) {
+    if (params.unlimitedMode || numVal > parseFloat(el.max)) {
+      el.max = String(Math.max(entry.defaultMax * (params.unlimitedMode ? 5 : 1), Math.abs(numVal) * 1.5, numVal));
+    }
+    if (params.unlimitedMode && numVal < parseFloat(el.min)) {
+      el.min = String(numVal * 1.5);
+    }
+    el.value = String(numVal);
+    entry.numInput.value = decimals !== null ? numVal.toFixed(decimals) : String(numVal);
+  } else {
+    el.value = String(numVal);
+    const valEl = document.getElementById(`${id}-val`);
+    if (valEl) {
+      valEl.textContent = `${decimals !== null ? numVal.toFixed(decimals) : value}${suffix}`;
+    }
+  }
 }
 
 function bindSlider(id, targetObj, key, suffix = '', decimals = null) {
   const el = document.getElementById(id);
-  const valEl = document.getElementById(`${id}-val`);
+  const oldSpan = document.getElementById(`${id}-val`);
+  const defaultMin = parseFloat(el.min);
+  const defaultMax = parseFloat(el.max);
+
+  const numInput = document.createElement('input');
+  numInput.type = 'number';
+  numInput.id = `${id}-val`;
+  numInput.className = 'num-val-input';
+  numInput.step = 'any';
+  numInput.value = decimals !== null ? parseFloat(el.value).toFixed(decimals) : el.value;
+  if (oldSpan && oldSpan.parentNode) {
+    oldSpan.parentNode.replaceChild(numInput, oldSpan);
+  }
+
+  const entry = { id, el, numInput, targetObj, key, suffix, decimals, defaultMin, defaultMax };
+  sliderRegistry.set(id, entry);
+
   el.addEventListener('input', () => {
     const v = parseFloat(el.value);
     targetObj[key] = v;
-    valEl.textContent = `${decimals !== null ? v.toFixed(decimals) : el.value}${suffix}`;
+    numInput.value = decimals !== null ? v.toFixed(decimals) : el.value;
+    if (targetObj === lightState) {
+      updateLightDir();
+    }
+  });
+
+  numInput.addEventListener('change', () => {
+    let v = parseFloat(numInput.value);
+    if (Number.isNaN(v)) {
+      numInput.value = String(targetObj[key]);
+      return;
+    }
+    if (!params.unlimitedMode) {
+      v = Math.max(defaultMin, Math.min(defaultMax, v));
+      numInput.value = decimals !== null ? v.toFixed(decimals) : String(v);
+    } else {
+      if (v > parseFloat(el.max)) {
+        el.max = String(Math.max(defaultMax * 5, v * 1.5));
+      }
+      if (v < parseFloat(el.min)) {
+        el.min = String(v < 0 ? v * 1.5 : 0);
+      }
+    }
+    targetObj[key] = v;
+    el.value = String(v);
     if (targetObj === lightState) {
       updateLightDir();
     }
   });
 }
 
-// Emitter & Shape sliders
+const unlimitedBtn = document.getElementById('btn-unlimited');
+const unlimitedWarningEl = document.getElementById('unlimited-warning');
+const gridStandardEl = document.getElementById('grid-standard-controls');
+const gridUnlimitedEl = document.getElementById('grid-unlimited-controls');
+const gridTextareaEl = document.getElementById('grid-custom-textarea');
+const gridCurLabelEl = document.getElementById('grid-cur-label');
+
+unlimitedBtn.addEventListener('click', () => {
+  params.unlimitedMode = !params.unlimitedMode;
+  unlimitedBtn.classList.toggle('active', params.unlimitedMode);
+  unlimitedBtn.textContent = `Unlimited Mode: ${params.unlimitedMode ? 'ON' : 'OFF'}`;
+  unlimitedWarningEl.classList.toggle('hidden', !params.unlimitedMode);
+  gridStandardEl.classList.toggle('hidden', params.unlimitedMode);
+  gridUnlimitedEl.classList.toggle('hidden', !params.unlimitedMode);
+
+  if (params.unlimitedMode) {
+    gridTextareaEl.value = params.gridDims.join(', ');
+    gridCurLabelEl.textContent = params.gridDims.join('x');
+  }
+
+  for (const entry of sliderRegistry.values()) {
+    const cur = entry.targetObj[entry.key];
+    if (params.unlimitedMode) {
+      entry.el.max = String(Math.max(entry.defaultMax * 5, Math.abs(cur) * 2));
+      if (entry.defaultMin < 0) {
+        entry.el.min = String(Math.min(entry.defaultMin * 5, -Math.abs(cur) * 2));
+      }
+    } else {
+      entry.el.min = String(entry.defaultMin);
+      entry.el.max = String(entry.defaultMax);
+    }
+    entry.el.value = String(cur);
+  }
+  log(`Unlimited Mode: ${params.unlimitedMode ? 'ON (performance warning active, custom grid textarea enabled)' : 'OFF'}`);
+});
+
+// Emitter sliders
 bindSlider('emit-radius', fluidParams, 'radius', '', 2);
 bindSlider('emit-pos-y', fluidParams, 'posY', '', 2);
 bindSlider('emit-density', fluidParams, 'density', '', 2);
@@ -206,6 +306,7 @@ bindSlider('emit-temp', fluidParams, 'temp', '', 2);
 bindSlider('emit-vel-y', fluidParams, 'velY', '', 2);
 bindSlider('emit-radial-vel', fluidParams, 'radialVel', '', 2);
 bindSlider('emit-swirl-vel', fluidParams, 'swirlVel', '', 2);
+bindSlider('emit-afterburn', fluidParams, 'afterburnSec', '', 2);
 
 // Cloud Physics sliders
 const chkCloudPhysics = document.getElementById('toggle-cloud-physics');
@@ -218,16 +319,17 @@ bindSlider('cp-latent', fluidParams, 'latentHeat', '', 2);
 bindSlider('cp-tropo', fluidParams, 'tropopauseY', '', 2);
 bindSlider('cp-shear', fluidParams, 'windShear', '', 2);
 
-// Forces & Space sliders
+// Space & Forces sliders
+bindSlider('space-x', params, 'spaceX', '', 2);
+bindSlider('space-y', params, 'spaceY', '', 2);
+bindSlider('space-z', params, 'spaceZ', '', 2);
 bindSlider('sim-speed', params, 'simSpeed', 'x', 2);
-bindSlider('domain-scale', params, 'domainScale', 'x', 2);
-bindSlider('domain-stretch-y', params, 'domainStretchY', 'x', 2);
 bindSlider('fluid-buoyancy', fluidParams, 'buoyancy');
 bindSlider('fluid-vorticity', fluidParams, 'vorticity');
 bindSlider('fluid-dissipation', fluidParams, 'densityDissipation');
 bindSlider('fluid-turbulence', fluidParams, 'noiseTurbulence');
 
-// Cloud & Fog (Procedural Noise) sliders
+// Cloud & Fog sliders
 bindSlider('cloud-coverage', noiseParams, 'coverage', '', 2);
 bindSlider('cloud-softness', noiseParams, 'softness', '', 2);
 bindSlider('cloud-billow', noiseParams, 'billow', '', 2);
@@ -241,13 +343,33 @@ bindSlider('cloud-core-glow', noiseParams, 'coreGlow', '', 2);
 // Look & Light sliders
 bindSlider('density-mult', params, 'densityMult');
 bindSlider('emissive-intensity', params, 'emissiveIntensity');
+bindSlider('soot-darkness', params, 'sootDarkness', '', 2);
 bindSlider('sim-substeps', params, 'simSubsteps');
 bindSlider('light-absorption', lightState, 'absorption');
 bindSlider('light-intensity', lightState, 'intensity');
 bindSlider('light-azimuth', lightState, 'azimuthDeg', '°');
 bindSlider('light-elevation', lightState, 'elevationDeg', '°');
 
-// Sync Bounds & Grid toggles between sidebar checkboxes and viewport HUD pills
+// Bake Angle sliders
+bindSlider('bake-azimuth', params, 'bakeAzimuth', '°');
+bindSlider('bake-elevation', params, 'bakeElevation', '°');
+
+function setBakeAngle(az, el) {
+  params.bakeAzimuth = az;
+  params.bakeElevation = el;
+  setSliderValue('bake-azimuth', Math.round(az), '°');
+  setSliderValue('bake-elevation', Math.round(el), '°');
+}
+
+document.getElementById('angle-front').addEventListener('click', () => setBakeAngle(0, 0));
+document.getElementById('angle-side').addEventListener('click', () => setBakeAngle(90, 0));
+document.getElementById('angle-top').addEventListener('click', () => setBakeAngle(0, 89));
+document.getElementById('angle-match').addEventListener('click', () => {
+  const az = ((cameraState.yaw * 180) / Math.PI + 540) % 360 - 180;
+  const el = Math.max(-89, Math.min(89, (cameraState.pitch * 180) / Math.PI));
+  setBakeAngle(az, el);
+});
+
 const chkBounds = document.getElementById('toggle-bounds');
 const chkGrid = document.getElementById('toggle-grid');
 const hudBoundsBtn = document.getElementById('hud-bounds-btn');
@@ -345,7 +467,7 @@ async function main() {
     gpuStatusEl.className = 'badge badge-ok';
     log(`WebGPU initialized (${gpuName})`);
 
-    const volumeRenderer = new VolumeRenderer(gpu, params.gridResolution);
+    const volumeRenderer = new VolumeRenderer(gpu, params.gridDims);
     await volumeRenderer.init();
 
     const bakePipeline = new BakePipeline(gpu);
@@ -355,14 +477,72 @@ async function main() {
     const sixWayPreview = new SixWayPreview(gpu);
     await sixWayPreview.init();
 
-    const fluidSim = new FluidSim(gpu, params.gridResolution);
+    const fluidSim = new FluidSim(gpu, params.gridDims);
     await fluidSim.init();
-    fluidSim.reset(fluidParams);
+    fluidSim.reset(fluidParams, [params.spaceX, params.spaceY, params.spaceZ]);
+
+    function getSpaceSize() {
+      return [params.spaceX, params.spaceY, params.spaceZ];
+    }
 
     function resetSimulation() {
       fluidParams.seed = Math.random() * 100.0;
-      fluidSim.reset(fluidParams);
+      fluidSim.reset(fluidParams, getSpaceSize());
       log(`Simulation restarted (mode=${fluidParams.emissionMode}, shape=${fluidParams.shapeType}).`);
+    }
+
+    function applyGridDims(gx, gy, gz) {
+      const max3D = gpu.device.limits.maxTextureDimension3D || 2048;
+      const clampDim = (v) => Math.max(4, Math.min(max3D, Math.round(v)));
+      const nx = clampDim(gx);
+      const ny = clampDim(gy);
+      const nz = clampDim(gz);
+      params.gridDims = [nx, ny, nz];
+      if ([32, 48, 64, 96, 128].includes(nx)) document.getElementById('grid-x').value = String(nx);
+      if ([32, 48, 64, 96, 128].includes(ny)) document.getElementById('grid-y').value = String(ny);
+      if ([32, 48, 64, 96, 128].includes(nz)) document.getElementById('grid-z').value = String(nz);
+      gridTextareaEl.value = `${nx}, ${ny}, ${nz}`;
+      gridCurLabelEl.textContent = `${nx}x${ny}x${nz}`;
+      fluidSim.resize(params.gridDims, fluidParams, getSpaceSize());
+      volumeRenderer.resize(params.gridDims);
+      log(`Resized grid to ${nx}x${ny}x${nz}.`);
+    }
+
+    function applyGridFromTextarea() {
+      const nums = gridTextareaEl.value
+        .trim()
+        .split(/[\s,xX×*]+/)
+        .map((s) => parseInt(s, 10))
+        .filter((n) => !Number.isNaN(n) && n > 0);
+      if (nums.length === 1) {
+        applyGridDims(nums[0], nums[0], nums[0]);
+      } else if (nums.length >= 3) {
+        applyGridDims(nums[0], nums[1], nums[2]);
+      } else {
+        log('Invalid grid size format. Example: "160, 192, 160" or "160"');
+      }
+    }
+
+    document.getElementById('btn-apply-grid').addEventListener('click', applyGridFromTextarea);
+    gridTextareaEl.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        applyGridFromTextarea();
+      }
+    });
+
+    document.getElementById('grid-preset').addEventListener('change', (e) => {
+      const [gx, gy, gz] = e.target.value.split(',').map((v) => parseInt(v, 10));
+      applyGridDims(gx, gy, gz);
+    });
+
+    for (const axis of ['grid-x', 'grid-y', 'grid-z']) {
+      document.getElementById(axis).addEventListener('change', () => {
+        const gx = parseInt(document.getElementById('grid-x').value, 10);
+        const gy = parseInt(document.getElementById('grid-y').value, 10);
+        const gz = parseInt(document.getElementById('grid-z').value, 10);
+        applyGridDims(gx, gy, gz);
+      });
     }
 
     document.getElementById('emission-mode').addEventListener('change', (e) => {
@@ -375,26 +555,17 @@ async function main() {
       resetSimulation();
     });
 
-    document.getElementById('grid-resolution').addEventListener('change', (e) => {
-      const newSize = parseInt(e.target.value, 10);
-      params.gridResolution = newSize;
-      fluidSim.resize(newSize, fluidParams);
-      volumeRenderer.resize(newSize);
-      log(`Resized simulation grid to ${newSize}x${newSize}x${newSize}.`);
-    });
-
     function prewarmFluid(steps = 60) {
       const encoder = gpu.device.createCommandEncoder({ label: 'FluidPrewarmEncoder' });
+      const space = getSpaceSize();
       for (let i = 0; i < steps; i++) {
-        fluidSim.step(encoder, 1 / 60, fluidParams);
+        fluidSim.step(encoder, 1 / 60, fluidParams, space);
       }
       gpu.device.queue.submit([encoder.finish()]);
       log(`Grew fluid simulation by +${steps} steps.`);
     }
 
-    document.getElementById('btn-prewarm').addEventListener('click', () => {
-      prewarmFluid(60);
-    });
+    document.getElementById('btn-prewarm').addEventListener('click', () => prewarmFluid(60));
 
     function applyPreset(key) {
       const p = PRESETS[key];
@@ -403,7 +574,26 @@ async function main() {
       Object.assign(fluidParams, p);
       params.densityMult = p.densityMult;
       params.emissiveIntensity = p.emissiveIntensity;
+      params.sootDarkness = p.sootDarkness ?? 0.0;
       lightState.absorption = p.lightAbsorption;
+
+      if (p.spaceSize) {
+        params.spaceX = p.spaceSize[0];
+        params.spaceY = p.spaceSize[1];
+        params.spaceZ = p.spaceSize[2];
+        setSliderValue('space-x', params.spaceX, '', 2);
+        setSliderValue('space-y', params.spaceY, '', 2);
+        setSliderValue('space-z', params.spaceZ, '', 2);
+        cameraState.distance = Math.max(...p.spaceSize) * 1.45;
+      } else {
+        params.spaceX = 1.0;
+        params.spaceY = 1.0;
+        params.spaceZ = 1.0;
+        setSliderValue('space-x', 1.0, '', 2);
+        setSliderValue('space-y', 1.0, '', 2);
+        setSliderValue('space-z', 1.0, '', 2);
+        cameraState.distance = 1.95;
+      }
 
       chkCloudPhysics.checked = fluidParams.cloudPhysics;
       if (p.cloudPhysics) {
@@ -423,6 +613,7 @@ async function main() {
       setSliderValue('emit-vel-y', p.velY, '', 2);
       setSliderValue('emit-radial-vel', p.radialVel, '', 2);
       setSliderValue('emit-swirl-vel', p.swirlVel, '', 2);
+      setSliderValue('emit-afterburn', p.afterburnSec ?? 0.0, '', 2);
 
       setSliderValue('fluid-buoyancy', p.buoyancy);
       setSliderValue('fluid-vorticity', p.vorticity);
@@ -430,6 +621,7 @@ async function main() {
       setSliderValue('fluid-turbulence', p.noiseTurbulence);
       setSliderValue('density-mult', p.densityMult);
       setSliderValue('emissive-intensity', p.emissiveIntensity);
+      setSliderValue('soot-darkness', params.sootDarkness, '', 2);
       setSliderValue('light-absorption', p.lightAbsorption);
 
       resetSimulation();
@@ -493,8 +685,11 @@ async function main() {
             densityMult: params.densityMult,
             emissiveIntensity: params.emissiveIntensity,
             lightAbsorption: lightState.absorption,
-            domainScale: params.domainScale,
-            domainStretchY: params.domainStretchY,
+            spaceX: params.spaceX,
+            spaceY: params.spaceY,
+            spaceZ: params.spaceZ,
+            bakeAzimuth: params.bakeAzimuth,
+            bakeElevation: params.bakeElevation,
           },
           stillSize
         );
@@ -522,7 +717,6 @@ async function main() {
       }
     });
 
-    // Viewport Preview Screenshot PNG
     document.getElementById('btn-export-preview').addEventListener('click', () => {
       pendingPreviewDownload = true;
     });
@@ -539,15 +733,16 @@ async function main() {
         const totalFrames = gridCols * gridCols;
         const atlasPx = gridCols * TILE_SIZE;
         const substeps = Math.max(1, Math.round(params.simSubsteps));
+        const space = getSpaceSize();
 
         bakePipeline.ensureAtlasTextures(gridCols);
         if (sourceMode === 'fluid') {
-          fluidSim.reset(fluidParams);
+          fluidSim.reset(fluidParams, space);
         }
 
         let bakeTime = 0;
         const dtStep = 0.024;
-        log(`Starting ${gridCols}x${gridCols} (${totalFrames} frames, ${atlasPx}x${atlasPx}) 6-way bake...`);
+        log(`Starting ${gridCols}x${gridCols} (${totalFrames} frames, ${atlasPx}x${atlasPx}) bake...`);
 
         await gpu.withValidationScope('Phase4.BakeAtlas', async () => {
           for (let f = 0; f < totalFrames; f++) {
@@ -557,24 +752,24 @@ async function main() {
 
             if (sourceMode === 'fluid') {
               for (let s = 0; s < substeps; s++) {
-                fluidSim.step(encoder, dtStep * params.simSpeed, fluidParams);
+                fluidSim.step(encoder, dtStep * params.simSpeed, fluidParams, space);
               }
               activeView = fluidSim.currentScalarView;
               activeSampler = fluidSim.sampler;
             } else {
               bakeTime += dtStep * substeps * noiseParams.speed;
-              volumeRenderer.encodeNoiseCompute(encoder, {
-                ...noiseParams,
-                time: bakeTime,
-              });
+              volumeRenderer.encodeNoiseCompute(encoder, { ...noiseParams, time: bakeTime }, space);
             }
 
             bakePipeline.encodeBakeTile(encoder, activeView, activeSampler, {
               densityMult: params.densityMult,
               emissiveIntensity: params.emissiveIntensity,
               lightAbsorption: lightState.absorption,
-              domainScale: params.domainScale,
-              domainStretchY: params.domainStretchY,
+              spaceX: params.spaceX,
+              spaceY: params.spaceY,
+              spaceZ: params.spaceZ,
+              bakeAzimuth: params.bakeAzimuth,
+              bakeElevation: params.bakeElevation,
             });
             bakePipeline.encodeCopyTileToAtlas(encoder, f, gridCols);
             gpu.device.queue.submit([encoder.finish()]);
@@ -622,7 +817,6 @@ async function main() {
     });
 
     log('All pipelines initialized.');
-
     window.addEventListener('resize', () => gpu.configureCanvas(canvas));
 
     let simTime = 0;
@@ -655,6 +849,7 @@ async function main() {
 
         gpu.configureCanvas(canvas);
         const camera = computeCameraBasis();
+        const space = getSpaceSize();
 
         const submitFrame = () => {
           const encoder = gpu.device.createCommandEncoder({ label: 'FrameEncoder' });
@@ -667,7 +862,7 @@ async function main() {
               if (params.animating) {
                 let steps = 0;
                 while (simAccumulator >= FIXED_DT && steps < 4) {
-                  fluidSim.step(encoder, FIXED_DT, fluidParams);
+                  fluidSim.step(encoder, FIXED_DT, fluidParams, space);
                   simAccumulator -= FIXED_DT;
                   steps++;
                 }
@@ -678,10 +873,7 @@ async function main() {
               activeVolumeView = fluidSim.currentScalarView;
               activeSampler = fluidSim.sampler;
             } else {
-              volumeRenderer.encodeNoiseCompute(encoder, {
-                ...noiseParams,
-                time: simTime,
-              });
+              volumeRenderer.encodeNoiseCompute(encoder, { ...noiseParams, time: simTime }, space);
             }
           }
 
@@ -701,8 +893,11 @@ async function main() {
               densityMult: params.densityMult,
               emissiveIntensity: params.emissiveIntensity,
               lightAbsorption: lightState.absorption,
-              domainScale: params.domainScale,
-              domainStretchY: params.domainStretchY,
+              spaceX: params.spaceX,
+              spaceY: params.spaceY,
+              spaceZ: params.spaceZ,
+              bakeAzimuth: params.bakeAzimuth,
+              bakeElevation: params.bakeElevation,
             });
             sixWayPreview.encodeRender(
               encoder,
@@ -716,6 +911,7 @@ async function main() {
                 intensity: lightState.intensity,
                 emissiveIntensity: params.emissiveIntensity,
                 debugMode: lightState.debugMode,
+                sootDarkness: params.sootDarkness,
               }
             );
           } else {
@@ -731,6 +927,7 @@ async function main() {
                 intensity: lightState.intensity,
                 emissiveIntensity: params.emissiveIntensity,
                 debugMode: lightState.debugMode,
+                sootDarkness: params.sootDarkness,
               }
             );
           }
@@ -755,7 +952,7 @@ async function main() {
           }
         };
 
-        const comboKey = `${sourceMode}:${viewMode}:${params.gridResolution}`;
+        const comboKey = `${sourceMode}:${viewMode}:${params.gridDims.join('x')}`;
         if (!validatedCombinations.has(comboKey)) {
           validatedCombinations.add(comboKey);
           await gpu.withValidationScope(`FirstFrame:${comboKey}`, async () => {

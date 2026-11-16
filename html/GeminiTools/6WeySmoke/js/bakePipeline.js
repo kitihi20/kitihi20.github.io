@@ -1,5 +1,29 @@
 export const TILE_SIZE = 256;
 
+export function computeBakeBasis(azimuthDeg, elevationDeg) {
+  const az = (azimuthDeg * Math.PI) / 180;
+  const el = (elevationDeg * Math.PI) / 180;
+  const ce = Math.cos(el);
+  // Camera sits at (ce*sin(az), sin(el), ce*cos(az)) looking toward origin
+  const forward = [-ce * Math.sin(az), -Math.sin(el), -ce * Math.cos(az)];
+  const worldUp = Math.abs(elevationDeg) > 88 ? [0, 0, elevationDeg > 0 ? -1 : 1] : [0, 1, 0];
+
+  let right = [
+    forward[1] * worldUp[2] - forward[2] * worldUp[1],
+    forward[2] * worldUp[0] - forward[0] * worldUp[2],
+    forward[0] * worldUp[1] - forward[1] * worldUp[0],
+  ];
+  const rLen = Math.hypot(right[0], right[1], right[2]) || 1;
+  right = [right[0] / rLen, right[1] / rLen, right[2] / rLen];
+
+  const up = [
+    right[1] * forward[2] - right[2] * forward[1],
+    right[2] * forward[0] - right[0] * forward[2],
+    right[0] * forward[1] - right[1] * forward[0],
+  ];
+  return { forward, right, up };
+}
+
 export class BakePipeline {
   constructor(gpu) {
     this.gpu = gpu;
@@ -45,7 +69,7 @@ export class BakePipeline {
 
       this.uniformBuffer = device.createBuffer({
         label: 'BakeUniformBuffer',
-        size: 32,
+        size: 5 * 16, // 80 bytes
         usage: GPUBufferUsage.UNIFORM | GPUBufferUsage.COPY_DST,
       });
 
@@ -78,7 +102,6 @@ export class BakePipeline {
         compute: { module, entryPoint: 'main' },
       });
 
-      // Pack U16 pipeline for 16-bit PNG readback
       const packModule = await this.gpu.loadShader('shaders/pack_u16.wgsl', 'pack_u16');
       this.packUniformBuffer = device.createBuffer({
         label: 'PackU16UniformBuffer',
@@ -134,22 +157,28 @@ export class BakePipeline {
     encoder,
     volumeView,
     volumeSampler,
-    { densityMult, emissiveIntensity, lightAbsorption, domainScale = 1.0, domainStretchY = 1.0 },
+    {
+      densityMult,
+      emissiveIntensity,
+      lightAbsorption,
+      spaceX = 1.0,
+      spaceY = 1.0,
+      spaceZ = 1.0,
+      bakeAzimuth = 0,
+      bakeElevation = 0,
+    },
     targetPosView = this.posTileView,
     targetNegView = this.negTileView,
     tileSize = TILE_SIZE
   ) {
-    const buf = new ArrayBuffer(32);
-    new Uint32Array(buf)[0] = tileSize;
-    const f32 = new Float32Array(buf);
-    f32[1] = densityMult;
-    f32[2] = emissiveIntensity;
-    f32[3] = lightAbsorption;
-    f32[4] = domainScale;
-    f32[5] = domainScale * domainStretchY;
-    f32[6] = domainScale;
-    f32[7] = 0;
-    this.device.queue.writeBuffer(this.uniformBuffer, 0, buf);
+    const basis = computeBakeBasis(bakeAzimuth, bakeElevation);
+    const data = new Float32Array(20);
+    data.set([basis.forward[0], basis.forward[1], basis.forward[2], 0], 0);
+    data.set([basis.right[0], basis.right[1], basis.right[2], 0], 4);
+    data.set([basis.up[0], basis.up[1], basis.up[2], 0], 8);
+    data.set([spaceX, spaceY, spaceZ, 0], 12);
+    data.set([tileSize, densityMult, emissiveIntensity, lightAbsorption], 16);
+    this.device.queue.writeBuffer(this.uniformBuffer, 0, data);
 
     const bindGroup = this.device.createBindGroup({
       label: 'BakeBindGroup',

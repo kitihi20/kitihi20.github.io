@@ -1,8 +1,8 @@
 struct SixWayUniforms {
-  lightDir: vec4<f32>,      // xyz: normalized light dir
-  lightColor: vec4<f32>,    // rgb: light color, a: intensity
-  ambientColor: vec4<f32>,  // rgb: ambient color, a: emissiveIntensity
-  viewParams: vec4<f32>,    // x: aspect, y: debugMode (0=Lit, 1=PosRGB, 2=NegRGB, 3=Alpha/Emissive)
+  lightDir: vec4<f32>,
+  lightColor: vec4<f32>,
+  ambientColor: vec4<f32>,
+  viewParams: vec4<f32>, // x: aspect, y: debugMode, z: sootDarkness, w: unused
 };
 
 @group(0) @binding(0) var<uniform> u: SixWayUniforms;
@@ -44,14 +44,12 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
   let aspect = u.viewParams.x;
   let debugMode = i32(u.viewParams.y + 0.5);
 
-  // Center a square quad in the viewport
   var quadUV = (in.uv - 0.5) * vec2<f32>(aspect, 1.0) * 1.18 + 0.5;
   let bgGrad = mix(vec3<f32>(0.05, 0.06, 0.09), vec3<f32>(0.10, 0.13, 0.19), 1.0 - in.uv.y);
 
   let posSample = textureSample(texPos, texSampler, clamp(quadUV, vec2<f32>(0.0), vec2<f32>(1.0)));
   let negSample = textureSample(texNeg, texSampler, clamp(quadUV, vec2<f32>(0.0), vec2<f32>(1.0)));
 
-  // Subtle checkerboard behind quad
   let inQuad = all(quadUV >= vec2<f32>(0.0)) && all(quadUV <= vec2<f32>(1.0));
   if (!inQuad) {
     return vec4<f32>(bgGrad, 1.0);
@@ -70,17 +68,16 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     return vec4<f32>(mix(checkerBg, negSample.rgb, alpha), 1.0);
   }
   if (debugMode == 3) {
-    let debugAE = vec3<f32>(alpha, emissiveVal, 0.0);
-    return vec4<f32>(debugAE, 1.0);
+    return vec4<f32>(vec3<f32>(alpha, emissiveVal, 0.0), 1.0);
   }
 
-  // Unity Six-way Smoke Lit evaluation
   let lDir = normalize(u.lightDir.xyz);
   let posW = max(lDir, vec3<f32>(0.0));
   let negW = max(-lDir, vec3<f32>(0.0));
 
   let lightMap = dot(posSample.rgb, posW) + dot(negSample.rgb, negW);
-  let smokeAlbedo = vec3<f32>(0.80, 0.83, 0.88);
+  let sootDarkness = clamp(u.viewParams.z, 0.0, 1.0);
+  let smokeAlbedo = mix(vec3<f32>(0.92, 0.94, 0.97), vec3<f32>(0.09, 0.09, 0.10), sootDarkness);
   let direct = u.lightColor.rgb * u.lightColor.a * lightMap;
   let ambient = u.ambientColor.rgb;
   let emissive = fireRamp(emissiveVal) * emissiveVal * u.ambientColor.a;
