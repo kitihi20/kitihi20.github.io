@@ -71,11 +71,16 @@ fn fs_main(in: VertexOut) -> @location(0) vec4<f32> {
     return vec4<f32>(vec3<f32>(alpha, emissiveVal, 0.0), 1.0);
   }
 
+  // Unity Six-way Smoke Lit evaluation:
+  // posSample (Lightmap A): R=Right(+X), G=Top(+Y), B=Back(+Z away from cam), A=Alpha
+  // negSample (Lightmap B): R=Left(-X), G=Bottom(-Y), B=Front(-Z toward cam), A=Emissive
   let lDir = normalize(u.lightDir.xyz);
-  let posW = max(lDir, vec3<f32>(0.0));
-  let negW = max(-lDir, vec3<f32>(0.0));
+  let lr = select(negSample.r, posSample.r, lDir.x > 0.0);
+  let tb = select(negSample.g, posSample.g, lDir.y > 0.0);
+  let fb = select(posSample.b, negSample.b, lDir.z > 0.0);
+  let w = lDir * lDir;
 
-  let lightMap = dot(posSample.rgb, posW) + dot(negSample.rgb, negW);
+  let lightMap = lr * w.x + tb * w.y + fb * w.z;
   let sootDarkness = clamp(u.viewParams.z, 0.0, 1.0);
   let smokeAlbedo = mix(vec3<f32>(0.92, 0.94, 0.97), vec3<f32>(0.09, 0.09, 0.10), sootDarkness);
   let direct = u.lightColor.rgb * u.lightColor.a * lightMap;

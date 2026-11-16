@@ -374,8 +374,8 @@
               <label for="sixway-debug">Channel View</label>
               <select id="sixway-debug" class="select-input">
                 <option value="0">Six-Way Lit Composite</option>
-                <option value="1">Lightmap_Pos (+X, +Y, +Z)</option>
-                <option value="2">Lightmap_Neg (-X, -Y, -Z)</option>
+                <option value="1">Lightmap_Pos (Right, Top, Back)</option>
+                <option value="2">Lightmap_Neg (Left, Bottom, Front)</option>
                 <option value="3">Alpha (R) &amp; Emissive (G)</option>
               </select>
             </div>
@@ -440,6 +440,10 @@
               <div id="bake-progress-bar" class="progress-fill"></div>
             </div>
             <div id="bake-status-text" class="bake-status">Ready to bake 16-bit RGBA outputs.</div>
+            <div class="unity-note">
+              Unity Import: <b>sRGB = OFF</b> (Linear), <b>Alpha Is Transparency = OFF</b> (特に Lightmap_Neg は Alpha=Emissive のため ON にすると黒潰れします)。<br />
+              Pos: R=Right, G=Top, B=Back, A=Alpha / Neg: R=Left, G=Bottom, B=Front, A=Emissive
+            </div>
           </section>
         </div>
 
