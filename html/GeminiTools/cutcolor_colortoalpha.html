@@ -1,0 +1,1816 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>統合画像透過スタジオ - CutColor & ColorToAlpha</title>
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Hiragino Kaku Gothic ProN', 'Meiryo', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'Fira Code', 'monospace'],
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        /* カスタムスクロールバー（ダークモード用） */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 9999px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+
+        /* 透過確認用背景パターン */
+        .bg-checker-dark {
+            background-color: #1e293b;
+            background-image: 
+                linear-gradient(45deg, #0f172a 25%, transparent 25%), 
+                linear-gradient(-45deg, #0f172a 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #0f172a 75%), 
+                linear-gradient(-45deg, transparent 75%, #0f172a 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        .bg-checker-light {
+            background-color: #ffffff;
+            background-image: 
+                linear-gradient(45deg, #cbd5e1 25%, transparent 25%), 
+                linear-gradient(-45deg, #cbd5e1 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #cbd5e1 75%), 
+                linear-gradient(-45deg, transparent 75%, #cbd5e1 75%);
+            background-size: 20px 20px;
+            background-position: 0 0, 0 10px, 10px -10px, -10px 0px;
+        }
+        .bg-solid-black {
+            background-color: #000000;
+        }
+        .bg-solid-white {
+            background-color: #ffffff;
+        }
+
+        /* レンジスライダーのダークテーマ装飾 */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: transparent;
+        }
+        input[type="range"]::-webkit-slider-runnable-track {
+            height: 6px;
+            border-radius: 9999px;
+            background: #334155;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #6366f1;
+            border: 2px solid #e0e7ff;
+            margin-top: -5px;
+            cursor: pointer;
+            transition: transform 0.1s ease, background-color 0.15s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: #818cf8;
+        }
+
+        /* カラー入力のカスタマイズ */
+        input[type="color"]::-webkit-color-swatch-wrapper {
+            padding: 0;
+        }
+        input[type="color"]::-webkit-color-swatch {
+            border: none;
+            border-radius: 0.5rem;
+        }
+
+        /* キャンバス描画の補間設定 */
+        .pixelated {
+            image-rendering: pixelated;
+            image-rendering: crisp-edges;
+        }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 font-sans antialiased selection:bg-indigo-500 selection:text-white lg:h-screen lg:overflow-hidden flex flex-col">
+
+    <!-- トップナビゲーションバー -->
+    <header class="bg-slate-900/90 backdrop-blur-md border-b border-slate-800 px-4 py-2.5 flex flex-wrap items-center justify-between gap-3 shrink-0 z-20">
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                <svg class="w-5 h-5 text-white" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                </svg>
+            </div>
+            <div>
+                <h1 class="text-base sm:text-lg font-bold tracking-tight text-slate-100 flex items-center gap-2">
+                    統合画像透過スタジオ
+                    <span class="hidden sm:inline-block text-[11px] font-medium px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">Pro</span>
+                </h1>
+                <p class="text-xs text-slate-400 hidden md:block">色域切り抜き × 色分離透過（アンミキシング）＆ 隣接選択拡張</p>
+            </div>
+        </div>
+
+        <div class="flex items-center gap-2 sm:gap-3">
+            <!-- サンプル画像生成ボタン -->
+            <button id="loadSampleBtn" type="button" class="px-3 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition flex items-center gap-1.5" title="検証用のテスト画像を生成して読み込みます">
+                <svg class="w-4 h-4 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19.428 15.428a2 2 0 00-1.022-.547l-2.387-.477a6 6 0 00-3.86.517l-.318.158a6 6 0 01-3.86.517L6.05 15.21a2 2 0 00-1.806.547M8 4h8l-1 1v5.172a2 2 0 00.586 1.414l5 5c1.26 1.26.367 3.414-1.415 3.414H4.828c-1.782 0-2.674-2.154-1.414-3.414l5-5A2 2 0 009 10.172V5L8 4z" />
+                </svg>
+                <span>テスト画像</span>
+            </button>
+
+            <!-- 画像アップロード -->
+            <label class="px-3 py-2 text-xs sm:text-sm font-medium rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 cursor-pointer transition flex items-center gap-1.5">
+                <svg class="w-4 h-4 text-indigo-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12" />
+                </svg>
+                <span>画像を開く</span>
+                <input type="file" id="imageInput" accept="image/*" class="hidden">
+            </label>
+
+            <!-- ガイドモーダルボタン -->
+            <button id="openGuideBtn" type="button" class="p-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-300 border border-slate-700 transition" title="機能とモードの使い分けガイド">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8.228 9c.549-1.165 2.03-2 3.772-2 2.21 0 4 1.343 4 3 0 1.4-1.278 2.575-3.006 2.907-.542.104-.994.54-.994 1.093m0 3h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+            </button>
+
+            <!-- 保存ボタン -->
+            <button id="downloadBtn" type="button" disabled class="px-3.5 py-2 text-xs sm:text-sm font-semibold rounded-lg bg-indigo-600 hover:bg-indigo-500 disabled:bg-slate-800 disabled:text-slate-500 disabled:border-slate-700 text-white shadow-lg shadow-indigo-600/20 disabled:shadow-none border border-indigo-500 transition flex items-center gap-1.5 cursor-pointer disabled:cursor-not-allowed">
+                <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4" />
+                </svg>
+                <span>PNG保存</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- メインワークスペース -->
+    <div class="flex-1 flex flex-col lg:flex-row lg:overflow-hidden">
+        
+        <!-- 左コントロールサイドバー -->
+        <aside class="w-full lg:w-[390px] xl:w-[410px] bg-slate-900 border-b lg:border-b-0 lg:border-r border-slate-800 lg:overflow-y-auto p-4 sm:p-5 space-y-5 shrink-0">
+            
+            <!-- クイックプリセット -->
+            <div class="bg-slate-950/60 border border-slate-800/80 rounded-xl p-3">
+                <div class="flex items-center justify-between mb-2">
+                    <span class="text-xs font-semibold text-slate-400 uppercase tracking-wider">目的別クイックプリセット</span>
+                    <span class="text-[11px] text-slate-500">ワンクリック設定</span>
+                </div>
+                <div class="grid grid-cols-3 gap-1.5">
+                    <button type="button" data-preset="bg-cutout" class="preset-btn px-2 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition group">
+                        <div class="text-xs font-semibold text-slate-200 group-hover:text-indigo-400">背景切り抜き</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5 leading-tight">隣接選択＋切り抜き</div>
+                    </button>
+                    <button type="button" data-preset="lineart" class="preset-btn px-2 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition group">
+                        <div class="text-xs font-semibold text-slate-200 group-hover:text-emerald-400">線画・煙抽出</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5 leading-tight">全体＋色分離透過</div>
+                    </button>
+                    <button type="button" data-preset="defringe-cut" class="preset-btn px-2 py-2 rounded-lg bg-slate-800/80 hover:bg-slate-800 border border-slate-700/80 text-left transition group">
+                        <div class="text-xs font-semibold text-slate-200 group-hover:text-purple-400">フチ馴染み透過</div>
+                        <div class="text-[10px] text-slate-400 mt-0.5 leading-tight">隣接拡張＋色分離</div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- STEP 1: 適用範囲（スコープモード） -->
+            <section class="space-y-3">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-indigo-400 flex items-center gap-1.5">
+                        <span class="w-5 h-5 rounded-full bg-indigo-500/20 text-indigo-300 flex items-center justify-center text-[11px]">1</span>
+                        適用範囲のモード
+                    </h2>
+                </div>
+
+                <!-- スコープ切替タブ -->
+                <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
+                    <button type="button" id="scopeGlobalBtn" class="scope-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5l-5-5m5 5v-4m0 4h-4" />
+                        </svg>
+                        <span>画像全体</span>
+                    </button>
+                    <button type="button" id="scopeContiguousBtn" class="scope-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-slate-200">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 15l-2 5L9 9l11 4-5 2zm0 0l5 5M7.188 2.239l.777 2.897M5.136 7.965l-2.898-.777M13.95 4.05l-2.122 2.122m-5.657 5.656l-2.12 2.122" />
+                        </svg>
+                        <span>隣接選択＋拡張</span>
+                    </button>
+                </div>
+
+                <!-- モード別説明ボックス -->
+                <div id="scopeDescGlobal" class="text-xs text-slate-400 bg-slate-800/40 border border-slate-800 rounded-lg p-2.5 leading-relaxed">
+                    <strong class="text-slate-200">画像全体モード：</strong>画像内のどこにあっても、指定したターゲット色に近いピクセルすべてに一括で透過処理を行います。
+                </div>
+                <div id="scopeDescContiguous" class="hidden text-xs text-slate-400 bg-indigo-950/30 border border-indigo-900/50 rounded-lg p-2.5 leading-relaxed">
+                    <strong class="text-indigo-300">隣接選択＋拡張モード：</strong>画像をクリックした場所から繋がっている近似色領域を選択し、さらに<strong class="text-slate-200">境界を外側へ広げて</strong>透過します。キャラクター内部の同色を保護したい時に最適です。
+                </div>
+
+                <!-- ターゲット色コントロール -->
+                <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 space-y-3">
+                    <div class="flex items-center justify-between">
+                        <label class="text-xs font-semibold text-slate-300">ターゲット色（透過基準色）</label>
+                        <span class="text-[11px] text-slate-400">画像クリックで取得</span>
+                    </div>
+                    <div class="flex items-center gap-3">
+                        <input type="color" id="targetColor" value="#ffffff" class="w-11 h-11 rounded-lg border border-slate-700 cursor-pointer bg-transparent shrink-0">
+                        <div class="flex-1">
+                            <div class="flex items-center gap-2">
+                                <span id="colorHex" class="font-mono text-sm font-bold text-slate-100 uppercase">#FFFFFF</span>
+                                <span id="colorRgbText" class="font-mono text-xs text-slate-400">RGB(255, 255, 255)</span>
+                            </div>
+                            <p id="clickActionHint" class="text-[11px] text-indigo-400 mt-0.5">プレビューをクリックしてスポイト取得</p>
+                        </div>
+                    </div>
+
+                    <!-- 隣接選択モード専用パネル -->
+                    <div id="contiguousControls" class="hidden pt-3 border-t border-slate-800 space-y-3">
+                        <div class="flex items-center justify-between">
+                            <span class="text-xs font-semibold text-indigo-300 flex items-center gap-1.5">
+                                選択シード地点:
+                                <span id="seedCountBadge" class="px-2 py-0.5 rounded-full bg-indigo-500/20 text-indigo-300 font-mono text-xs">0箇所</span>
+                            </span>
+                            <div class="flex items-center gap-1.5">
+                                <button type="button" id="undoSeedBtn" disabled class="px-2 py-1 text-[11px] rounded bg-slate-800 hover:bg-slate-700 disabled:opacity-40 text-slate-300 border border-slate-700 transition">1つ戻す</button>
+                                <button type="button" id="clearSeedsBtn" disabled class="px-2 py-1 text-[11px] rounded bg-rose-950/60 hover:bg-rose-900/60 disabled:opacity-40 text-rose-300 border border-rose-800/60 transition">クリア</button>
+                            </div>
+                        </div>
+
+                        <!-- 選択の誤差許容値 -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <label class="font-medium text-slate-300" title="クリックした地点から、どれくらい色の誤差がある隣接ピクセルまで選択範囲に含めるか">選択時の色誤差許容値</label>
+                                <span id="selToleranceVal" class="font-mono font-bold text-indigo-400">15</span>
+                            </div>
+                            <input type="range" id="selTolerance" min="0" max="100" value="15" class="w-full">
+                        </div>
+
+                        <!-- 選択範囲の拡張（重要機能） -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <label class="font-medium text-slate-300" title="選択した領域から何ピクセル外側まで広げて透過対象に含めるか（アンチエイリアス境界のカバーに有効）">選択範囲の拡張 (広げる幅)</label>
+                                <span id="selExpandVal" class="font-mono font-bold text-indigo-400">3 px</span>
+                            </div>
+                            <input type="range" id="selExpand" min="0" max="30" value="3" class="w-full">
+                            <p class="text-[10px] text-slate-500 mt-0.5">※選択範囲を外側へ広げ、輪郭のアンチエイリアス部分まで透過対象に含めます。</p>
+                        </div>
+
+                        <!-- 選択境界のぼかし -->
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <label class="font-medium text-slate-300">拡張境界の馴染ませ (ぼかし)</label>
+                                <span id="selFeatherVal" class="font-mono font-bold text-indigo-400">2 px</span>
+                            </div>
+                            <input type="range" id="selFeather" min="0" max="25" value="2" class="w-full">
+                        </div>
+
+                        <!-- 選択範囲可視化チェック -->
+                        <label class="flex items-center justify-between pt-1 cursor-pointer select-none">
+                            <span class="text-xs text-slate-300">選択マスクをプレビュー表示（シアン色）</span>
+                            <input type="checkbox" id="showMaskToggle" class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-indigo-600 focus:ring-indigo-500">
+                        </label>
+                    </div>
+                </div>
+            </section>
+
+            <!-- STEP 2: 透過アルゴリズム（処理方式） -->
+            <section class="space-y-3 pt-2 border-t border-slate-800">
+                <div class="flex items-center justify-between">
+                    <h2 class="text-xs font-bold uppercase tracking-wider text-emerald-400 flex items-center gap-1.5">
+                        <span class="w-5 h-5 rounded-full bg-emerald-500/20 text-emerald-300 flex items-center justify-center text-[11px]">2</span>
+                        透過アルゴリズム
+                    </h2>
+                </div>
+
+                <!-- アルゴリズム切替タブ -->
+                <div class="grid grid-cols-2 gap-1.5 p-1 bg-slate-950 rounded-xl border border-slate-800">
+                    <button type="button" id="algoCutoutBtn" class="algo-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-emerald-600 text-white shadow">
+                        <span>色域切り抜き</span>
+                    </button>
+                    <button type="button" id="algoColorToAlphaBtn" class="algo-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-slate-200">
+                        <span>色分離透過</span>
+                    </button>
+                </div>
+
+                <!-- アルゴリズム別説明 -->
+                <div id="algoDescCutout" class="text-xs text-slate-400 bg-slate-800/40 border border-slate-800 rounded-lg p-2.5 leading-relaxed">
+                    <strong class="text-emerald-300">色域切り抜き (CutColor)：</strong>RGB値は変えず透明度のみ調整します。被写体本体を透けさせず不透明に保ちたい写真・イラストの切り抜き向け。
+                </div>
+                <div id="algoDescColorToAlpha" class="hidden text-xs text-slate-400 bg-emerald-950/30 border border-emerald-900/50 rounded-lg p-2.5 leading-relaxed">
+                    <strong class="text-emerald-300">色分離透過 (Color to Alpha)：</strong>ピクセルからターゲット色の成分を逆算して抜き取ります。白背景の線画抽出・煙・光・白フリンジの完全除去に最適。
+                </div>
+
+                <!-- パラメータ調整カード -->
+                <div class="bg-slate-950/60 border border-slate-800 rounded-xl p-3 space-y-3.5">
+                    
+                    <!-- 色の比較基準 -->
+                    <div>
+                        <label class="block text-xs font-semibold text-slate-300 mb-1.5">色の差の計算方法</label>
+                        <select id="compareMetric" class="w-full px-3 py-2 text-xs bg-slate-900 border border-slate-700 rounded-lg text-slate-200 focus:ring-2 focus:ring-indigo-500 focus:border-indigo-500 outline-none">
+                            <option value="rgbDistance">RGB空間距離（バランス・標準）</option>
+                            <option value="rgbMax">RGB最大チャンネル差（色分離向け）</option>
+                            <option value="hue">色相 (Hue) のみ比較</option>
+                            <option value="saturation">彩度 (Saturation) のみ比較</option>
+                            <option value="lightness">明度 (Lightness) のみ比較</option>
+                        </select>
+                    </div>
+
+                    <!-- パラメータ A: Cutout用 -->
+                    <div id="cutoutParams" class="space-y-3">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <label class="font-medium text-slate-300">完全透過のしきい値</label>
+                                <span id="cutThresholdVal" class="font-mono font-bold text-emerald-400">12</span>
+                            </div>
+                            <input type="range" id="cutThreshold" min="0" max="100" value="12" class="w-full">
+                            <p class="text-[10px] text-slate-500 mt-0.5">ターゲット色との差がこの値以下のピクセルを完全に透明にします。</p>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <label class="font-medium text-slate-300">境界の滑らかさ (フェザー幅)</label>
+                                <span id="cutSmoothingVal" class="font-mono font-bold text-emerald-400">18</span>
+                            </div>
+                            <input type="range" id="cutSmoothing" min="0" max="100" value="18" class="w-full">
+                            <p class="text-[10px] text-slate-500 mt-0.5">しきい値の外側で徐々に不透明へ変化させるグラデーション幅です。</p>
+                        </div>
+
+                        <label class="flex items-center justify-between pt-1 cursor-pointer select-none border-t border-slate-800/80">
+                            <div>
+                                <span class="text-xs font-medium text-slate-200 block">境界フリンジ軽減（色分離ブレンド）</span>
+                                <span class="text-[10px] text-slate-500">半透明になったフチから背景色の残りを抜きます</span>
+                            </div>
+                            <input type="checkbox" id="defringeToggle" checked class="w-4 h-4 rounded bg-slate-800 border-slate-600 text-emerald-500 focus:ring-emerald-500">
+                        </label>
+                    </div>
+
+                    <!-- パラメータ B: Color to Alpha用 -->
+                    <div id="c2aParams" class="hidden space-y-3">
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <label class="font-medium text-slate-300">色分離の適用範囲（感度）</label>
+                                <span id="c2aRangeVal" class="font-mono font-bold text-emerald-400">100</span>
+                            </div>
+                            <input type="range" id="c2aRange" min="1" max="100" value="100" class="w-full">
+                            <p class="text-[10px] text-slate-500 mt-0.5">大きいほどターゲット色から遠い色まで背景成分を抜き取ります。</p>
+                        </div>
+
+                        <div>
+                            <div class="flex justify-between text-xs mb-1">
+                                <label class="font-medium text-slate-300">不透明の保護（濃色の維持）</label>
+                                <span id="c2aProtectVal" class="font-mono font-bold text-emerald-400">0</span>
+                            </div>
+                            <input type="range" id="c2aProtect" min="0" max="95" value="0" class="w-full">
+                            <p class="text-[10px] text-slate-500 mt-0.5">ターゲット色との差がこの値以上の濃い部分は100%不透明に保ちます。</p>
+                        </div>
+                    </div>
+
+                </div>
+            </section>
+        </aside>
+
+        <!-- 右プレビューエリア（拡大・縮小・移動対応） -->
+        <main class="flex-1 flex flex-col bg-slate-950 relative min-h-[450px] lg:min-h-0 overflow-hidden">
+            
+            <!-- プレビュー上部フローティングツールバー -->
+            <div class="bg-slate-900/85 backdrop-blur-md border-b border-slate-800 px-3 py-2 flex flex-wrap items-center justify-between gap-2 z-10 shrink-0">
+                
+                <!-- 操作ツール切替（選択/スポイト vs 手のひら移動） -->
+                <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                    <button type="button" id="toolPickBtn" class="tool-btn px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 bg-indigo-600 text-white transition" title="クリックで色取得 / 領域選択 (ショートカット: V)">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 21a4 4 0 01-4-4V5a2 2 0 012-2h4a2 2 0 012 2v12a4 4 0 01-4 4zm0 0h12a2 2 0 002-2v-4a2 2 0 00-2-2h-2.343M11 7.343l1.657-1.657a2 2 0 012.828 0l2.829 2.829a2 2 0 010 2.828l-8.486 8.485M7 17h.01" />
+                        </svg>
+                        <span id="toolPickLabel">スポイト</span>
+                    </button>
+                    <button type="button" id="toolPanBtn" class="tool-btn px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition" title="ドラッグでプレビュー移動 (Spaceキー長押しでも移動可能)">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 11.5V14m0-2.5v-6a1.5 1.5 0 113 0m-3 6a1.5 1.5 0 00-3 0v2a7.5 7.5 0 0015 0v-5a1.5 1.5 0 00-3 0m-6-3V11m0-5.5v-1a1.5 1.5 0 013 0v1m0 0V11m0-5.5a1.5 1.5 0 013 0v3m0 0V11" />
+                        </svg>
+                        <span>移動</span>
+                    </button>
+                </div>
+
+                <!-- ズームコントロール -->
+                <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800">
+                    <button type="button" id="zoomOutBtn" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" title="縮小 (-)">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M20 12H4" />
+                        </svg>
+                    </button>
+                    <button type="button" id="zoomResetBtn" class="px-2 py-1 rounded hover:bg-slate-800 text-xs font-mono font-semibold text-slate-200 min-w-[54px] text-center transition" title="100%表示にリセット">100%</button>
+                    <button type="button" id="zoomInBtn" class="p-1.5 rounded hover:bg-slate-800 text-slate-300 transition" title="拡大 (+)">
+                        <svg class="w-3.5 h-3.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4v16m8-8H4" />
+                        </svg>
+                    </button>
+                    <div class="w-px h-4 bg-slate-800 mx-0.5"></div>
+                    <button type="button" id="zoomFitBtn" class="px-2 py-1 rounded hover:bg-slate-800 text-xs font-medium text-slate-300 transition" title="画面サイズに合わせる">全体表示</button>
+                </div>
+
+                <!-- 背景パターン & 元画像比較 -->
+                <div class="flex items-center gap-2">
+                    <!-- 背景切替 -->
+                    <div class="flex items-center gap-1 bg-slate-950 p-1 rounded-lg border border-slate-800" title="透過確認用の背景パターン切替">
+                        <button type="button" data-bg="bg-checker-dark" class="bg-btn w-6 h-6 rounded border-2 border-indigo-500 bg-checker-dark" title="ダークチェッカー"></button>
+                        <button type="button" data-bg="bg-checker-light" class="bg-btn w-6 h-6 rounded border border-slate-700 bg-checker-light" title="ライトチェッカー"></button>
+                        <button type="button" data-bg="bg-solid-black" class="bg-btn w-6 h-6 rounded border border-slate-700 bg-black" title="黒背景（白フリンジ確認用）"></button>
+                        <button type="button" data-bg="bg-solid-white" class="bg-btn w-6 h-6 rounded border border-slate-700 bg-white" title="白背景（黒フリンジ確認用）"></button>
+                    </div>
+
+                    <!-- 元画像比較ボタン -->
+                    <button type="button" id="compareOriginalBtn" class="px-2.5 py-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-medium text-slate-200 border border-slate-700 transition flex items-center gap-1.5 select-none" title="押している間（またはクリック切替で）元の画像を表示">
+                        <svg class="w-3.5 h-3.5 text-amber-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+                        </svg>
+                        <span class="hidden sm:inline">元画像比較</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- インタラクティブキャンバスビューポート -->
+            <div id="viewport" class="flex-1 relative overflow-hidden bg-slate-950 select-none touch-none cursor-crosshair">
+                
+                <!-- 初期ドロップゾーン / プレースホルダー -->
+                <div id="emptyState" class="absolute inset-0 flex flex-col items-center justify-center p-6 text-center z-10">
+                    <div id="dropZone" class="max-w-md w-full border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-900/60 rounded-2xl p-8 transition cursor-pointer">
+                        <div class="w-14 h-14 mx-auto mb-4 rounded-2xl bg-slate-800 border border-slate-700 flex items-center justify-center text-indigo-400">
+                            <svg class="w-7 h-7" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="1.8" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                            </svg>
+                        </div>
+                        <h3 class="text-base font-bold text-slate-100 mb-1">画像をドラッグ＆ドロップ</h3>
+                        <p class="text-xs text-slate-400 mb-5">またはクリックしてファイルを選択（PNG / JPEG / WebP）</p>
+                        <div class="flex flex-wrap items-center justify-center gap-2">
+                            <button type="button" id="emptySelectBtn" class="px-4 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs font-semibold text-white transition">ファイルを選択</button>
+                            <button type="button" id="emptySampleBtn" class="px-4 py-2 rounded-lg bg-slate-800 hover:bg-slate-700 text-xs font-semibold text-slate-200 border border-slate-700 transition">テスト画像で試す</button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- ズーム＆パン変換レイヤー -->
+                <div id="canvasTransformLayer" class="hidden absolute top-0 left-0 origin-top-left shadow-2xl">
+                    <div id="canvasBgBox" class="bg-checker-dark relative">
+                        <canvas id="outputCanvas" class="block"></canvas>
+                        <!-- シード点マーカー表示用SVGオーバーレイ -->
+                        <svg id="seedMarkersLayer" class="absolute inset-0 w-full h-full pointer-events-none overflow-visible"></svg>
+                    </div>
+                </div>
+
+                <!-- 下部ステータスバー（操作ヒント＆画像情報） -->
+                <div class="absolute bottom-3 left-3 right-3 flex flex-wrap items-center justify-between gap-2 pointer-events-none z-10">
+                    <div class="bg-slate-900/90 backdrop-blur border border-slate-800 rounded-lg px-3 py-1.5 text-[11px] text-slate-400 flex items-center gap-3 shadow-lg">
+                        <span id="imageDimText">画像未読込</span>
+                        <span class="hidden sm:inline text-slate-600">|</span>
+                        <span class="hidden sm:inline">ホイール: 拡大縮小 / Space+ドラッグ: 移動 / クリック: 色取得・選択</span>
+                    </div>
+                    <div id="activeModeBadge" class="bg-slate-900/90 backdrop-blur border border-slate-800 rounded-lg px-3 py-1.5 text-[11px] font-medium text-indigo-300 shadow-lg">
+                        全体モード × 色域切り抜き
+                    </div>
+                </div>
+            </div>
+        </main>
+    </div>
+
+    <!-- 機能整理＆使い分けガイドモーダル -->
+    <div id="guideModal" class="hidden fixed inset-0 bg-black/75 backdrop-blur-sm z-50 flex items-center justify-center p-4">
+        <div class="bg-slate-900 border border-slate-700 rounded-2xl max-w-2xl w-full max-h-[85vh] overflow-y-auto shadow-2xl p-6 space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-800 pb-3">
+                <h3 class="text-lg font-bold text-slate-100 flex items-center gap-2">
+                    <span class="w-2.5 h-2.5 rounded-full bg-indigo-500"></span>
+                    モードの整理と使い分けガイド
+                </h3>
+                <button id="closeGuideBtn" type="button" class="p-1.5 rounded-lg bg-slate-800 hover:bg-slate-700 text-slate-400 hover:text-white">
+                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                    </svg>
+                </button>
+            </div>
+
+            <div class="space-y-4 text-xs sm:text-sm text-slate-300 leading-relaxed">
+                <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <h4 class="font-bold text-indigo-400 text-sm">Step 1：適用範囲（どこを透過するか？）</h4>
+                    <ul class="space-y-2 list-disc list-inside text-slate-300">
+                        <li><strong class="text-white">画像全体：</strong>画像全体から指定色を一括で探して透過します。紙に描いた線画の抽出や、単色背景のロゴ処理に最適です。</li>
+                        <li><strong class="text-white">隣接選択＋拡張：</strong>クリックした場所と繋がっている近似色領域だけを選択し、さらに<span class="text-indigo-300 font-semibold">「選択範囲の拡張」で数ピクセル外側へ広げて</span>から透過します。被写体の内側にある同じ色（白い服や瞳のハイライトなど）を守りつつ、外周のアンチエイリアス境界まで綺麗に透過できます。</li>
+                    </ul>
+                </div>
+
+                <div class="bg-slate-950/70 border border-slate-800 rounded-xl p-4 space-y-2">
+                    <h4 class="font-bold text-emerald-400 text-sm">Step 2：透過アルゴリズム（どう透過するか？）</h4>
+                    <ul class="space-y-2 list-disc list-inside text-slate-300">
+                        <li><strong class="text-white">色域切り抜き (CutColor)：</strong>色差に応じて透明度（アルファ値）のみを変更します。被写体本体を透けさせず不透明のまま切り抜きたい写真・イラストに最適です。</li>
+                        <li><strong class="text-white">色分離透過 (Color to Alpha)：</strong>ピクセルの色から背景色の成分そのものを逆算して抜き取ります。白背景の線画抽出、煙・光・ガラスの表現、切り抜き境界の白フリンジ除去に絶大な効果を発揮します。</li>
+                    </ul>
+                </div>
+
+                <div class="bg-indigo-950/30 border border-indigo-900/50 rounded-xl p-3.5 text-xs text-indigo-200">
+                    <strong>おすすめの組み合わせ例：</strong><br>
+                    「白背景のキャラクターイラスト」を切り抜く場合 → <strong>[隣接選択＋拡張]</strong> で外側の白をクリックし、拡張幅を <code>2〜4px</code> に設定した上で <strong>[色分離透過]</strong>（または境界フリンジ軽減ONの <strong>[色域切り抜き]</strong>）を使うと、内側の白は残しつつ輪郭の白フリンジが一切ないプロ品質の切り抜きができます。
+                </div>
+            </div>
+
+            <div class="flex justify-end pt-2">
+                <button id="confirmGuideBtn" type="button" class="px-5 py-2 rounded-lg bg-indigo-600 hover:bg-indigo-500 text-xs sm:text-sm font-semibold text-white transition">理解しました</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- トースト通知コンテナ -->
+    <div id="toastContainer" class="fixed bottom-14 right-4 z-50 flex flex-col gap-2 pointer-events-none"></div>
+
+    <script>
+        /**
+         * 統合画像透過スタジオ - メインスクリプト
+         * - 色域切り抜き (CutColor) と 色分離透過 (Color to Alpha) の統合エンジン
+         * - 画像全体モード と 隣接選択(Flood Fill)＋モルフォロジー拡張＆ぼかしマスク生成
+         * - スムーズなパン＆ズーム（ホイール、スペース＋ドラッグ、ピンチズーム対応）
+         */
+
+        // --- DOM要素の取得 ---
+        const imageInput = document.getElementById('imageInput');
+        const loadSampleBtn = document.getElementById('loadSampleBtn');
+        const emptySelectBtn = document.getElementById('emptySelectBtn');
+        const emptySampleBtn = document.getElementById('emptySampleBtn');
+        const emptyState = document.getElementById('emptyState');
+        const dropZone = document.getElementById('dropZone');
+        const downloadBtn = document.getElementById('downloadBtn');
+
+        // スコープ＆アルゴリズムUI
+        const scopeGlobalBtn = document.getElementById('scopeGlobalBtn');
+        const scopeContiguousBtn = document.getElementById('scopeContiguousBtn');
+        const scopeDescGlobal = document.getElementById('scopeDescGlobal');
+        const scopeDescContiguous = document.getElementById('scopeDescContiguous');
+        const contiguousControls = document.getElementById('contiguousControls');
+
+        const algoCutoutBtn = document.getElementById('algoCutoutBtn');
+        const algoColorToAlphaBtn = document.getElementById('algoColorToAlphaBtn');
+        const algoDescCutout = document.getElementById('algoDescCutout');
+        const algoDescColorToAlpha = document.getElementById('algoDescColorToAlpha');
+        const cutoutParams = document.getElementById('cutoutParams');
+        const c2aParams = document.getElementById('c2aParams');
+
+        // カラー＆選択コントロール
+        const targetColorInput = document.getElementById('targetColor');
+        const colorHexText = document.getElementById('colorHex');
+        const colorRgbText = document.getElementById('colorRgbText');
+        const clickActionHint = document.getElementById('clickActionHint');
+        const seedCountBadge = document.getElementById('seedCountBadge');
+        const undoSeedBtn = document.getElementById('undoSeedBtn');
+        const clearSeedsBtn = document.getElementById('clearSeedsBtn');
+
+        const selToleranceInput = document.getElementById('selTolerance');
+        const selToleranceVal = document.getElementById('selToleranceVal');
+        const selExpandInput = document.getElementById('selExpand');
+        const selExpandVal = document.getElementById('selExpandVal');
+        const selFeatherInput = document.getElementById('selFeather');
+        const selFeatherVal = document.getElementById('selFeatherVal');
+        const showMaskToggle = document.getElementById('showMaskToggle');
+
+        // 透過パラメータコントロール
+        const compareMetricSelect = document.getElementById('compareMetric');
+        const cutThresholdInput = document.getElementById('cutThreshold');
+        const cutThresholdVal = document.getElementById('cutThresholdVal');
+        const cutSmoothingInput = document.getElementById('cutSmoothing');
+        const cutSmoothingVal = document.getElementById('cutSmoothingVal');
+        const defringeToggle = document.getElementById('defringeToggle');
+
+        const c2aRangeInput = document.getElementById('c2aRange');
+        const c2aRangeVal = document.getElementById('c2aRangeVal');
+        const c2aProtectInput = document.getElementById('c2aProtect');
+        const c2aProtectVal = document.getElementById('c2aProtectVal');
+
+        // ビューポート＆パン・ズームUI
+        const viewport = document.getElementById('viewport');
+        const canvasTransformLayer = document.getElementById('canvasTransformLayer');
+        const canvasBgBox = document.getElementById('canvasBgBox');
+        const outputCanvas = document.getElementById('outputCanvas');
+        const ctx = outputCanvas.getContext('2d', { willReadFrequently: true });
+        const seedMarkersLayer = document.getElementById('seedMarkersLayer');
+
+        const toolPickBtn = document.getElementById('toolPickBtn');
+        const toolPickLabel = document.getElementById('toolPickLabel');
+        const toolPanBtn = document.getElementById('toolPanBtn');
+        const zoomOutBtn = document.getElementById('zoomOutBtn');
+        const zoomResetBtn = document.getElementById('zoomResetBtn');
+        const zoomInBtn = document.getElementById('zoomInBtn');
+        const zoomFitBtn = document.getElementById('zoomFitBtn');
+        const compareOriginalBtn = document.getElementById('compareOriginalBtn');
+        const imageDimText = document.getElementById('imageDimText');
+        const activeModeBadge = document.getElementById('activeModeBadge');
+
+        // モーダル
+        const guideModal = document.getElementById('guideModal');
+        const openGuideBtn = document.getElementById('openGuideBtn');
+        const closeGuideBtn = document.getElementById('closeGuideBtn');
+        const confirmGuideBtn = document.getElementById('confirmGuideBtn');
+
+        // --- アプリケーション状態 ---
+        const state = {
+            hasImage: false,
+            width: 0,
+            height: 0,
+            originalData: null, // Uint8ClampedArray (元画像ピクセル)
+            
+            scopeMode: 'global',        // 'global' | 'contiguous'
+            transparentMode: 'cutout',  // 'cutout' | 'colorToAlpha'
+            compareMetric: 'rgbDistance',
+
+            targetColor: { r: 255, g: 255, b: 255, hex: '#ffffff' },
+            
+            // 隣接選択＋拡張用
+            seeds: [],                  // [{ x, y, r, g, b }]
+            selTolerance: 15,
+            selExpand: 3,
+            selFeather: 2,
+            showMask: false,
+            maskDirty: true,            // マスク再計算フラグ
+            influenceMask: null,        // Float32Array (0.0 ~ 1.0)
+
+            // Cutout用
+            cutThreshold: 12,
+            cutSmoothing: 18,
+            defringe: true,
+
+            // ColorToAlpha用
+            c2aRange: 100,
+            c2aProtect: 0,
+
+            // ビューポート（パン＆ズーム）
+            scale: 1,
+            offsetX: 0,
+            offsetY: 0,
+            activeTool: 'pick',         // 'pick' | 'pan'
+            isSpacePressed: false,
+            isDragging: false,
+            dragStartX: 0,
+            dragStartY: 0,
+            dragMoved: false,
+            showOriginal: false,
+            bgClass: 'bg-checker-dark'
+        };
+
+        let renderScheduled = false;
+
+        // --- トースト通知ユーティリティ ---
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const colors = {
+                info: 'bg-slate-800 border-slate-700 text-slate-100',
+                success: 'bg-emerald-950/90 border-emerald-700 text-emerald-200',
+                warn: 'bg-amber-950/90 border-amber-700 text-amber-200'
+            };
+            toast.className = `px-4 py-2.5 rounded-xl border shadow-xl text-xs font-medium backdrop-blur-md transition-all duration-300 transform translate-y-2 opacity-0 ${colors[type] || colors.info}`;
+            toast.textContent = message;
+            container.appendChild(toast);
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 2600);
+        }
+
+        // --- 色空間変換＆色差計算関数 ---
+        function hexToRgb(hex) {
+            return {
+                r: parseInt(hex.slice(1, 3), 16),
+                g: parseInt(hex.slice(3, 5), 16),
+                b: parseInt(hex.slice(5, 7), 16)
+            };
+        }
+
+        function rgbToHex(r, g, b) {
+            return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1).toUpperCase();
+        }
+
+        function rgbToHsl(r, g, b) {
+            r /= 255; g /= 255; b /= 255;
+            const max = Math.max(r, g, b), min = Math.min(r, g, b);
+            let h = 0, s = 0, l = (max + min) / 2;
+            if (max !== min) {
+                const d = max - min;
+                s = l > 0.5 ? d / (2 - max - min) : d / (max + min);
+                switch (max) {
+                    case r: h = (g - b) / d + (g < b ? 6 : 0); break;
+                    case g: h = (b - r) / d + 2; break;
+                    case b: h = (r - g) / d + 4; break;
+                }
+                h /= 6;
+            }
+            return { h: h * 360, s: s * 100, l: l * 100 };
+        }
+
+        /**
+         * 2色間の差を 0 ~ 100 のスケールで計算
+         */
+        function computeColorDiff(r, g, b, tr, tg, tb, targetHsl, metric) {
+            if (metric === 'rgbDistance') {
+                const dr = r - tr;
+                const dg = g - tg;
+                const db = b - tb;
+                // 最大距離 sqrt(255^2 * 3) ≈ 441.67
+                return Math.sqrt(dr * dr + dg * dg + db * db) / 4.4167;
+            } else if (metric === 'rgbMax') {
+                const maxD = Math.max(Math.abs(r - tr), Math.abs(g - tg), Math.abs(b - tb));
+                return (maxD / 255) * 100;
+            } else {
+                const hsl = rgbToHsl(r, g, b);
+                if (metric === 'hue') {
+                    let dh = Math.abs(hsl.h - targetHsl.h);
+                    if (dh > 180) dh = 360 - dh;
+                    return (dh / 180) * 100;
+                } else if (metric === 'saturation') {
+                    return Math.abs(hsl.s - targetHsl.s);
+                } else if (metric === 'lightness') {
+                    return Math.abs(hsl.l - targetHsl.l);
+                }
+            }
+            return 0;
+        }
+
+        // --- 隣接選択（Flood Fill）＋ 選択範囲の拡張（Dilation）＆ ぼかし（Feather） ---
+        function updateInfluenceMask() {
+            const w = state.width;
+            const h = state.height;
+            const total = w * h;
+
+            if (!state.influenceMask || state.influenceMask.length !== total) {
+                state.influenceMask = new Float32Array(total);
+            } else {
+                state.influenceMask.fill(0);
+            }
+
+            if (state.scopeMode !== 'contiguous' || state.seeds.length === 0) {
+                state.maskDirty = false;
+                return;
+            }
+
+            const data = state.originalData;
+            const visited = new Uint8Array(total);
+            const selected = new Uint8Array(total);
+            const queue = new Int32Array(total);
+            const metric = state.compareMetric;
+            const tolerance = state.selTolerance;
+
+            // 各シード地点からBFS（幅優先探索）で近似色領域を連結選択
+            for (let s = 0; s < state.seeds.length; s++) {
+                const seed = state.seeds[s];
+                const startIdx = seed.y * w + seed.x;
+                if (startIdx < 0 || startIdx >= total) continue;
+
+                // シード地点の色を基準に探索（ターゲット色が手動変更されていればそれも考慮）
+                const baseR = seed.r;
+                const baseG = seed.g;
+                const baseB = seed.b;
+                const baseHsl = rgbToHsl(baseR, baseG, baseB);
+
+                let head = 0;
+                let tail = 0;
+                if (!visited[startIdx]) {
+                    visited[startIdx] = 1;
+                    selected[startIdx] = 1;
+                    queue[tail++] = startIdx;
+                }
+
+                while (head < tail) {
+                    const curr = queue[head++];
+                    const cx = curr % w;
+                    const cy = (curr - cx) / w;
+
+                    // 4近傍探索（上・下・左・右）
+                    const neighbors = [];
+                    if (cx > 0) neighbors.push(curr - 1);
+                    if (cx < w - 1) neighbors.push(curr + 1);
+                    if (cy > 0) neighbors.push(curr - w);
+                    if (cy < h - 1) neighbors.push(curr + w);
+
+                    for (let n = 0; n < neighbors.length; n++) {
+                        const nIdx = neighbors[n];
+                        if (visited[nIdx]) continue;
+                        visited[nIdx] = 1;
+
+                        const p = nIdx * 4;
+                        const diff = computeColorDiff(
+                            data[p], data[p + 1], data[p + 2],
+                            baseR, baseG, baseB, baseHsl, metric
+                        );
+
+                        if (diff <= tolerance) {
+                            selected[nIdx] = 1;
+                            queue[tail++] = nIdx;
+                        }
+                    }
+                }
+            }
+
+            // 選択範囲の拡張（Dilation）＆ 境界のぼかし（Feather）
+            // ユークリッド距離変換（2パス分離アルゴリズム）を使用して高速に外側への距離を計算
+            const expandR = state.selExpand;
+            const featherR = state.selFeather;
+            const maxRadius = expandR + featherR;
+
+            if (maxRadius <= 0) {
+                for (let i = 0; i < total; i++) {
+                    state.influenceMask[i] = selected[i] ? 1.0 : 0.0;
+                }
+            } else {
+                // 選択外ピクセルから最寄りの選択内ピクセルまでの2乗距離を計算
+                const INF = 1e9;
+                const distSq = new Float32Array(total);
+                for (let i = 0; i < total; i++) {
+                    distSq[i] = selected[i] ? 0 : INF;
+                }
+
+                // 水平パス（左→右、右→左）
+                for (let y = 0; y < h; y++) {
+                    const rowOffset = y * w;
+                    let d = INF;
+                    for (let x = 0; x < w; x++) {
+                        const idx = rowOffset + x;
+                        if (distSq[idx] === 0) d = 0;
+                        else if (d < INF) d += 1;
+                        if (d * d < distSq[idx]) distSq[idx] = d * d;
+                    }
+                    d = INF;
+                    for (let x = w - 1; x >= 0; x--) {
+                        const idx = rowOffset + x;
+                        if (distSq[idx] === 0) d = 0;
+                        else if (d < INF) d += 1;
+                        if (d * d < distSq[idx]) distSq[idx] = d * d;
+                    }
+                }
+
+                // 垂直パス（Meijster/Felzenszwalb風の放物線下側包絡線アルゴリズムで正確な2Dユークリッド距離をO(N)計算）
+                const v = new Int32Array(h);
+                const z = new Float32Array(h + 1);
+                const f = new Float32Array(h);
+
+                for (let x = 0; x < w; x++) {
+                    for (let y = 0; y < h; y++) {
+                        f[y] = distSq[y * w + x];
+                    }
+                    let k = 0;
+                    v[0] = 0;
+                    z[0] = -INF;
+                    z[1] = +INF;
+                    for (let q = 1; q < h; q++) {
+                        let s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+                        while (s <= z[k]) {
+                            k--;
+                            s = ((f[q] + q * q) - (f[v[k]] + v[k] * v[k])) / (2 * q - 2 * v[k]);
+                        }
+                        k++;
+                        v[k] = q;
+                        z[k] = s;
+                        z[k + 1] = +INF;
+                    }
+                    k = 0;
+                    for (let q = 0; q < h; q++) {
+                        while (z[k + 1] < q) k++;
+                        const dy = q - v[k];
+                        distSq[q * w + x] = dy * dy + f[v[k]];
+                    }
+                }
+
+                // 距離に応じた影響度マップ生成（expandR以内は1.0、expandR〜maxRadiusは滑らかに1.0→0.0へ減衰）
+                for (let i = 0; i < total; i++) {
+                    const dist = Math.sqrt(distSq[i]);
+                    if (dist <= expandR) {
+                        state.influenceMask[i] = 1.0;
+                    } else if (featherR > 0 && dist < maxRadius) {
+                        // スムーズステップ補間
+                        const t = (dist - expandR) / featherR;
+                        const smooth = 1.0 - (t * t * (3 - 2 * t));
+                        state.influenceMask[i] = smooth;
+                    } else {
+                        state.influenceMask[i] = 0.0;
+                    }
+                }
+            }
+
+            state.maskDirty = false;
+        }
+
+        // --- 画像透過処理エンジン（メイン描画） ---
+        function scheduleRender() {
+            if (!state.hasImage) return;
+            if (!renderScheduled) {
+                renderScheduled = true;
+                requestAnimationFrame(() => {
+                    renderScheduled = false;
+                    renderImage();
+                });
+            }
+        }
+
+        function renderImage() {
+            if (!state.hasImage) return;
+
+            const w = state.width;
+            const h = state.height;
+            const src = state.originalData;
+
+            // 「元画像比較」が押されている場合はオリジナルをそのまま描画
+            if (state.showOriginal) {
+                const imgData = new ImageData(new Uint8ClampedArray(src), w, h);
+                ctx.putImageData(imgData, 0, 0);
+                return;
+            }
+
+            // 隣接選択モードでマスクの再計算が必要な場合
+            if (state.scopeMode === 'contiguous' && state.maskDirty) {
+                updateInfluenceMask();
+            }
+
+            const outImgData = ctx.createImageData(w, h);
+            const dst = outImgData.data;
+
+            const tr = state.targetColor.r;
+            const tg = state.targetColor.g;
+            const tb = state.targetColor.b;
+            const targetHsl = rgbToHsl(tr, tg, tb);
+
+            const isContiguous = state.scopeMode === 'contiguous';
+            const hasSeeds = state.seeds.length > 0;
+            const mask = state.influenceMask;
+            const showMaskOverlay = isContiguous && state.showMask && hasSeeds;
+
+            const mode = state.transparentMode;
+            const metric = state.compareMetric;
+
+            // Cutout用パラメータ
+            const cutThresh = state.cutThreshold;
+            const cutSmooth = state.cutSmoothing;
+            const useDefringe = state.defringe;
+
+            // ColorToAlpha用パラメータ
+            const c2aMax = Math.max(1, state.c2aRange);
+            const c2aMin = Math.min(c2aMax - 0.1, (state.c2aProtect / 100) * c2aMax);
+            const c2aSpan = Math.max(0.1, c2aMax - c2aMin);
+
+            const totalPixels = w * h;
+
+            for (let idx = 0; idx < totalPixels; idx++) {
+                const p = idx * 4;
+                const r = src[p];
+                const g = src[p + 1];
+                const b = src[p + 2];
+                const a = src[p + 3];
+
+                // 影響度 (0.0 ~ 1.0) の決定
+                let influence = 1.0;
+                if (isContiguous) {
+                    influence = hasSeeds ? mask[idx] : 0.0;
+                }
+
+                // 影響度が0なら元ピクセルをそのままコピー
+                if (influence <= 0.0001 || a === 0) {
+                    dst[p] = r;
+                    dst[p + 1] = g;
+                    dst[p + 2] = b;
+                    dst[p + 3] = a;
+                    continue;
+                }
+
+                // 色差計算 (0 ~ 100)
+                const diff = computeColorDiff(r, g, b, tr, tg, tb, targetHsl, metric);
+
+                let newR = r;
+                let newG = g;
+                let newB = b;
+                let newA = a;
+
+                if (mode === 'cutout') {
+                    // --- モードA: 色域切り抜き (CutColor) ---
+                    let alphaRatio = 1.0;
+                    if (diff <= cutThresh) {
+                        alphaRatio = 0.0;
+                    } else if (cutSmooth > 0 && diff < cutThresh + cutSmooth) {
+                        alphaRatio = (diff - cutThresh) / cutSmooth;
+                    }
+
+                    // 境界フリンジ軽減オプション：半透明になった境界部分から背景色成分を抜く
+                    if (useDefringe && alphaRatio > 0.01 && alphaRatio < 0.99) {
+                        const effA = Math.max(0.15, alphaRatio);
+                        const invA = 1.0 / effA;
+                        const omA = 1.0 - effA;
+                        newR = Math.max(0, Math.min(255, (r - omA * tr) * invA));
+                        newG = Math.max(0, Math.min(255, (g - omA * tg) * invA));
+                        newB = Math.max(0, Math.min(255, (b - omA * tb) * invA));
+                    }
+
+                    const targetAlpha = a * alphaRatio;
+                    newA = a * (1.0 - influence) + targetAlpha * influence;
+                    if (influence < 1.0) {
+                        newR = r * (1.0 - influence) + newR * influence;
+                        newG = g * (1.0 - influence) + newG * influence;
+                        newB = b * (1.0 - influence) + newB * influence;
+                    }
+
+                } else {
+                    // --- モードB: 色分離透過 (Color to Alpha / Un-mixing) ---
+                    let alphaFactor = (diff - c2aMin) / c2aSpan;
+                    if (alphaFactor < 0) alphaFactor = 0;
+                    if (alphaFactor > 1) alphaFactor = 1;
+
+                    const origAlphaNorm = a / 255.0;
+                    const unmixedAlphaNorm = alphaFactor * origAlphaNorm;
+
+                    let unmixedR = r;
+                    let unmixedG = g;
+                    let unmixedB = b;
+
+                    if (alphaFactor > 0.002 && alphaFactor < 1.0) {
+                        // P = A * C + (1 - A) * T  =>  C = (P - (1 - A) * T) / A
+                        const invA = 1.0 / alphaFactor;
+                        const omA = 1.0 - alphaFactor;
+                        unmixedR = Math.max(0, Math.min(255, (r - omA * tr) * invA));
+                        unmixedG = Math.max(0, Math.min(255, (g - omA * tg) * invA));
+                        unmixedB = Math.max(0, Math.min(255, (b - omA * tb) * invA));
+                    }
+
+                    // 選択マスクの影響度でブレンド
+                    newR = r * (1.0 - influence) + unmixedR * influence;
+                    newG = g * (1.0 - influence) + unmixedG * influence;
+                    newB = b * (1.0 - influence) + unmixedB * influence;
+                    newA = (origAlphaNorm * (1.0 - influence) + unmixedAlphaNorm * influence) * 255.0;
+                }
+
+                // 選択マスクの可視化オーバーレイ（デバッグ・確認用）
+                if (showMaskOverlay && influence > 0.05) {
+                    const overlayStrength = influence * 0.38;
+                    // シアン色 (0, 220, 255) を合成
+                    newR = newR * (1 - overlayStrength) + 0 * overlayStrength;
+                    newG = newG * (1 - overlayStrength) + 220 * overlayStrength;
+                    newB = newB * (1 - overlayStrength) + 255 * overlayStrength;
+                    newA = Math.max(newA, influence * 110);
+                }
+
+                dst[p] = newR;
+                dst[p + 1] = newG;
+                dst[p + 2] = newB;
+                dst[p + 3] = newA;
+            }
+
+            ctx.putImageData(outImgData, 0, 0);
+        }
+
+        // --- シード地点マーカーの描画 ---
+        function renderSeedMarkers() {
+            seedMarkersLayer.innerHTML = '';
+            if (state.scopeMode !== 'contiguous' || !state.hasImage) return;
+
+            const markerRadius = Math.max(5, 7 / state.scale);
+            const strokeW = Math.max(1.5, 2 / state.scale);
+
+            state.seeds.forEach((seed, i) => {
+                const g = document.createElementNS('http://www.w3.org/2000/svg', 'g');
+                
+                // 外枠白リング
+                const outer = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                outer.setAttribute('cx', seed.x);
+                outer.setAttribute('cy', seed.y);
+                outer.setAttribute('r', markerRadius);
+                outer.setAttribute('fill', `rgb(${seed.r},${seed.g},${seed.b})`);
+                outer.setAttribute('stroke', '#ffffff');
+                outer.setAttribute('stroke-width', strokeW);
+
+                // 内側アクセントリング
+                const inner = document.createElementNS('http://www.w3.org/2000/svg', 'circle');
+                inner.setAttribute('cx', seed.x);
+                inner.setAttribute('cy', seed.y);
+                inner.setAttribute('r', markerRadius + strokeW * 0.8);
+                inner.setAttribute('fill', 'none');
+                inner.setAttribute('stroke', '#6366f1');
+                inner.setAttribute('stroke-width', strokeW * 0.8);
+
+                g.appendChild(inner);
+                g.appendChild(outer);
+                seedMarkersLayer.appendChild(g);
+            });
+        }
+
+        // --- 画像読み込み処理 ---
+        function loadImageFromSource(srcUrl, fileName = 'image') {
+            const img = new Image();
+            img.onload = () => {
+                state.hasImage = true;
+                state.width = img.width;
+                state.height = img.height;
+
+                outputCanvas.width = img.width;
+                outputCanvas.height = img.height;
+                ctx.drawImage(img, 0, 0);
+
+                // 元画像のピクセルデータを保持
+                state.originalData = ctx.getImageData(0, 0, img.width, img.height).data;
+                state.seeds = [];
+                state.maskDirty = true;
+
+                emptyState.classList.add('hidden');
+                canvasTransformLayer.classList.remove('hidden');
+                downloadBtn.disabled = false;
+
+                imageDimText.textContent = `${img.width} × ${img.height} px`;
+                updateSeedUI();
+                fitViewport();
+                scheduleRender();
+                showToast(`画像を読み込みました (${img.width}×${img.height})`, 'success');
+            };
+            img.onerror = () => {
+                showToast('画像の読み込みに失敗しました', 'warn');
+            };
+            img.src = srcUrl;
+        }
+
+        imageInput.addEventListener('change', (e) => {
+            const file = e.target.files[0];
+            if (!file) return;
+            const reader = new FileReader();
+            reader.onload = (ev) => loadImageFromSource(ev.target.result, file.name);
+            reader.readAsDataURL(file);
+        });
+
+        // ドラッグ＆ドロップ読込
+        viewport.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-indigo-500', 'bg-slate-800/80');
+        });
+        viewport.addEventListener('dragleave', () => {
+            dropZone.classList.remove('border-indigo-500', 'bg-slate-800/80');
+        });
+        viewport.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-slate-800/80');
+            const file = e.dataTransfer.files[0];
+            if (file && file.type.startsWith('image/')) {
+                const reader = new FileReader();
+                reader.onload = (ev) => loadImageFromSource(ev.target.result, file.name);
+                reader.readAsDataURL(file);
+            }
+        });
+
+        emptySelectBtn.addEventListener('click', () => imageInput.click());
+
+        // --- 検証用テスト画像の動的生成 ---
+        function generateTestSample() {
+            const tempCanvas = document.createElement('canvas');
+            tempCanvas.width = 800;
+            tempCanvas.height = 560;
+            const tctx = tempCanvas.getContext('2d');
+
+            // 1. 白背景
+            tctx.fillStyle = '#ffffff';
+            tctx.fillRect(0, 0, 800, 560);
+
+            // 2. 左側：白いハイライトを持つキャラクター風イラスト（隣接選択テスト用）
+            tctx.save();
+            // 影
+            tctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+            tctx.beginPath();
+            tctx.ellipse(230, 460, 120, 24, 0, 0, Math.PI * 2);
+            tctx.fill();
+
+            // 本体（青いボディ）
+            const grad = tctx.createLinearGradient(110, 120, 350, 440);
+            grad.addColorStop(0, '#4f46e5');
+            grad.addColorStop(1, '#1e1b4b');
+            tctx.fillStyle = grad;
+            tctx.beginPath();
+            tctx.arc(230, 280, 140, 0, Math.PI * 2);
+            tctx.fill();
+
+            // 内部の白いパーツ（目とバッジ：隣接選択なら保護される！）
+            tctx.fillStyle = '#ffffff';
+            tctx.beginPath();
+            tctx.arc(185, 250, 28, 0, Math.PI * 2);
+            tctx.arc(275, 250, 28, 0, Math.PI * 2);
+            tctx.fill();
+
+            // 瞳
+            tctx.fillStyle = '#0f172a';
+            tctx.beginPath();
+            tctx.arc(190, 250, 12, 0, Math.PI * 2);
+            tctx.arc(270, 250, 12, 0, Math.PI * 2);
+            tctx.fill();
+
+            // 白い星マーク
+            tctx.fillStyle = '#ffffff';
+            tctx.font = 'bold 42px sans-serif';
+            tctx.textAlign = 'center';
+            tctx.fillText('★', 230, 355);
+            tctx.restore();
+
+            // 3. 右側：半透明の煙・グラデーションと繊細な線画（Color to Alpha テスト用）
+            tctx.save();
+            const smokeGrad = tctx.createRadialGradient(570, 230, 10, 570, 230, 140);
+            smokeGrad.addColorStop(0, 'rgba(30, 41, 59, 0.85)');
+            smokeGrad.addColorStop(0.5, 'rgba(71, 85, 105, 0.45)');
+            smokeGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+            tctx.fillStyle = smokeGrad;
+            tctx.beginPath();
+            tctx.arc(570, 230, 140, 0, Math.PI * 2);
+            tctx.fill();
+
+            // アンチエイリアス付きの曲線（線画）
+            tctx.strokeStyle = '#0f172a';
+            tctx.lineWidth = 5;
+            tctx.beginPath();
+            tctx.moveTo(460, 410);
+            tctx.bezierCurveTo(510, 320, 630, 480, 690, 360);
+            tctx.stroke();
+
+            tctx.lineWidth = 2;
+            tctx.strokeStyle = '#334155';
+            tctx.beginPath();
+            tctx.moveTo(460, 435);
+            tctx.bezierCurveTo(510, 345, 630, 505, 690, 385);
+            tctx.stroke();
+            tctx.restore();
+
+            loadImageFromSource(tempCanvas.toDataURL('image/png'), 'sample.png');
+        }
+
+        loadSampleBtn.addEventListener('click', generateTestSample);
+        emptySampleBtn.addEventListener('click', generateTestSample);
+
+        // --- UI状態同期とモード切替 ---
+        function setTargetColor(r, g, b) {
+            const hex = rgbToHex(r, g, b);
+            state.targetColor = { r, g, b, hex };
+            targetColorInput.value = hex.toLowerCase();
+            colorHexText.textContent = hex;
+            colorRgbText.textContent = `RGB(${r}, ${g}, ${b})`;
+        }
+
+        function updateModeBadges() {
+            const scopeName = state.scopeMode === 'global' ? '画像全体' : '隣接選択＋拡張';
+            const algoName = state.transparentMode === 'cutout' ? '色域切り抜き' : '色分離透過';
+            activeModeBadge.textContent = `${scopeName} × ${algoName}`;
+            toolPickLabel.textContent = state.scopeMode === 'global' ? 'スポイト' : '領域選択';
+            clickActionHint.textContent = state.scopeMode === 'global'
+                ? 'プレビューをクリックしてスポイト取得'
+                : 'プレビューをクリックして隣接領域を追加選択';
+        }
+
+        function setScopeMode(mode) {
+            state.scopeMode = mode;
+            if (mode === 'global') {
+                scopeGlobalBtn.className = 'scope-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow';
+                scopeContiguousBtn.className = 'scope-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-slate-200';
+                scopeDescGlobal.classList.remove('hidden');
+                scopeDescContiguous.classList.add('hidden');
+                contiguousControls.classList.add('hidden');
+            } else {
+                scopeContiguousBtn.className = 'scope-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-indigo-600 text-white shadow';
+                scopeGlobalBtn.className = 'scope-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-slate-200';
+                scopeDescContiguous.classList.remove('hidden');
+                scopeDescGlobal.classList.add('hidden');
+                contiguousControls.classList.remove('hidden');
+                state.maskDirty = true;
+            }
+            renderSeedMarkers();
+            updateModeBadges();
+            scheduleRender();
+        }
+
+        function setTransparentMode(mode) {
+            state.transparentMode = mode;
+            if (mode === 'cutout') {
+                algoCutoutBtn.className = 'algo-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-emerald-600 text-white shadow';
+                algoColorToAlphaBtn.className = 'algo-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-slate-200';
+                algoDescCutout.classList.remove('hidden');
+                algoDescColorToAlpha.classList.add('hidden');
+                cutoutParams.classList.remove('hidden');
+                c2aParams.classList.add('hidden');
+            } else {
+                algoColorToAlphaBtn.className = 'algo-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 bg-emerald-600 text-white shadow';
+                algoCutoutBtn.className = 'algo-tab py-2 px-3 rounded-lg text-xs font-semibold transition flex items-center justify-center gap-1.5 text-slate-400 hover:text-slate-200';
+                algoDescColorToAlpha.classList.remove('hidden');
+                algoDescCutout.classList.add('hidden');
+                c2aParams.classList.remove('hidden');
+                cutoutParams.classList.add('hidden');
+            }
+            updateModeBadges();
+            scheduleRender();
+        }
+
+        function updateSeedUI() {
+            const count = state.seeds.length;
+            seedCountBadge.textContent = `${count}箇所`;
+            undoSeedBtn.disabled = count === 0;
+            clearSeedsBtn.disabled = count === 0;
+            renderSeedMarkers();
+        }
+
+        scopeGlobalBtn.addEventListener('click', () => setScopeMode('global'));
+        scopeContiguousBtn.addEventListener('click', () => setScopeMode('contiguous'));
+        algoCutoutBtn.addEventListener('click', () => setTransparentMode('cutout'));
+        algoColorToAlphaBtn.addEventListener('click', () => setTransparentMode('colorToAlpha'));
+
+        // クイックプリセット適用
+        document.querySelectorAll('.preset-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                const preset = btn.dataset.preset;
+                if (preset === 'bg-cutout') {
+                    setScopeMode('contiguous');
+                    setTransparentMode('cutout');
+                    state.selTolerance = 18;
+                    state.selExpand = 2;
+                    state.selFeather = 1;
+                    state.cutThreshold = 15;
+                    state.cutSmoothing = 15;
+                    state.defringe = true;
+                    syncInputsFromState();
+                    state.maskDirty = true;
+                    scheduleRender();
+                    showToast('「背景切り抜き」プリセットを適用しました。透過したい背景をクリックしてください。');
+                } else if (preset === 'lineart') {
+                    setScopeMode('global');
+                    setTransparentMode('colorToAlpha');
+                    setTargetColor(255, 255, 255);
+                    state.compareMetric = 'rgbMax';
+                    state.c2aRange = 100;
+                    state.c2aProtect = 0;
+                    syncInputsFromState();
+                    scheduleRender();
+                    showToast('「線画・煙抽出」プリセット（全体＋色分離透過）を適用しました。');
+                } else if (preset === 'defringe-cut') {
+                    setScopeMode('contiguous');
+                    setTransparentMode('colorToAlpha');
+                    state.selTolerance = 18;
+                    state.selExpand = 4;
+                    state.selFeather = 2;
+                    state.c2aRange = 95;
+                    state.c2aProtect = 15;
+                    syncInputsFromState();
+                    state.maskDirty = true;
+                    scheduleRender();
+                    showToast('「フチ馴染み透過」プリセット（隣接拡張＋色分離）を適用しました。背景をクリックしてください。');
+                }
+            });
+        });
+
+        function syncInputsFromState() {
+            selToleranceInput.value = state.selTolerance;
+            selToleranceVal.textContent = state.selTolerance;
+            selExpandInput.value = state.selExpand;
+            selExpandVal.textContent = `${state.selExpand} px`;
+            selFeatherInput.value = state.selFeather;
+            selFeatherVal.textContent = `${state.selFeather} px`;
+            compareMetricSelect.value = state.compareMetric;
+
+            cutThresholdInput.value = state.cutThreshold;
+            cutThresholdVal.textContent = state.cutThreshold;
+            cutSmoothingInput.value = state.cutSmoothing;
+            cutSmoothingVal.textContent = state.cutSmoothing;
+            defringeToggle.checked = state.defringe;
+
+            c2aRangeInput.value = state.c2aRange;
+            c2aRangeVal.textContent = state.c2aRange;
+            c2aProtectInput.value = state.c2aProtect;
+            c2aProtectVal.textContent = state.c2aProtect;
+        }
+
+        // --- 各コントロールのイベントリスナー ---
+        targetColorInput.addEventListener('input', (e) => {
+            const { r, g, b } = hexToRgb(e.target.value);
+            setTargetColor(r, g, b);
+            // 手動で色を変えた場合、最新のシード色も連動更新すると微調整しやすい
+            if (state.scopeMode === 'contiguous' && state.seeds.length > 0) {
+                state.seeds[state.seeds.length - 1].r = r;
+                state.seeds[state.seeds.length - 1].g = g;
+                state.seeds[state.seeds.length - 1].b = b;
+                state.maskDirty = true;
+                renderSeedMarkers();
+            }
+            scheduleRender();
+        });
+
+        compareMetricSelect.addEventListener('change', (e) => {
+            state.compareMetric = e.target.value;
+            state.maskDirty = true;
+            scheduleRender();
+        });
+
+        selToleranceInput.addEventListener('input', (e) => {
+            state.selTolerance = parseFloat(e.target.value);
+            selToleranceVal.textContent = state.selTolerance;
+            state.maskDirty = true;
+            scheduleRender();
+        });
+
+        selExpandInput.addEventListener('input', (e) => {
+            state.selExpand = parseInt(e.target.value, 10);
+            selExpandVal.textContent = `${state.selExpand} px`;
+            state.maskDirty = true;
+            scheduleRender();
+        });
+
+        selFeatherInput.addEventListener('input', (e) => {
+            state.selFeather = parseInt(e.target.value, 10);
+            selFeatherVal.textContent = `${state.selFeather} px`;
+            state.maskDirty = true;
+            scheduleRender();
+        });
+
+        showMaskToggle.addEventListener('change', (e) => {
+            state.showMask = e.target.checked;
+            scheduleRender();
+        });
+
+        undoSeedBtn.addEventListener('click', () => {
+            if (state.seeds.length > 0) {
+                state.seeds.pop();
+                state.maskDirty = true;
+                updateSeedUI();
+                scheduleRender();
+            }
+        });
+
+        clearSeedsBtn.addEventListener('click', () => {
+            state.seeds = [];
+            state.maskDirty = true;
+            updateSeedUI();
+            scheduleRender();
+        });
+
+        cutThresholdInput.addEventListener('input', (e) => {
+            state.cutThreshold = parseFloat(e.target.value);
+            cutThresholdVal.textContent = state.cutThreshold;
+            scheduleRender();
+        });
+
+        cutSmoothingInput.addEventListener('input', (e) => {
+            state.cutSmoothing = parseFloat(e.target.value);
+            cutSmoothingVal.textContent = state.cutSmoothing;
+            scheduleRender();
+        });
+
+        defringeToggle.addEventListener('change', (e) => {
+            state.defringe = e.target.checked;
+            scheduleRender();
+        });
+
+        c2aRangeInput.addEventListener('input', (e) => {
+            state.c2aRange = parseFloat(e.target.value);
+            c2aRangeVal.textContent = state.c2aRange;
+            scheduleRender();
+        });
+
+        c2aProtectInput.addEventListener('input', (e) => {
+            state.c2aProtect = parseFloat(e.target.value);
+            c2aProtectVal.textContent = state.c2aProtect;
+            scheduleRender();
+        });
+
+        // --- プレビューの拡大・縮小・移動（パン＆ズーム） ---
+        function applyViewportTransform() {
+            canvasTransformLayer.style.transform = `translate(${state.offsetX}px, ${state.offsetY}px) scale(${state.scale})`;
+            zoomResetBtn.textContent = `${Math.round(state.scale * 100)}%`;
+
+            // 200%以上拡大した時はピクセル境界がはっきり見えるようにする
+            if (state.scale >= 2.0) {
+                outputCanvas.classList.add('pixelated');
+            } else {
+                outputCanvas.classList.remove('pixelated');
+            }
+            renderSeedMarkers();
+        }
+
+        function fitViewport() {
+            if (!state.hasImage) return;
+            const rect = viewport.getBoundingClientRect();
+            const padding = 48;
+            const availW = Math.max(100, rect.width - padding * 2);
+            const availH = Math.max(100, rect.height - padding * 2);
+
+            const scaleX = availW / state.width;
+            const scaleY = availH / state.height;
+            state.scale = Math.min(1.0, Math.min(scaleX, scaleY));
+
+            state.offsetX = (rect.width - state.width * state.scale) / 2;
+            state.offsetY = (rect.height - state.height * state.scale) / 2;
+            applyViewportTransform();
+        }
+
+        function zoomAtPoint(newScale, clientX, clientY) {
+            if (!state.hasImage) return;
+            newScale = Math.max(0.05, Math.min(25, newScale));
+            const rect = viewport.getBoundingClientRect();
+            const mouseX = clientX - rect.left;
+            const mouseY = clientY - rect.top;
+
+            // カーソル位置の画像上の座標を維持するようにオフセットを再計算
+            const imgX = (mouseX - state.offsetX) / state.scale;
+            const imgY = (mouseY - state.offsetY) / state.scale;
+
+            state.scale = newScale;
+            state.offsetX = mouseX - imgX * state.scale;
+            state.offsetY = mouseY - imgY * state.scale;
+            applyViewportTransform();
+        }
+
+        // ホイールズーム
+        viewport.addEventListener('wheel', (e) => {
+            if (!state.hasImage) return;
+            e.preventDefault();
+            const factor = e.deltaY < 0 ? 1.15 : 1 / 1.15;
+            zoomAtPoint(state.scale * factor, e.clientX, e.clientY);
+        }, { passive: false });
+
+        zoomInBtn.addEventListener('click', () => {
+            const rect = viewport.getBoundingClientRect();
+            zoomAtPoint(state.scale * 1.25, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        });
+        zoomOutBtn.addEventListener('click', () => {
+            const rect = viewport.getBoundingClientRect();
+            zoomAtPoint(state.scale / 1.25, rect.left + rect.width / 2, rect.top + rect.height / 2);
+        });
+        zoomResetBtn.addEventListener('click', () => {
+            if (!state.hasImage) return;
+            const rect = viewport.getBoundingClientRect();
+            state.scale = 1.0;
+            state.offsetX = (rect.width - state.width) / 2;
+            state.offsetY = (rect.height - state.height) / 2;
+            applyViewportTransform();
+        });
+        zoomFitBtn.addEventListener('click', fitViewport);
+
+        // ツール切替（スポイト/選択 vs 移動）
+        function setActiveTool(tool) {
+            state.activeTool = tool;
+            if (tool === 'pick') {
+                toolPickBtn.className = 'tool-btn px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 bg-indigo-600 text-white transition';
+                toolPanBtn.className = 'tool-btn px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition';
+                viewport.style.cursor = 'crosshair';
+            } else {
+                toolPanBtn.className = 'tool-btn px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 bg-indigo-600 text-white transition';
+                toolPickBtn.className = 'tool-btn px-2.5 py-1.5 rounded-md text-xs font-medium flex items-center gap-1.5 text-slate-400 hover:text-slate-200 transition';
+                viewport.style.cursor = 'grab';
+            }
+        }
+
+        toolPickBtn.addEventListener('click', () => setActiveTool('pick'));
+        toolPanBtn.addEventListener('click', () => setActiveTool('pan'));
+
+        // キーボードショートカット（Spaceで一時移動、Vでスポイト、Hで移動）
+        window.addEventListener('keydown', (e) => {
+            if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+            if (e.code === 'Space' && !state.isSpacePressed) {
+                e.preventDefault();
+                state.isSpacePressed = true;
+                viewport.style.cursor = 'grab';
+            } else if (e.key === 'v' || e.key === 'V') {
+                setActiveTool('pick');
+            } else if (e.key === 'h' || e.key === 'H') {
+                setActiveTool('pan');
+            }
+        });
+        window.addEventListener('keyup', (e) => {
+            if (e.code === 'Space') {
+                state.isSpacePressed = false;
+                viewport.style.cursor = state.activeTool === 'pan' ? 'grab' : 'crosshair';
+            }
+        });
+
+        // 画像上の座標を取得してクリックアクション（色取得 / 隣接選択追加）を実行
+        function handleCanvasClickAction(clientX, clientY) {
+            if (!state.hasImage) return;
+            const rect = outputCanvas.getBoundingClientRect();
+            const imgX = Math.floor((clientX - rect.left) / state.scale);
+            const imgY = Math.floor((clientY - rect.top) / state.scale);
+
+            if (imgX < 0 || imgX >= state.width || imgY < 0 || imgY >= state.height) return;
+
+            const idx = (imgY * state.width + imgX) * 4;
+            const r = state.originalData[idx];
+            const g = state.originalData[idx + 1];
+            const b = state.originalData[idx + 2];
+
+            setTargetColor(r, g, b);
+
+            if (state.scopeMode === 'contiguous') {
+                state.seeds.push({ x: imgX, y: imgY, r, g, b });
+                state.maskDirty = true;
+                updateSeedUI();
+            }
+
+            scheduleRender();
+        }
+
+        // マウス操作（パン移動 ＆ クリック）
+        let isPanGesture = false;
+
+        viewport.addEventListener('mousedown', (e) => {
+            if (!state.hasImage) return;
+            // 中ボタン(1)、右ボタン(2)、Space押下中、または移動ツール選択中はパン移動開始
+            isPanGesture = (e.button === 1 || e.button === 2 || state.isSpacePressed || state.activeTool === 'pan');
+            state.isDragging = true;
+            state.dragMoved = false;
+            state.dragStartX = e.clientX - state.offsetX;
+            state.dragStartY = e.clientY - state.offsetY;
+
+            if (isPanGesture) {
+                viewport.style.cursor = 'grabbing';
+            }
+        });
+
+        window.addEventListener('mousemove', (e) => {
+            if (!state.isDragging) return;
+            state.dragMoved = true;
+            if (isPanGesture) {
+                state.offsetX = e.clientX - state.dragStartX;
+                state.offsetY = e.clientY - state.dragStartY;
+                applyViewportTransform();
+            }
+        });
+
+        window.addEventListener('mouseup', (e) => {
+            if (!state.isDragging) return;
+            const wasPan = isPanGesture;
+            state.isDragging = false;
+            isPanGesture = false;
+
+            viewport.style.cursor = (state.isSpacePressed || state.activeTool === 'pan') ? 'grab' : 'crosshair';
+
+            // 移動ジェスチャーではなく左クリックだった場合は色取得・選択を実行
+            if (!wasPan && e.button === 0) {
+                handleCanvasClickAction(e.clientX, e.clientY);
+            }
+        });
+
+        viewport.addEventListener('contextmenu', (e) => {
+            if (state.hasImage) e.preventDefault();
+        });
+
+        // タッチ操作対応（1本指タップ/パン、2本指ピンチズーム＆パン）
+        let touchState = {
+            mode: 'none', // 'single' | 'pinch'
+            startX: 0,
+            startY: 0,
+            moved: false,
+            initDist: 0,
+            initScale: 1,
+            lastMidX: 0,
+            lastMidY: 0
+        };
+
+        viewport.addEventListener('touchstart', (e) => {
+            if (!state.hasImage) return;
+            if (e.touches.length === 1) {
+                const t = e.touches[0];
+                touchState.mode = 'single';
+                touchState.startX = t.clientX;
+                touchState.startY = t.clientY;
+                touchState.moved = false;
+                state.dragStartX = t.clientX - state.offsetX;
+                state.dragStartY = t.clientY - state.offsetY;
+            } else if (e.touches.length === 2) {
+                e.preventDefault();
+                const t1 = e.touches[0], t2 = e.touches[1];
+                touchState.mode = 'pinch';
+                touchState.initDist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                touchState.initScale = state.scale;
+                touchState.lastMidX = (t1.clientX + t2.clientX) / 2;
+                touchState.lastMidY = (t1.clientY + t2.clientY) / 2;
+            }
+        }, { passive: false });
+
+        viewport.addEventListener('touchmove', (e) => {
+            if (!state.hasImage) return;
+            if (touchState.mode === 'single' && e.touches.length === 1) {
+                const t = e.touches[0];
+                if (Math.hypot(t.clientX - touchState.startX, t.clientY - touchState.startY) > 6) {
+                    touchState.moved = true;
+                }
+                if (touchState.moved || state.activeTool === 'pan') {
+                    e.preventDefault();
+                    state.offsetX = t.clientX - state.dragStartX;
+                    state.offsetY = t.clientY - state.dragStartY;
+                    applyViewportTransform();
+                }
+            } else if (touchState.mode === 'pinch' && e.touches.length === 2) {
+                e.preventDefault();
+                const t1 = e.touches[0], t2 = e.touches[1];
+                const dist = Math.hypot(t2.clientX - t1.clientX, t2.clientY - t1.clientY);
+                const midX = (t1.clientX + t2.clientX) / 2;
+                const midY = (t1.clientY + t2.clientY) / 2;
+
+                // 2本指の移動分を反映
+                state.offsetX += (midX - touchState.lastMidX);
+                state.offsetY += (midY - touchState.lastMidY);
+                touchState.lastMidX = midX;
+                touchState.lastMidY = midY;
+
+                const newScale = touchState.initScale * (dist / Math.max(1, touchState.initDist));
+                zoomAtPoint(newScale, midX, midY);
+            }
+        }, { passive: false });
+
+        viewport.addEventListener('touchend', (e) => {
+            if (touchState.mode === 'single' && !touchState.moved && state.activeTool === 'pick') {
+                handleCanvasClickAction(touchState.startX, touchState.startY);
+            }
+            if (e.touches.length === 0) {
+                touchState.mode = 'none';
+            }
+        });
+
+        // 背景パターン切替
+        document.querySelectorAll('.bg-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.bg-btn').forEach(b => {
+                    b.classList.remove('border-2', 'border-indigo-500');
+                    b.classList.add('border', 'border-slate-700');
+                });
+                btn.classList.remove('border', 'border-slate-700');
+                btn.classList.add('border-2', 'border-indigo-500');
+
+                canvasBgBox.classList.remove(state.bgClass);
+                state.bgClass = btn.dataset.bg;
+                canvasBgBox.classList.add(state.bgClass);
+            });
+        });
+
+        // 元画像比較ボタン（押下中比較）
+        compareOriginalBtn.addEventListener('pointerdown', () => {
+            if (!state.hasImage) return;
+            state.showOriginal = true;
+            compareOriginalBtn.classList.add('bg-amber-600', 'text-white', 'border-amber-500');
+            renderImage();
+        });
+        const releaseCompare = () => {
+            if (!state.showOriginal) return;
+            state.showOriginal = false;
+            compareOriginalBtn.classList.remove('bg-amber-600', 'text-white', 'border-amber-500');
+            renderImage();
+        };
+        window.addEventListener('pointerup', releaseCompare);
+        window.addEventListener('pointercancel', releaseCompare);
+
+        // --- PNGダウンロード処理 ---
+        downloadBtn.addEventListener('click', () => {
+            if (!state.hasImage) return;
+            // 選択マスクのハイライトが一時的にONの場合は、保存時のみマスク無しでクリーンに描画する
+            const prevShowMask = state.showMask;
+            const prevShowOrig = state.showOriginal;
+            state.showMask = false;
+            state.showOriginal = false;
+            renderImage();
+
+            const link = document.createElement('a');
+            link.download = `transparent-${Date.now()}.png`;
+            link.href = outputCanvas.toDataURL('image/png');
+            link.click();
+
+            state.showMask = prevShowMask;
+            state.showOriginal = prevShowOrig;
+            if (prevShowMask || prevShowOrig) renderImage();
+
+            showToast('透過PNG画像を保存しました', 'success');
+        });
+
+        // --- ガイドモーダル開閉 ---
+        openGuideBtn.addEventListener('click', () => guideModal.classList.remove('hidden'));
+        closeGuideBtn.addEventListener('click', () => guideModal.classList.add('hidden'));
+        confirmGuideBtn.addEventListener('click', () => guideModal.classList.add('hidden'));
+        guideModal.addEventListener('click', (e) => {
+            if (e.target === guideModal) guideModal.classList.add('hidden');
+        });
+
+        // リサイズ時のフィット調整（初回未操作時など）
+        window.addEventListener('resize', () => {
+            if (state.hasImage) applyViewportTransform();
+        });
+
+        // 初期化
+        updateModeBadges();
+    </script>
+</body>
+</html>

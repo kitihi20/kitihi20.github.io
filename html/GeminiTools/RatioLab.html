@@ -1,0 +1,1990 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>RatioLab - デザイン構図＆黄金比レイアウト検証ツール</title>
+    <!-- Tailwind CSS CDN -->
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&family=Noto+Sans+JP:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+                        mono: ['JetBrains Mono', 'monospace'],
+                    },
+                    colors: {
+                        studio: {
+                            950: '#09090b',
+                            900: '#121215',
+                            850: '#18181c',
+                            800: '#222228',
+                            700: '#2e2e36',
+                            600: '#3f3f4a',
+                        },
+                        gold: {
+                            400: '#fbbf24',
+                            500: '#f59e0b',
+                            600: '#d97706',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+
+    <style>
+        /* カスタムスクロールバーとスタジオ風UI調整 */
+        ::-webkit-scrollbar {
+            width: 6px;
+            height: 6px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #121215;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #2e2e36;
+            border-radius: 3px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #3f3f4a;
+        }
+
+        /* 透過チェッカーボード背景 */
+        .canvas-checkerboard {
+            background-color: #0d0d10;
+            background-image: 
+                linear-gradient(45deg, #16161b 25%, transparent 25%), 
+                linear-gradient(-45deg, #16161b 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #16161b 75%), 
+                linear-gradient(-45deg, transparent 75%, #16161b 75%);
+            background-size: 24px 24px;
+            background-position: 0 0, 0 12px, 12px -12px, -12px 0;
+        }
+
+        /* レンジスライダーのカスタマイズ */
+        input[type="range"] {
+            -webkit-appearance: none;
+            appearance: none;
+            background: #222228;
+            height: 6px;
+            border-radius: 999px;
+            outline: none;
+        }
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 16px;
+            height: 16px;
+            border-radius: 50%;
+            background: #f59e0b;
+            cursor: pointer;
+            border: 2px solid #121215;
+            box-shadow: 0 0 0 1px rgba(245, 158, 11, 0.4);
+            transition: transform 0.1s ease, background-color 0.15s ease;
+        }
+        input[type="range"]::-webkit-slider-thumb:hover {
+            transform: scale(1.15);
+            background: #fbbf24;
+        }
+
+        .guide-btn.active {
+            background-color: rgba(245, 158, 11, 0.14);
+            border-color: #f59e0b;
+            color: #fbbf24;
+            box-shadow: inset 0 0 12px rgba(245, 158, 11, 0.12);
+        }
+        .guide-btn.active .guide-icon {
+            color: #fbbf24;
+        }
+    </style>
+</head>
+<body class="bg-studio-950 text-zinc-100 font-sans antialiased selection:bg-gold-500 selection:text-studio-950 h-screen flex flex-col overflow-hidden select-none">
+
+    <!-- トップヘッダーバー -->
+    <header class="h-14 bg-studio-900 border-b border-studio-800 px-4 flex items-center justify-between shrink-0 z-20">
+        <!-- ロゴ＆タイトル -->
+        <div class="flex items-center gap-3">
+            <div class="w-9 h-9 rounded-lg bg-gradient-to-br from-gold-400 to-amber-600 p-0.5 shadow-lg shadow-amber-500/10 flex items-center justify-center">
+                <div class="w-full h-full bg-studio-900 rounded-[6px] flex items-center justify-center">
+                    <svg class="w-5 h-5 text-gold-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                        <rect x="3" y="3" width="18" height="18" rx="2"/>
+                        <line x1="14.1" y1="3" x2="14.1" y2="21"/>
+                        <line x1="14.1" y1="14.1" x2="21" y2="14.1"/>
+                        <path d="M3 21A11.1 11.1 0 0 1 14.1 9.9c3.8 0 6.9 3.1 6.9 6.9a4.2 4.2 0 0 1-4.2 4.2"/>
+                    </svg>
+                </div>
+            </div>
+            <div>
+                <div class="flex items-center gap-2">
+                    <h1 class="font-bold text-sm tracking-tight text-zinc-100">RatioLab Studio</h1>
+                    <span class="text-[10px] font-mono uppercase px-1.5 py-0.5 rounded bg-gold-500/15 text-gold-400 border border-gold-500/30 font-semibold">φ = 1.61803</span>
+                </div>
+                <p class="text-[11px] text-zinc-400 hidden sm:block">黄金比・三分割・幾何学レイアウト構図インスペクター</p>
+            </div>
+        </div>
+
+        <!-- 中央：サンプルプリセット＆画像読み込み -->
+        <div class="flex items-center gap-2">
+            <!-- ファイル選択ボタン -->
+            <label for="fileInput" class="cursor-pointer inline-flex items-center gap-2 px-3.5 py-1.5 rounded-lg bg-gold-500 hover:bg-gold-400 text-studio-950 font-semibold text-xs transition shadow-md shadow-amber-500/10">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"/>
+                </svg>
+                <span>画像を開く</span>
+                <input id="fileInput" type="file" accept="image/*" class="hidden">
+            </label>
+
+            <!-- サンプル画像ドロップダウン -->
+            <div class="relative">
+                <select id="samplePresetSelect" class="bg-studio-800 hover:bg-studio-700 text-zinc-200 text-xs rounded-lg px-3 py-1.5 border border-studio-700 focus:outline-none focus:border-gold-500 transition cursor-pointer">
+                    <option value="" disabled>サンプルアートを選択...</option>
+                    <option value="golden_arch" selected>サンプル 1: 黄金比モダニズム建築 (16:10)</option>
+                    <option value="thirds_landscape">サンプル 2: 三分割・夕暮れの灯台と水平線 (16:9)</option>
+                    <option value="ui_poster">サンプル 3: スイススタイル・タイポグラフィポスター (1:1.414)</option>
+                    <option value="radial_geometry">サンプル 4: シンメトリー＆対角線ジオメトリ (1:1)</option>
+                </select>
+            </div>
+        </div>
+
+        <!-- 右側アクション：一時非表示・書き出し -->
+        <div class="flex items-center gap-2">
+            <button id="holdCompareBtn" title="スペースキーまたは長押しでガイドを一時非表示" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 text-zinc-300 border border-studio-700 text-xs transition">
+                <svg class="w-4 h-4 text-zinc-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/>
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"/>
+                </svg>
+                <span class="hidden md:inline">元画像と比較 (長押し)</span>
+            </button>
+
+            <button id="exportImageBtn" class="inline-flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-studio-800 hover:bg-studio-700 text-zinc-100 border border-studio-600 text-xs font-medium transition">
+                <svg class="w-4 h-4 text-gold-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/>
+                </svg>
+                <span class="hidden sm:inline">ガイド付きPNG保存</span>
+            </button>
+        </div>
+    </header>
+
+    <!-- メインワークスペース (左パネル・中央キャンバス・右パネル) -->
+    <div class="flex-1 flex flex-col lg:flex-row overflow-hidden relative">
+
+        <!-- 左サイドパネル：構図オーバーレイ選択＆変換 -->
+        <aside class="w-full lg:w-80 bg-studio-900 border-b lg:border-b-0 lg:border-r border-studio-800 flex flex-col overflow-y-auto shrink-0 z-10 max-h-[38vh] lg:max-h-none">
+            
+            <!-- セクション1: 構図ガイドライン（複数同時選択可） -->
+            <div class="p-4 border-b border-studio-800">
+                <div class="flex items-center justify-between mb-2.5">
+                    <h2 class="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                        <span class="w-1.5 h-1.5 rounded-full bg-gold-400"></span>
+                        構図オーバーレイ (複数可)
+                    </h2>
+                    <button id="resetGuidesBtn" class="text-[11px] text-zinc-400 hover:text-gold-400 transition">初期状態に戻す</button>
+                </div>
+
+                <!-- ガイドボタングリッド -->
+                <div class="grid grid-cols-2 gap-2" id="guideButtonsContainer">
+                    <!-- 1. 黄金螺旋 (Golden Spiral) -->
+                    <button data-guide="fibonacciSpiral" class="guide-btn active flex items-start gap-2.5 p-2.5 rounded-xl bg-studio-850 hover:bg-studio-800 border border-studio-700 text-left transition group">
+                        <svg class="guide-icon w-5 h-5 text-zinc-400 shrink-0 mt-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+                            <line x1="14.2" y1="4" x2="14.2" y2="20"/>
+                            <line x1="14.2" y1="13.8" x2="21" y2="13.8"/>
+                            <path d="M3 20C3 11.2 10.2 4 19 4"/>
+                        </svg>
+                        <div>
+                            <div class="text-xs font-semibold leading-tight">黄金比スパイラル</div>
+                            <div class="text-[10px] text-zinc-400 mt-0.5">フィボナッチ螺旋と分割</div>
+                        </div>
+                    </button>
+
+                    <!-- 2. ファイ・グリッド (Phi Grid 1:0.618:1) -->
+                    <button data-guide="phiGrid" class="guide-btn flex items-start gap-2.5 p-2.5 rounded-xl bg-studio-850 hover:bg-studio-800 border border-studio-700 text-left transition group">
+                        <svg class="guide-icon w-5 h-5 text-zinc-400 shrink-0 mt-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+                            <line x1="9.8" y1="4" x2="9.8" y2="20"/>
+                            <line x1="14.2" y1="4" x2="14.2" y2="20"/>
+                            <line x1="3" y1="10.1" x2="21" y2="10.1"/>
+                            <line x1="3" y1="13.9" x2="21" y2="13.9"/>
+                        </svg>
+                        <div>
+                            <div class="text-xs font-semibold leading-tight">ファイ・グリッド</div>
+                            <div class="text-[10px] text-zinc-400 mt-0.5">黄金比 1 : 0.618 : 1</div>
+                        </div>
+                    </button>
+
+                    <!-- 3. 三分割法 (Rule of Thirds) -->
+                    <button data-guide="ruleOfThirds" class="guide-btn active flex items-start gap-2.5 p-2.5 rounded-xl bg-studio-850 hover:bg-studio-800 border border-studio-700 text-left transition group">
+                        <svg class="guide-icon w-5 h-5 text-zinc-400 shrink-0 mt-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+                            <line x1="9" y1="4" x2="9" y2="20"/>
+                            <line x1="15" y1="4" x2="15" y2="20"/>
+                            <line x1="3" y1="9.3" x2="21" y2="9.3"/>
+                            <line x1="3" y1="14.7" x2="21" y2="14.7"/>
+                        </svg>
+                        <div>
+                            <div class="text-xs font-semibold leading-tight">三分割法 (3×3)</div>
+                            <div class="text-[10px] text-zinc-400 mt-0.5">等間隔3分割＋力点</div>
+                        </div>
+                    </button>
+
+                    <!-- 4. 黄金三角形 (Golden Triangles) -->
+                    <button data-guide="goldenTriangle" class="guide-btn flex items-start gap-2.5 p-2.5 rounded-xl bg-studio-850 hover:bg-studio-800 border border-studio-700 text-left transition group">
+                        <svg class="guide-icon w-5 h-5 text-zinc-400 shrink-0 mt-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+                            <line x1="3" y1="20" x2="21" y2="4"/>
+                            <line x1="3" y1="4" x2="10.5" y2="13.3"/>
+                            <line x1="21" y1="20" x2="13.5" y2="10.7"/>
+                        </svg>
+                        <div>
+                            <div class="text-xs font-semibold leading-tight">黄金三角形</div>
+                            <div class="text-[10px] text-zinc-400 mt-0.5">対角線と垂線の交点</div>
+                        </div>
+                    </button>
+
+                    <!-- 5. 対角線・バロック＆シニスター (Diagonals) -->
+                    <button data-guide="diagonals" class="guide-btn flex items-start gap-2.5 p-2.5 rounded-xl bg-studio-850 hover:bg-studio-800 border border-studio-700 text-left transition group">
+                        <svg class="guide-icon w-5 h-5 text-zinc-400 shrink-0 mt-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+                            <line x1="3" y1="4" x2="21" y2="20"/>
+                            <line x1="21" y1="4" x2="3" y2="20"/>
+                        </svg>
+                        <div>
+                            <div class="text-xs font-semibold leading-tight">対角線＆ひし形</div>
+                            <div class="text-[10px] text-zinc-400 mt-0.5">X字対角＋中点ダイヤ</div>
+                        </div>
+                    </button>
+
+                    <!-- 6. センタークロス＆黄金円 (Center & Golden Circles) -->
+                    <button data-guide="centerCross" class="guide-btn flex items-start gap-2.5 p-2.5 rounded-xl bg-studio-850 hover:bg-studio-800 border border-studio-700 text-left transition group">
+                        <svg class="guide-icon w-5 h-5 text-zinc-400 shrink-0 mt-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+                            <line x1="12" y1="4" x2="12" y2="20"/>
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                            <circle cx="12" cy="12" r="5"/>
+                        </svg>
+                        <div>
+                            <div class="text-xs font-semibold leading-tight">二分割＋黄金円</div>
+                            <div class="text-[10px] text-zinc-400 mt-0.5">日の丸構図・黄金比円</div>
+                        </div>
+                    </button>
+
+                    <!-- 7. ルート矩形 / ハーモニック・アーマチュア (Harmonic Armature) -->
+                    <button data-guide="harmonicArmature" class="guide-btn flex items-start gap-2.5 p-2.5 rounded-xl bg-studio-850 hover:bg-studio-800 border border-studio-700 text-left transition group">
+                        <svg class="guide-icon w-5 h-5 text-zinc-400 shrink-0 mt-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+                            <line x1="3" y1="4" x2="21" y2="20"/>
+                            <line x1="21" y1="4" x2="3" y2="20"/>
+                            <line x1="12" y1="4" x2="3" y2="20"/>
+                            <line x1="12" y1="4" x2="21" y2="20"/>
+                        </svg>
+                        <div>
+                            <div class="text-xs font-semibold leading-tight">ハーモニック骨格</div>
+                            <div class="text-[10px] text-zinc-400 mt-0.5">絵画・ポスターの古典骨格</div>
+                        </div>
+                    </button>
+
+                    <!-- 8. モジュラー・カスタムグリッド (Custom N×M Grid) -->
+                    <button data-guide="customGrid" class="guide-btn flex items-start gap-2.5 p-2.5 rounded-xl bg-studio-850 hover:bg-studio-800 border border-studio-700 text-left transition group">
+                        <svg class="guide-icon w-5 h-5 text-zinc-400 shrink-0 mt-0.5 transition" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8">
+                            <rect x="3" y="4" width="18" height="16" rx="1.5"/>
+                            <line x1="7.5" y1="4" x2="7.5" y2="20"/>
+                            <line x1="12" y1="4" x2="12" y2="20"/>
+                            <line x1="16.5" y1="4" x2="16.5" y2="20"/>
+                            <line x1="3" y1="8" x2="21" y2="8"/>
+                            <line x1="3" y1="12" x2="21" y2="12"/>
+                            <line x1="3" y1="16" x2="21" y2="16"/>
+                        </svg>
+                        <div>
+                            <div class="text-xs font-semibold leading-tight">等分割グリッド</div>
+                            <div class="text-[10px] text-zinc-400 mt-0.5">4×4 / 8×8 / 任意分割</div>
+                        </div>
+                    </button>
+                </div>
+            </div>
+
+            <!-- セクション2: スパイラル＆三角形の向き・反転コントロール -->
+            <div class="p-4 border-b border-studio-800 space-y-3">
+                <div class="flex items-center justify-between">
+                    <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">螺旋・三角形の向きと反転</h3>
+                    <span id="spiralOrientationBadge" class="text-[10px] font-mono text-gold-400 bg-studio-800 px-2 py-0.5 rounded">右下収束 (標準)</span>
+                </div>
+
+                <div class="grid grid-cols-3 gap-2">
+                    <button id="flipHBtn" class="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-studio-800 hover:bg-studio-700 border border-studio-700 text-xs font-medium transition">
+                        <svg class="w-4 h-4 text-gold-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M8 7l-5 5 5 5M16 7l5 5-5 5M12 3v18"/>
+                        </svg>
+                        <span>左右反転</span>
+                    </button>
+                    <button id="flipVBtn" class="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-studio-800 hover:bg-studio-700 border border-studio-700 text-xs font-medium transition">
+                        <svg class="w-4 h-4 text-gold-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M7 8l5-5 5 5M7 16l5 5 5-5M3 12h18"/>
+                        </svg>
+                        <span>上下反転</span>
+                    </button>
+                    <button id="cycleSpiralBtn" class="flex items-center justify-center gap-1.5 py-2 px-2.5 rounded-lg bg-studio-800 hover:bg-studio-700 border border-studio-700 text-xs font-medium transition">
+                        <svg class="w-4 h-4 text-gold-400" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                            <path d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"/>
+                        </svg>
+                        <span>軸切替</span>
+                    </button>
+                </div>
+
+                <!-- 黄金螺旋の追加表示オプション -->
+                <div class="pt-1 space-y-2">
+                    <label class="flex items-center justify-between text-xs text-zinc-300 cursor-pointer">
+                        <span>黄金矩形の内部区画線を表示</span>
+                        <input type="checkbox" id="showSpiralBoxesToggle" checked class="accent-amber-500 w-4 h-4 rounded cursor-pointer">
+                    </label>
+                    <label class="flex items-center justify-between text-xs text-zinc-300 cursor-pointer">
+                        <span>黄金比カラーオーバーレイ (面積比)</span>
+                        <input type="checkbox" id="showSpiralTintsToggle" checked class="accent-amber-500 w-4 h-4 rounded cursor-pointer">
+                    </label>
+                    <label class="flex items-center justify-between text-xs text-zinc-300 cursor-pointer">
+                        <span>交点パワーポイント (注目点) を強調</span>
+                        <input type="checkbox" id="showPowerPointsToggle" checked class="accent-amber-500 w-4 h-4 rounded cursor-pointer">
+                    </label>
+                </div>
+            </div>
+
+            <!-- セクション3: 外観・ラインスタイル調整 -->
+            <div class="p-4 border-b border-studio-800 space-y-3.5">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-400">ガイドラインの外観設定</h3>
+
+                <!-- カラープリセット選択 -->
+                <div>
+                    <div class="flex items-center justify-between text-xs mb-1.5">
+                        <span class="text-zinc-300">メインガイドカラー</span>
+                        <span id="colorHexLabel" class="font-mono text-[11px] text-zinc-400">#F59E0B</span>
+                    </div>
+                    <div class="flex items-center gap-2">
+                        <button data-color="#f59e0b" class="color-swatch w-6 h-6 rounded-full bg-[#f59e0b] ring-2 ring-white ring-offset-2 ring-offset-studio-900 transition"></button>
+                        <button data-color="#06b6d4" class="color-swatch w-6 h-6 rounded-full bg-[#06b6d4] opacity-80 hover:opacity-100 transition"></button>
+                        <button data-color="#ec4899" class="color-swatch w-6 h-6 rounded-full bg-[#ec4899] opacity-80 hover:opacity-100 transition"></button>
+                        <button data-color="#10b981" class="color-swatch w-6 h-6 rounded-full bg-[#10b981] opacity-80 hover:opacity-100 transition"></button>
+                        <button data-color="#ffffff" class="color-swatch w-6 h-6 rounded-full bg-[#ffffff] opacity-80 hover:opacity-100 transition"></button>
+                        <button data-color="#ef4444" class="color-swatch w-6 h-6 rounded-full bg-[#ef4444] opacity-80 hover:opacity-100 transition"></button>
+                        <input type="color" id="customColorPicker" value="#f59e0b" class="w-7 h-7 rounded bg-transparent border-0 cursor-pointer ml-auto" title="自由な色を選択">
+                    </div>
+                </div>
+
+                <!-- 線の太さ -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-zinc-300">ラインの太さ</span>
+                        <span id="lineWidthLabel" class="font-mono text-gold-400">2.0 px</span>
+                    </div>
+                    <input type="range" id="lineWidthRange" min="0.5" max="6" step="0.5" value="2" class="w-full">
+                </div>
+
+                <!-- ガイドの不透明度 -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-zinc-300">ガイド不透明度</span>
+                        <span id="lineOpacityLabel" class="font-mono text-gold-400">90%</span>
+                    </div>
+                    <input type="range" id="lineOpacityRange" min="15" max="100" step="5" value="90" class="w-full">
+                </div>
+
+                <!-- 画像の暗転 (ガイドを見やすくするディマー) -->
+                <div>
+                    <div class="flex justify-between text-xs mb-1">
+                        <span class="text-zinc-300">背景画像の減光 (コントラスト補助)</span>
+                        <span id="imageDimLabel" class="font-mono text-zinc-400">0%</span>
+                    </div>
+                    <input type="range" id="imageDimRange" min="0" max="75" step="5" value="0" class="w-full">
+                </div>
+
+                <!-- 等分割グリッドの分割数設定 -->
+                <div class="pt-1 border-t border-studio-800/80">
+                    <div class="flex items-center justify-between text-xs mb-2">
+                        <span class="text-zinc-300">等分割グリッド数 (列 × 行)</span>
+                        <span id="customGridCountLabel" class="font-mono text-xs text-gold-400">4 × 4</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2">
+                        <div class="flex items-center gap-2 bg-studio-850 px-2.5 py-1.5 rounded-lg border border-studio-700">
+                            <span class="text-[11px] text-zinc-400">列(X)</span>
+                            <input type="number" id="gridColsInput" min="2" max="24" value="4" class="w-full bg-transparent text-right font-mono text-xs text-zinc-100 focus:outline-none">
+                        </div>
+                        <div class="flex items-center gap-2 bg-studio-850 px-2.5 py-1.5 rounded-lg border border-studio-700">
+                            <span class="text-[11px] text-zinc-400">行(Y)</span>
+                            <input type="number" id="gridRowsInput" min="2" max="24" value="4" class="w-full bg-transparent text-right font-mono text-xs text-zinc-100 focus:outline-none">
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 中央メインキャンバスエリア -->
+        <main id="canvasContainer" class="flex-1 canvas-checkerboard relative flex flex-col overflow-hidden">
+            
+            <!-- ドラッグ＆ドロップ案内オーバーレイ -->
+            <div id="dropZoneOverlay" class="pointer-events-none absolute inset-4 rounded-2xl border-2 border-dashed border-gold-400 bg-studio-950/85 backdrop-blur-sm z-30 hidden items-center justify-center flex-col gap-3 transition">
+                <div class="w-14 h-14 rounded-2xl bg-gold-500/20 border border-gold-500/40 flex items-center justify-center text-gold-400">
+                    <svg class="w-8 h-8" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"/>
+                    </svg>
+                </div>
+                <p class="text-base font-bold text-zinc-100">画像をここにドロップしてレイアウト解析を開始</p>
+                <p class="text-xs text-zinc-400">PNG / JPG / WebP / SVG 対応（ブラウザ内処理のため外部送信されません）</p>
+            </div>
+
+            <!-- 上部フローティング・バウンディングボックス調整バー -->
+            <div class="absolute top-3 left-1/2 -translate-x-1/2 z-20 flex flex-wrap items-center gap-1.5 bg-studio-900/90 backdrop-blur-md border border-studio-700 px-3 py-1.5 rounded-xl shadow-2xl">
+                <span class="text-[11px] text-zinc-400 mr-1">検証枠の比率:</span>
+                <button data-box-preset="full" class="box-preset-btn px-2 py-1 rounded text-[11px] font-medium bg-gold-500/20 text-gold-400 border border-gold-500/40 transition">画像全体</button>
+                <button data-box-preset="phi-landscape" class="box-preset-btn px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:bg-studio-800 transition">1.618:1 (横黄金)</button>
+                <button data-box-preset="phi-portrait" class="box-preset-btn px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:bg-studio-800 transition">1:1.618 (縦黄金)</button>
+                <button data-box-preset="square" class="box-preset-btn px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:bg-studio-800 transition">1:1 (正方形)</button>
+                <button data-box-preset="root2" class="box-preset-btn px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:bg-studio-800 transition">1.414:1 (白銀比)</button>
+                <div class="h-3.5 w-[1px] bg-studio-700 mx-1"></div>
+                <label class="flex items-center gap-1.5 text-[11px] text-zinc-300 cursor-pointer">
+                    <input type="checkbox" id="interactiveFrameToggle" checked class="accent-amber-500 w-3.5 h-3.5 rounded cursor-pointer">
+                    <span>枠をドラッグで移動・拡縮</span>
+                </label>
+            </div>
+
+            <!-- キャンバス本体 -->
+            <div class="flex-1 w-full h-full relative overflow-hidden flex items-center justify-center">
+                <canvas id="mainCanvas" class="block cursor-crosshair"></canvas>
+            </div>
+
+            <!-- 下部ステータス＆マウス座標・カラーピッカーHUD -->
+            <div class="h-9 bg-studio-900/95 border-t border-studio-800 px-4 flex items-center justify-between text-[11px] font-mono text-zinc-400 shrink-0 z-20">
+                <div class="flex items-center gap-4">
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-zinc-500">座標:</span>
+                        <span id="cursorCoordLabel" class="text-zinc-200">X: ---, Y: ---</span>
+                    </div>
+                    <div class="hidden sm:flex items-center gap-1.5">
+                        <span class="text-zinc-500">相対位置:</span>
+                        <span id="cursorPercentLabel" class="text-gold-400">--% , --%</span>
+                    </div>
+                    <div class="flex items-center gap-1.5">
+                        <span class="text-zinc-500">픽セル色:</span>
+                        <span id="sampledColorSwatch" class="w-3 h-3 rounded-sm border border-white/20 inline-block bg-zinc-700"></span>
+                        <span id="sampledColorHex" class="text-zinc-200">#------</span>
+                    </div>
+                </div>
+
+                <div class="flex items-center gap-3">
+                    <span class="hidden md:inline text-zinc-500">ショートカット: [Space] ガイド一時非表示 / [R] 螺旋反転 / [F] 画像全体に合わせる</span>
+                </div>
+            </div>
+        </main>
+
+        <!-- 右サイドパネル：比率診断＆黄金比・白銀比電卓 -->
+        <aside class="w-full lg:w-80 bg-studio-900 border-t lg:border-t-0 lg:border-l border-studio-800 flex flex-col overflow-y-auto shrink-0 z-10 max-h-[36vh] lg:max-h-none">
+            
+            <!-- セクション1: 現在の画像＆選択枠の比率インスペクター -->
+            <div class="p-4 border-b border-studio-800 space-y-3">
+                <h2 class="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-emerald-400"></span>
+                    画像・アスペクト比診断
+                </h2>
+
+                <!-- メトリクスカード -->
+                <div class="grid grid-cols-2 gap-2">
+                    <div class="bg-studio-850 p-2.5 rounded-xl border border-studio-800">
+                        <div class="text-[10px] text-zinc-400">画像サイズ (W × H)</div>
+                        <div id="imgDimensionText" class="font-mono text-sm font-semibold text-zinc-100 mt-0.5">1600 × 1000</div>
+                    </div>
+                    <div class="bg-studio-850 p-2.5 rounded-xl border border-studio-800">
+                        <div class="text-[10px] text-zinc-400">実測アスペクト比</div>
+                        <div id="imgAspectRatioText" class="font-mono text-sm font-semibold text-gold-400 mt-0.5">1.600 : 1</div>
+                    </div>
+                </div>
+
+                <!-- 黄金比・白銀比との一致度メーター -->
+                <div class="bg-studio-850 p-3 rounded-xl border border-studio-800 space-y-2">
+                    <div class="flex items-center justify-between text-xs">
+                        <span class="text-zinc-300 font-medium">黄金比 (1 : 1.618) 適合度</span>
+                        <span id="goldenMatchScore" class="font-mono font-bold text-gold-400">98.9%</span>
+                    </div>
+                    <div class="w-full h-2 bg-studio-950 rounded-full overflow-hidden">
+                        <div id="goldenMatchBar" class="h-full bg-gradient-to-r from-amber-500 to-yellow-300 rounded-full transition-all duration-300" style="width: 98.9%"></div>
+                    </div>
+                    <p id="ratioFeedbackText" class="text-[11px] text-zinc-400 leading-relaxed">
+                        現在の画像比率は非常に黄金比(1.618)に近く、自然で安定した黄金螺旋レイアウトが可能です。
+                    </p>
+                </div>
+
+                <!-- 主要な構図座標（現在の検証枠に対するpx座標） -->
+                <div class="bg-studio-850 p-3 rounded-xl border border-studio-800 space-y-2">
+                    <div class="text-[11px] font-semibold text-zinc-300 flex items-center justify-between">
+                        <span>主要分割ライン座標 (px)</span>
+                        <span id="activeBoxDimensionsLabel" class="font-mono text-[10px] text-zinc-400">枠: 1600×1000</span>
+                    </div>
+                    <div class="grid grid-cols-2 gap-2 text-[11px] font-mono">
+                        <div class="bg-studio-900 p-2 rounded border border-studio-800">
+                            <span class="text-zinc-400 block text-[10px]">黄金分割 X (38.2% / 61.8%)</span>
+                            <span id="phiCoordX" class="text-gold-400">611px / 989px</span>
+                        </div>
+                        <div class="bg-studio-900 p-2 rounded border border-studio-800">
+                            <span class="text-zinc-400 block text-[10px]">黄金分割 Y (38.2% / 61.8%)</span>
+                            <span id="phiCoordY" class="text-gold-400">382px / 618px</span>
+                        </div>
+                        <div class="bg-studio-900 p-2 rounded border border-studio-800">
+                            <span class="text-zinc-400 block text-[10px]">三分割 X (33.3% / 66.7%)</span>
+                            <span id="thirdsCoordX" class="text-cyan-400">533px / 1067px</span>
+                        </div>
+                        <div class="bg-studio-900 p-2 rounded border border-studio-800">
+                            <span class="text-zinc-400 block text-[10px]">三分割 Y (33.3% / 66.7%)</span>
+                            <span id="thirdsCoordY" class="text-cyan-400">333px / 667px</span>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <!-- セクション2: デザイナー向け黄金比・白銀比インタラクティブ計算機 -->
+            <div class="p-4 border-b border-studio-800 space-y-3">
+                <h2 class="text-xs font-semibold uppercase tracking-wider text-zinc-400 flex items-center gap-1.5">
+                    <span class="w-1.5 h-1.5 rounded-full bg-gold-400"></span>
+                    レイアウト寸法・黄金比計算機
+                </h2>
+                <p class="text-[11px] text-zinc-400">基準となる幅やフォントサイズを入力すると、黄金比(φ=1.618)および白銀比(√2=1.414)の推奨値を算出します。</p>
+
+                <div class="flex items-center gap-2">
+                    <label class="text-xs text-zinc-300 shrink-0">基準値 (Base):</label>
+                    <input type="number" id="calcBaseInput" value="1200" min="1" max="99999" class="w-full bg-studio-850 border border-studio-700 focus:border-gold-500 rounded-lg px-3 py-1.5 font-mono text-xs text-zinc-100 focus:outline-none">
+                    <span class="text-xs font-mono text-zinc-500">px</span>
+                </div>
+
+                <!-- 計算結果テーブル -->
+                <div class="space-y-1.5 text-xs font-mono">
+                    <div class="flex items-center justify-between bg-studio-850 px-3 py-2 rounded-lg border border-studio-800">
+                        <span class="text-zinc-400 font-sans text-[11px]">メイン領域 (Base ÷ φ = 61.8%)</span>
+                        <span id="calcGoldenMajor" class="text-gold-400 font-semibold">741.6 px</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-studio-850 px-3 py-2 rounded-lg border border-studio-800">
+                        <span class="text-zinc-400 font-sans text-[11px]">サブ領域 (Base - Major = 38.2%)</span>
+                        <span id="calcGoldenMinor" class="text-gold-400 font-semibold">458.4 px</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-studio-850 px-3 py-2 rounded-lg border border-studio-800">
+                        <span class="text-zinc-400 font-sans text-[11px]">拡大黄金比 (Base × φ = 161.8%)</span>
+                        <span id="calcGoldenExpand" class="text-zinc-200">1941.6 px</span>
+                    </div>
+                    <div class="flex items-center justify-between bg-studio-850 px-3 py-2 rounded-lg border border-studio-800">
+                        <span class="text-zinc-400 font-sans text-[11px]">白銀比分割 (Base ÷ √2 = 70.7%)</span>
+                        <span id="calcSilverRatio" class="text-cyan-400">848.5 px</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- セクション3: 構図ガイド解説ミニリファレンス -->
+            <div class="p-4 space-y-2.5 text-xs text-zinc-400">
+                <h3 class="text-xs font-semibold uppercase tracking-wider text-zinc-300">構図チェックのポイント</h3>
+                <ul class="space-y-2 text-[11px] leading-relaxed">
+                    <li class="flex gap-2">
+                        <span class="text-gold-400 font-bold">●</span>
+                        <span><strong class="text-zinc-200">黄金比スパイラル:</strong> 視線の誘導経路と最終到達点（螺旋の収束部）に最も重要な要素（主題・CTA・瞳など）が配置されているか確認します。</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="text-gold-400 font-bold">●</span>
+                        <span><strong class="text-zinc-200">三分割法 vs ファイ・グリッド:</strong> ファイ・グリッド(1:0.618:1)は三分割法よりも中央寄りに交点が集まり、より繊細で求心力の高いデザインに適しています。</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="text-gold-400 font-bold">●</span>
+                        <span><strong class="text-zinc-200">部分領域の検証:</strong> 画面上部の「枠をドラッグで移動・拡縮」を使うと、画像内の特定のカードやロゴ単体の黄金比も測定できます。</span>
+                    </li>
+                </ul>
+            </div>
+        </aside>
+    </div>
+
+    <!-- トースト通知用コンテナ -->
+    <div id="toastMessage" class="fixed bottom-12 left-1/2 -translate-x-1/2 z-50 px-4 py-2 rounded-xl bg-studio-800/95 border border-gold-500/40 text-zinc-100 text-xs font-medium shadow-2xl pointer-events-none opacity-0 transition-opacity duration-200">
+        画像を読み込みました
+    </div>
+
+    <script>
+        /**
+         * RatioLab Studio - バニラJavaScriptによるデザイン構図＆黄金比検証エンジン
+         */
+        (() => {
+            // 数学定数
+            const PHI = (1 + Math.sqrt(5)) / 2; // 1.6180339887...
+            const INV_PHI = 1 / PHI;            // 0.6180339887...
+            const MINOR_PHI = 1 - INV_PHI;      // 0.3819660112...
+            const SQRT2 = Math.sqrt(2);         // 1.4142135623...
+
+            // アプリケーション状態管理
+            const state = {
+                image: null,               // 現在読み込まれているHTMLImageElementまたはオフスクリーンCanvas
+                imageWidth: 1600,
+                imageHeight: 1000,
+                
+                // アクティブな構図ガイド（複数同時ON可能）
+                activeGuides: {
+                    fibonacciSpiral: true,
+                    phiGrid: false,
+                    ruleOfThirds: true,
+                    goldenTriangle: false,
+                    diagonals: false,
+                    centerCross: false,
+                    harmonicArmature: false,
+                    customGrid: false
+                },
+
+                // 螺旋・黄金三角形の方向と反転状態
+                flipH: false,              // 左右反転
+                flipV: false,              // 上下反転
+                spiralVariant: 0,          // 0: 横長展開, 1: 縦長展開
+
+                // 黄金螺旋の詳細表示フラグ
+                showSpiralBoxes: true,
+                showSpiralTints: true,
+                showPowerPoints: true,
+
+                // スタイル設定
+                guideColor: '#f59e0b',
+                lineWidth: 2.0,
+                lineOpacity: 0.90,
+                imageDim: 0.0,
+
+                // カスタムグリッド分割数
+                gridCols: 4,
+                gridRows: 4,
+
+                // 検証バウンディングボックス（画像座標系 0.0 ~ 1.0 で保持）
+                box: {
+                    x: 0,
+                    y: 0,
+                    w: 1,
+                    h: 1
+                },
+                interactiveFrame: true,
+                isHoldingCompare: false,
+
+                // キャンバス描画トランスフォーム情報（画面上の画像描画位置・スケール）
+                renderRect: { x: 0, y: 0, w: 800, h: 500, scale: 1 },
+
+                // マウスドラッグ操作状態
+                dragMode: null, // 'move', 'nw', 'ne', 'sw', 'se'
+                dragStartMouse: { x: 0, y: 0 },
+                dragStartBox: { x: 0, y: 0, w: 1, h: 1 }
+            };
+
+            // DOM要素の参照取得
+            const canvas = document.getElementById('mainCanvas');
+            const ctx = canvas.getContext('2d');
+            const canvasContainer = document.getElementById('canvasContainer');
+            const fileInput = document.getElementById('fileInput');
+            const samplePresetSelect = document.getElementById('samplePresetSelect');
+            const dropZoneOverlay = document.getElementById('dropZoneOverlay');
+            const toastMessage = document.getElementById('toastMessage');
+
+            /**
+             * 初期表示およびプリセット切り替え用の高品質サンプルアートワークをCanvasで動的生成する関数
+             * 外部画像URL切れの心配がなく、黄金比や三分割法が美しく検証できる構図を描画します。
+             */
+            function generateSampleArtwork(type) {
+                const offCanvas = document.createElement('canvas');
+                const oCtx = offCanvas.getContext('2d');
+
+                if (type === 'golden_arch') {
+                    // 黄金比 (1600 x 989 ≒ 1.618:1) のモダニズム建築＆太陽のアートワーク
+                    offCanvas.width = 1618;
+                    offCanvas.height = 1000;
+                    const W = offCanvas.width;
+                    const H = offCanvas.height;
+
+                    // 背景グラデーション
+                    const bgGrad = oCtx.createLinearGradient(0, 0, W, H);
+                    bgGrad.addColorStop(0, '#0f172a');
+                    bgGrad.addColorStop(0.55, '#1e293b');
+                    bgGrad.addColorStop(1, '#334155');
+                    oCtx.fillStyle = bgGrad;
+                    oCtx.fillRect(0, 0, W, H);
+
+                    // 黄金分割位置 (X = 1000, Y = 618)
+                    const majorX = W * INV_PHI; // 約1000
+                    const majorY = H * INV_PHI; // 約618
+
+                    // 大きなアーチ構造（左側 61.8% 領域）
+                    oCtx.fillStyle = '#1e293b';
+                    oCtx.fillRect(0, 0, majorX, H);
+
+                    // 光の差し込む階段状の幾何学ウォール
+                    const sunGrad = oCtx.createRadialGradient(
+                        majorX + (W - majorX) * MINOR_PHI,
+                        majorY + (H - majorY) * MINOR_PHI,
+                        20,
+                        majorX + (W - majorX) * MINOR_PHI,
+                        majorY + (H - majorY) * MINOR_PHI,
+                        750
+                    );
+                    sunGrad.addColorStop(0, '#fde68a');
+                    sunGrad.addColorStop(0.25, '#f59e0b');
+                    sunGrad.addColorStop(0.6, '#ea580c');
+                    sunGrad.addColorStop(1, 'rgba(15, 23, 42, 0)');
+                    oCtx.fillStyle = sunGrad;
+                    oCtx.fillRect(0, 0, W, H);
+
+                    // 建築的な大円弧（黄金スパイラルに沿うシルエット）
+                    oCtx.save();
+                    oCtx.beginPath();
+                    oCtx.arc(majorX, H, majorX, Math.PI, Math.PI * 1.5);
+                    oCtx.lineTo(majorX, H);
+                    oCtx.closePath();
+                    oCtx.fillStyle = 'rgba(15, 23, 42, 0.55)';
+                    oCtx.fill();
+                    oCtx.restore();
+
+                    // 黄金スパイラルの収束点（アイ・オブ・ザ・スパイラル）に輝く球体オブジェを配置
+                    const focalX = majorX + (W - majorX) * (1 - INV_PHI * INV_PHI);
+                    const focalY = majorY + (H - majorY) * INV_PHI;
+
+                    // 水平デッキと柱
+                    oCtx.fillStyle = '#090d16';
+                    oCtx.fillRect(0, majorY, majorX, H - majorY);
+                    oCtx.fillRect(majorX - 18, 0, 18, H);
+
+                    // 主題の黄金球体
+                    oCtx.beginPath();
+                    oCtx.arc(focalX, focalY, 64, 0, Math.PI * 2);
+                    const sphereGrad = oCtx.createRadialGradient(focalX - 18, focalY - 18, 6, focalX, focalY, 64);
+                    sphereGrad.addColorStop(0, '#fffbeb');
+                    sphereGrad.addColorStop(0.5, '#f59e0b');
+                    sphereGrad.addColorStop(1, '#78350f');
+                    oCtx.fillStyle = sphereGrad;
+                    oCtx.fill();
+
+                    // タイポグラフィのアクセント（左上の余白）
+                    oCtx.fillStyle = 'rgba(248, 250, 252, 0.85)';
+                    oCtx.font = '700 42px Inter, sans-serif';
+                    oCtx.fillText('ARCHITECTURAL PHI', 80, 120);
+                    oCtx.fillStyle = 'rgba(148, 163, 184, 0.8)';
+                    oCtx.font = '400 20px "JetBrains Mono", monospace';
+                    oCtx.fillText('1618 × 1000 px  |  PROPORTION 1 : 1.61803', 80, 162);
+
+                } else if (type === 'thirds_landscape') {
+                    // 三分割法 (1600 x 900, 16:9) の夕暮れ海景と灯台
+                    offCanvas.width = 1600;
+                    offCanvas.height = 900;
+                    const W = offCanvas.width;
+                    const H = offCanvas.height;
+
+                    // 空のグラデーション（上2/3）
+                    const skyGrad = oCtx.createLinearGradient(0, 0, 0, H * (2 / 3));
+                    skyGrad.addColorStop(0, '#0f172a');
+                    skyGrad.addColorStop(0.5, '#311042');
+                    skyGrad.addColorStop(0.85, '#be185d');
+                    skyGrad.addColorStop(1, '#f97316');
+                    oCtx.fillStyle = skyGrad;
+                    oCtx.fillRect(0, 0, W, H * (2 / 3));
+
+                    // 左上1/3の交点に夕日
+                    const sunX = W * (1 / 3);
+                    const sunY = H * (1 / 3);
+                    const sunG = oCtx.createRadialGradient(sunX, sunY, 10, sunX, sunY, 260);
+                    sunG.addColorStop(0, '#fef08a');
+                    sunG.addColorStop(0.3, '#f97316');
+                    sunG.addColorStop(1, 'rgba(249, 115, 22, 0)');
+                    oCtx.fillStyle = sunG;
+                    oCtx.beginPath();
+                    oCtx.arc(sunX, sunY, 260, 0, Math.PI * 2);
+                    oCtx.fill();
+
+                    // 海（下1/3ライン＝H * 2/3 が水平線）
+                    const seaGrad = oCtx.createLinearGradient(0, H * (2 / 3), 0, H);
+                    seaGrad.addColorStop(0, '#431407');
+                    seaGrad.addColorStop(0.4, '#1e1b4b');
+                    seaGrad.addColorStop(1, '#09090b');
+                    oCtx.fillStyle = seaGrad;
+                    oCtx.fillRect(0, H * (2 / 3), W, H * (1 / 3));
+
+                    // 右1/3ライン (X = W * 2/3) に岬と灯台を配置
+                    const lighthouseX = W * (2 / 3);
+                    const horizonY = H * (2 / 3);
+
+                    // 岬のシルエット
+                    oCtx.fillStyle = '#09090b';
+                    oCtx.beginPath();
+                    oCtx.moveTo(W * 0.48, horizonY);
+                    oCtx.quadraticCurveTo(W * 0.6, horizonY - 35, lighthouseX - 40, horizonY - 25);
+                    oCtx.lineTo(W, horizonY - 10);
+                    oCtx.lineTo(W, horizonY + 30);
+                    oCtx.lineTo(W * 0.48, horizonY);
+                    oCtx.fill();
+
+                    // 灯台本体（右1/3の垂直線上にぴったり重なる）
+                    oCtx.fillStyle = '#09090b';
+                    oCtx.beginPath();
+                    oCtx.moveTo(lighthouseX - 26, horizonY - 20);
+                    oCtx.lineTo(lighthouseX - 14, H * (1 / 3));
+                    oCtx.lineTo(lighthouseX + 14, H * (1 / 3));
+                    oCtx.lineTo(lighthouseX + 26, horizonY - 20);
+                    oCtx.closePath();
+                    oCtx.fill();
+
+                    // 灯台の光（右上1/3の交点 X = 2/3, Y = 1/3 に配置）
+                    const beamGrad = oCtx.createRadialGradient(lighthouseX, H * (1 / 3), 4, lighthouseX, H * (1 / 3), 140);
+                    beamGrad.addColorStop(0, '#ffffff');
+                    beamGrad.addColorStop(0.3, '#fde047');
+                    beamGrad.addColorStop(1, 'rgba(253, 224, 71, 0)');
+                    oCtx.fillStyle = beamGrad;
+                    oCtx.beginPath();
+                    oCtx.arc(lighthouseX, H * (1 / 3), 140, 0, Math.PI * 2);
+                    oCtx.fill();
+
+                } else if (type === 'ui_poster') {
+                    // スイススタイル・白銀比ポスター (1000 x 1414)
+                    offCanvas.width = 1000;
+                    offCanvas.height = 1414;
+                    const W = offCanvas.width;
+                    const H = offCanvas.height;
+
+                    oCtx.fillStyle = '#141418';
+                    oCtx.fillRect(0, 0, W, H);
+
+                    // 黄金分割で上下に大ブロック配置
+                    const splitY = H * INV_PHI; // 874px
+                    const splitX = W * INV_PHI; // 618px
+
+                    // メインビジュアルブロック
+                    oCtx.fillStyle = '#e11d48';
+                    oCtx.fillRect(80, 80, splitX - 80, splitY - 80);
+
+                    // サブブロック
+                    oCtx.fillStyle = '#f59e0b';
+                    oCtx.fillRect(splitX + 20, 80, W - splitX - 100, (splitY - 80) * INV_PHI);
+
+                    // 幾何学サークル
+                    oCtx.fillStyle = '#f8fafc';
+                    oCtx.beginPath();
+                    oCtx.arc(splitX, splitY, 160, 0, Math.PI * 2);
+                    oCtx.fill();
+
+                    // タイポグラフィ
+                    oCtx.fillStyle = '#f8fafc';
+                    oCtx.font = '700 68px Inter, sans-serif';
+                    oCtx.fillText('SWISS GRID', 80, splitY + 180);
+                    oCtx.fillStyle = '#94a3b8';
+                    oCtx.font = '500 28px Inter, sans-serif';
+                    oCtx.fillText('Golden & Silver Ratio Typography Layout', 80, splitY + 240);
+
+                } else if (type === 'radial_geometry') {
+                    // シンメトリー＆対角線ジオメトリ (1200 x 1200)
+                    offCanvas.width = 1200;
+                    offCanvas.height = 1200;
+                    const W = offCanvas.width;
+                    const H = offCanvas.height;
+                    const cx = W / 2;
+                    const cy = H / 2;
+
+                    const bg = oCtx.createRadialGradient(cx, cy, 40, cx, cy, 800);
+                    bg.addColorStop(0, '#1e1b4b');
+                    bg.addColorStop(0.6, '#0f172a');
+                    bg.addColorStop(1, '#020617');
+                    oCtx.fillStyle = bg;
+                    oCtx.fillRect(0, 0, W, H);
+
+                    // 対角線上のダイヤモンド
+                    oCtx.strokeStyle = 'rgba(56, 189, 248, 0.35)';
+                    oCtx.lineWidth = 6;
+                    oCtx.beginPath();
+                    oCtx.moveTo(cx, 0);
+                    oCtx.lineTo(W, cy);
+                    oCtx.lineTo(cx, H);
+                    oCtx.lineTo(0, cy);
+                    oCtx.closePath();
+                    oCtx.stroke();
+
+                    // 黄金比の同心円リング
+                    const radii = [W * 0.5 * INV_PHI, W * 0.5 * INV_PHI * INV_PHI, W * 0.5 * Math.pow(INV_PHI, 3)];
+                    radii.forEach((r, idx) => {
+                        oCtx.beginPath();
+                        oCtx.arc(cx, cy, r, 0, Math.PI * 2);
+                        oCtx.fillStyle = idx === 1 ? 'rgba(245, 158, 11, 0.25)' : 'rgba(14, 165, 233, 0.15)';
+                        oCtx.fill();
+                        oCtx.strokeStyle = idx === 1 ? '#f59e0b' : '#38bdf8';
+                        oCtx.lineWidth = 4;
+                        oCtx.stroke();
+                    });
+                }
+
+                const img = new Image();
+                img.onload = () => {
+                    state.image = img;
+                    state.imageWidth = offCanvas.width;
+                    state.imageHeight = offCanvas.height;
+                    resetBoundingBoxToFull();
+                    updateInspectorMetrics();
+                    resizeAndRender();
+                };
+                img.src = offCanvas.toDataURL('image/png');
+            }
+
+            /**
+             * キャンバスを親コンテナのサイズに合わせてリサイズし、Retina/高DPIディスプレイに対応する
+             */
+            function resizeAndRender() {
+                const rect = canvasContainer.getBoundingClientRect();
+                // 下部ステータスバー(36px)を除いた領域
+                const availW = Math.max(200, rect.width);
+                const availH = Math.max(200, rect.height - 36);
+
+                const dpr = window.devicePixelRatio || 1;
+                canvas.width = availW * dpr;
+                canvas.height = availH * dpr;
+                canvas.style.width = `${availW}px`;
+                canvas.style.height = `${availH}px`;
+
+                ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+                // 画像の表示領域計算（余白を持たせて中央配置）
+                const padX = Math.min(48, availW * 0.06);
+                const padY = Math.min(60, availH * 0.09);
+                const maxW = availW - padX * 2;
+                const maxH = availH - padY * 2;
+
+                const scale = Math.min(maxW / state.imageWidth, maxH / state.imageHeight);
+                const drawW = state.imageWidth * scale;
+                const drawH = state.imageHeight * scale;
+                const drawX = (availW - drawW) / 2;
+                const drawY = (availH - drawH) / 2 + 12; // 上部ツールバーを避けるため少し下げる
+
+                state.renderRect = { x: drawX, y: drawY, w: drawW, h: drawH, scale };
+
+                renderScene(ctx, state.renderRect, false);
+            }
+
+            /**
+             * HEXカラーコードとアルファ値から rgba(...) 文字列を生成するユーティリティ
+             */
+            function hexToRgba(hex, alpha) {
+                const clean = hex.replace('#', '');
+                const bigint = parseInt(clean, 16);
+                const r = (bigint >> 16) & 255;
+                const g = (bigint >> 8) & 255;
+                const b = bigint & 255;
+                return `rgba(${r}, ${g}, ${b}, ${alpha})`;
+            }
+
+            /**
+             * メインの描画関数（画面表示とPNG書き出しの両方で共用）
+             * @param {CanvasRenderingContext2D} targetCtx 描画先コンテキスト
+             * @param {Object} imgRect 画像が描画される矩形 {x, y, w, h}
+             * @param {Boolean} isExport 画像書き出しモードかどうか（UIハンドルを非表示にする）
+             */
+            function renderScene(targetCtx, imgRect, isExport = false) {
+                if (!isExport) {
+                    const cw = canvas.width / (window.devicePixelRatio || 1);
+                    const ch = canvas.height / (window.devicePixelRatio || 1);
+                    targetCtx.clearRect(0, 0, cw, ch);
+                }
+
+                if (!state.image) return;
+
+                // 1. ベース画像の描画
+                targetCtx.save();
+                if (!isExport) {
+                    targetCtx.shadowColor = 'rgba(0, 0, 0, 0.65)';
+                    targetCtx.shadowBlur = 28;
+                    targetCtx.shadowOffsetY = 8;
+                }
+                targetCtx.drawImage(state.image, imgRect.x, imgRect.y, imgRect.w, imgRect.h);
+                targetCtx.restore();
+
+                // 2. 背景画像の減光（ディマー）フィルター
+                if (state.imageDim > 0) {
+                    targetCtx.fillStyle = `rgba(9, 9, 11, ${state.imageDim})`;
+                    targetCtx.fillRect(imgRect.x, imgRect.y, imgRect.w, imgRect.h);
+                }
+
+                // スペースキーまたは「元画像と比較」ボタン押下中はガイド描画をスキップ
+                if (state.isHoldingCompare) return;
+
+                // 検証バウンディングボックスの実座標を算出
+                const bx = imgRect.x + state.box.x * imgRect.w;
+                const by = imgRect.y + state.box.y * imgRect.h;
+                const bw = state.box.w * imgRect.w;
+                const bh = state.box.h * imgRect.h;
+
+                // 検証枠外の領域をわずかに暗くして検証対象を際立たせる（部分選択時）
+                if (state.box.x > 0.001 || state.box.y > 0.001 || state.box.w < 0.999 || state.box.h < 0.999) {
+                    targetCtx.save();
+                    targetCtx.fillStyle = 'rgba(0, 0, 0, 0.45)';
+                    targetCtx.beginPath();
+                    targetCtx.rect(imgRect.x, imgRect.y, imgRect.w, imgRect.h);
+                    targetCtx.rect(bx, by, bw, bh);
+                    targetCtx.fill('evenodd');
+                    targetCtx.restore();
+                }
+
+                // 共通ラインスタイルの準備
+                const scaleFactor = isExport ? (state.imageWidth / state.renderRect.w) : 1;
+                const strokeW = state.lineWidth * scaleFactor;
+                const mainStroke = hexToRgba(state.guideColor, state.lineOpacity);
+                const subStroke = hexToRgba(state.guideColor, state.lineOpacity * 0.55);
+
+                targetCtx.save();
+                // 視認性を高める微細なドロップシャドウ（明暗どちらの画像でも線が見えるように）
+                targetCtx.shadowColor = 'rgba(0, 0, 0, 0.75)';
+                targetCtx.shadowBlur = 3 * scaleFactor;
+
+                // --- 各構図オーバーレイの描画 ---
+
+                // A. 等分割カスタムグリッド (N × M)
+                if (state.activeGuides.customGrid) {
+                    drawSubdivisionGrid(targetCtx, bx, by, bw, bh, state.gridCols, state.gridRows, subStroke, strokeW * 0.75);
+                }
+
+                // B. ハーモニック・アーマチュア (Harmonic Armature)
+                if (state.activeGuides.harmonicArmature) {
+                    drawHarmonicArmature(targetCtx, bx, by, bw, bh, subStroke, strokeW * 0.85);
+                }
+
+                // C. 対角線＆ひし形 (Diagonals & Diamond)
+                if (state.activeGuides.diagonals) {
+                    drawDiagonalsAndDiamond(targetCtx, bx, by, bw, bh, mainStroke, subStroke, strokeW);
+                }
+
+                // D. センタークロス＆黄金同心円 (Center Cross & Golden Circles)
+                if (state.activeGuides.centerCross) {
+                    drawCenterCrossAndCircles(targetCtx, bx, by, bw, bh, mainStroke, subStroke, strokeW);
+                }
+
+                // E. 三分割法 (Rule of Thirds)
+                if (state.activeGuides.ruleOfThirds) {
+                    drawRuleOfThirds(targetCtx, bx, by, bw, bh, mainStroke, strokeW, scaleFactor);
+                }
+
+                // F. ファイ・グリッド (Phi Grid 1 : 0.618 : 1)
+                if (state.activeGuides.phiGrid) {
+                    drawPhiGrid(targetCtx, bx, by, bw, bh, mainStroke, strokeW, scaleFactor);
+                }
+
+                // G. 黄金三角形 (Golden Triangles)
+                if (state.activeGuides.goldenTriangle) {
+                    drawGoldenTriangles(targetCtx, bx, by, bw, bh, mainStroke, strokeW, scaleFactor);
+                }
+
+                // H. 黄金比スパイラル（フィボナッチ螺旋＆黄金矩形分割）
+                if (state.activeGuides.fibonacciSpiral) {
+                    drawGoldenSpiral(targetCtx, bx, by, bw, bh, mainStroke, subStroke, strokeW, scaleFactor);
+                }
+
+                // 外枠の描画
+                targetCtx.strokeStyle = mainStroke;
+                targetCtx.lineWidth = strokeW;
+                targetCtx.strokeRect(bx, by, bw, bh);
+
+                targetCtx.restore();
+
+                // インタラクティブ枠の四隅リサイズハンドル（エクスポート時は描かない）
+                if (!isExport && state.interactiveFrame) {
+                    drawResizeHandles(targetCtx, bx, by, bw, bh);
+                }
+            }
+
+            /**
+             * 1. 黄金比スパイラル（フィボナッチ螺旋）と再帰的黄金分割ボックスの描画
+             * 左右反転(flipH)、上下反転(flipV)、横展開/縦展開(spiralVariant)の8通りすべてに対応
+             */
+            function drawGoldenSpiral(ctx, x, y, w, h, mainStroke, subStroke, lineWidth, scaleFactor) {
+                ctx.save();
+
+                // 中心を基準に左右反転・上下反転を適用
+                const cx = x + w / 2;
+                const cy = y + h / 2;
+                ctx.translate(cx, cy);
+                ctx.scale(state.flipH ? -1 : 1, state.flipV ? -1 : 1);
+                ctx.translate(-w / 2, -h / 2);
+
+                let rx = 0;
+                let ry = 0;
+                let rw = w;
+                let rh = h;
+
+                // 9段階の再帰的黄金分割を実行
+                const steps = 9;
+                const tintColors = [
+                    hexToRgba(state.guideColor, 0.06),
+                    hexToRgba(state.guideColor, 0.10),
+                    hexToRgba(state.guideColor, 0.14),
+                    hexToRgba(state.guideColor, 0.18),
+                ];
+
+                // スパイラルの開始方向（0: 左→上→右→下, 1: 上→左→下→右）
+                let dir = state.spiralVariant === 0 ? 0 : 1;
+
+                for (let i = 0; i < steps; i++) {
+                    const currentDir = (dir + i) % 4;
+                    let boxX, boxY, boxW, boxH;
+                    let arcCx, arcCy, radiusX, radiusY, startAngle, endAngle;
+
+                    if (currentDir === 0) {
+                        // 左側 61.8% を切り出す
+                        boxW = rw * INV_PHI;
+                        boxH = rh;
+                        boxX = rx;
+                        boxY = ry;
+
+                        rx += boxW;
+                        rw -= boxW;
+
+                        arcCx = boxX + boxW;
+                        arcCy = boxY + boxH;
+                        radiusX = boxW;
+                        radiusY = boxH;
+                        startAngle = Math.PI;
+                        endAngle = 1.5 * Math.PI;
+                    } else if (currentDir === 1) {
+                        // 上側 61.8% を切り出す
+                        boxW = rw;
+                        boxH = rh * INV_PHI;
+                        boxX = rx;
+                        boxY = ry;
+
+                        ry += boxH;
+                        rh -= boxH;
+
+                        arcCx = boxX;
+                        arcCy = boxY + boxH;
+                        radiusX = boxW;
+                        radiusY = boxH;
+                        startAngle = 1.5 * Math.PI;
+                        endAngle = 2.0 * Math.PI;
+                    } else if (currentDir === 2) {
+                        // 右側 61.8% を切り出す
+                        boxW = rw * INV_PHI;
+                        boxH = rh;
+                        boxX = rx + (rw - boxW);
+                        boxY = ry;
+
+                        rw -= boxW;
+
+                        arcCx = boxX;
+                        arcCy = boxY;
+                        radiusX = boxW;
+                        radiusY = boxH;
+                        startAngle = 0;
+                        endAngle = 0.5 * Math.PI;
+                    } else {
+                        // 下側 61.8% を切り出す
+                        boxW = rw;
+                        boxH = rh * INV_PHI;
+                        boxX = rx;
+                        boxY = ry + (rh - boxH);
+
+                        rh -= boxH;
+
+                        arcCx = boxX + boxW;
+                        arcCy = boxY;
+                        radiusX = boxW;
+                        radiusY = boxH;
+                        startAngle = 0.5 * Math.PI;
+                        endAngle = Math.PI;
+                    }
+
+                    // 黄金矩形の面積カラーティント表示
+                    if (state.showSpiralTints && i < 6) {
+                        ctx.fillStyle = tintColors[i % tintColors.length];
+                        ctx.fillRect(boxX, boxY, boxW, boxH);
+                    }
+
+                    // 黄金矩形の区画ライン表示
+                    if (state.showSpiralBoxes) {
+                        ctx.strokeStyle = subStroke;
+                        ctx.lineWidth = Math.max(1, lineWidth * 0.7);
+                        ctx.strokeRect(boxX, boxY, boxW, boxH);
+                    }
+
+                    // 楕円アークによる滑らかな黄金螺旋の描画
+                    ctx.beginPath();
+                    ctx.ellipse(arcCx, arcCy, Math.max(0.5, radiusX), Math.max(0.5, radiusY), 0, startAngle, endAngle);
+                    ctx.strokeStyle = mainStroke;
+                    ctx.lineWidth = lineWidth * 1.35;
+                    ctx.stroke();
+
+                    // 最終収束点（Eye of the Golden Spiral）のターゲットマーカー
+                    if (i === steps - 1 && state.showPowerPoints) {
+                        drawPowerPointMarker(ctx, rx + rw / 2, ry + rh / 2, 7 * scaleFactor, mainStroke);
+                    }
+                }
+
+                ctx.restore();
+            }
+
+            /**
+             * 2. 三分割法（Rule of Thirds 3×3）と4つの力点（Power Points）の描画
+             */
+            function drawRuleOfThirds(ctx, x, y, w, h, stroke, lineWidth, scaleFactor) {
+                const x1 = x + w / 3;
+                const x2 = x + (w * 2) / 3;
+                const y1 = y + h / 3;
+                const y2 = y + (h * 2) / 3;
+
+                ctx.beginPath();
+                ctx.moveTo(x1, y); ctx.lineTo(x1, y + h);
+                ctx.moveTo(x2, y); ctx.lineTo(x2, y + h);
+                ctx.moveTo(x, y1); ctx.lineTo(x + w, y1);
+                ctx.moveTo(x, y2); ctx.lineTo(x + w, y2);
+
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+
+                if (state.showPowerPoints) {
+                    const r = 5.5 * scaleFactor;
+                    drawPowerPointMarker(ctx, x1, y1, r, stroke);
+                    drawPowerPointMarker(ctx, x2, y1, r, stroke);
+                    drawPowerPointMarker(ctx, x1, y2, r, stroke);
+                    drawPowerPointMarker(ctx, x2, y2, r, stroke);
+                }
+            }
+
+            /**
+             * 3. ファイ・グリッド（Phi Grid: 1 : 0.618 : 1 すなわち 38.2% と 61.8% の黄金分割線）
+             */
+            function drawPhiGrid(ctx, x, y, w, h, stroke, lineWidth, scaleFactor) {
+                const x1 = x + w * MINOR_PHI;
+                const x2 = x + w * INV_PHI;
+                const y1 = y + h * MINOR_PHI;
+                const y2 = y + h * INV_PHI;
+
+                ctx.save();
+                ctx.setLineDash([8 * scaleFactor, 5 * scaleFactor]);
+                ctx.beginPath();
+                ctx.moveTo(x1, y); ctx.lineTo(x1, y + h);
+                ctx.moveTo(x2, y); ctx.lineTo(x2, y + h);
+                ctx.moveTo(x, y1); ctx.lineTo(x + w, y1);
+                ctx.moveTo(x, y2); ctx.lineTo(x + w, y2);
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+                ctx.restore();
+
+                if (state.showPowerPoints) {
+                    const r = 5 * scaleFactor;
+                    drawPowerPointMarker(ctx, x1, y1, r, stroke);
+                    drawPowerPointMarker(ctx, x2, y1, r, stroke);
+                    drawPowerPointMarker(ctx, x1, y2, r, stroke);
+                    drawPowerPointMarker(ctx, x2, y2, r, stroke);
+                }
+            }
+
+            /**
+             * 4. 黄金三角形（Golden Triangles: メイン対角線と、残りの2頂点から下ろした垂線）
+             */
+            function drawGoldenTriangles(ctx, x, y, w, h, stroke, lineWidth, scaleFactor) {
+                ctx.save();
+                const cx = x + w / 2;
+                const cy = y + h / 2;
+                ctx.translate(cx, cy);
+                ctx.scale(state.flipH ? -1 : 1, state.flipV ? -1 : 1);
+                ctx.translate(-w / 2, -h / 2);
+
+                // 左下(0, h) から 右上(w, 0) への主対角線
+                ctx.beginPath();
+                ctx.moveTo(0, h);
+                ctx.lineTo(w, 0);
+
+                // 左上(0, 0) から主対角線への垂線の足を計算
+                // 直線: x/w + y/h = 1  => hx + wy - wh = 0
+                const denom = w * w + h * h;
+                const foot1X = (w * h * h) / denom;
+                const foot1Y = (w * w * h) / denom;
+
+                // 右下(w, h) から主対角線への垂線の足
+                const foot2X = w - foot1X;
+                const foot2Y = h - foot1Y;
+
+                ctx.moveTo(0, 0);
+                ctx.lineTo(foot1X, foot1Y);
+
+                ctx.moveTo(w, h);
+                ctx.lineTo(foot2X, foot2Y);
+
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+
+                if (state.showPowerPoints) {
+                    const r = 6 * scaleFactor;
+                    drawPowerPointMarker(ctx, foot1X, foot1Y, r, stroke);
+                    drawPowerPointMarker(ctx, foot2X, foot2Y, r, stroke);
+                }
+
+                ctx.restore();
+            }
+
+            /**
+             * 5. 対角線（バロック＆シニスター）＋ 中点ひし形ダイヤモンド
+             */
+            function drawDiagonalsAndDiamond(ctx, x, y, w, h, mainStroke, subStroke, lineWidth) {
+                ctx.beginPath();
+                // 対角線 X
+                ctx.moveTo(x, y); ctx.lineTo(x + w, y + h);
+                ctx.moveTo(x + w, y); ctx.lineTo(x, y + h);
+                ctx.strokeStyle = mainStroke;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+
+                // 中点を結ぶひし形
+                ctx.beginPath();
+                ctx.moveTo(x + w / 2, y);
+                ctx.lineTo(x + w, y + h / 2);
+                ctx.lineTo(x + w / 2, y + h);
+                ctx.lineTo(x, y + h / 2);
+                ctx.closePath();
+                ctx.strokeStyle = subStroke;
+                ctx.lineWidth = lineWidth * 0.85;
+                ctx.stroke();
+            }
+
+            /**
+             * 6. センタークロス（二分割）＋ 黄金比同心円
+             */
+            function drawCenterCrossAndCircles(ctx, x, y, w, h, mainStroke, subStroke, lineWidth) {
+                const cx = x + w / 2;
+                const cy = y + h / 2;
+                const minSide = Math.min(w, h);
+
+                ctx.beginPath();
+                ctx.moveTo(cx, y); ctx.lineTo(cx, y + h);
+                ctx.moveTo(x, cy); ctx.lineTo(x + w, cy);
+                ctx.strokeStyle = mainStroke;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+
+                // 短辺を基準にした黄金比の円 (直径 = 短辺 × 0.618, および × 0.382)
+                const r1 = (minSide / 2) * INV_PHI;
+                const r2 = (minSide / 2) * MINOR_PHI;
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, r1, 0, Math.PI * 2);
+                ctx.strokeStyle = mainStroke;
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(cx, cy, r2, 0, Math.PI * 2);
+                ctx.strokeStyle = subStroke;
+                ctx.stroke();
+            }
+
+            /**
+             * 7. ハーモニック・アーマチュア（古典絵画・ポスターの14本線骨格）
+             */
+            function drawHarmonicArmature(ctx, x, y, w, h, stroke, lineWidth) {
+                const cx = x + w / 2;
+                const cy = y + h / 2;
+
+                ctx.beginPath();
+                // 中心十字
+                ctx.moveTo(cx, y); ctx.lineTo(cx, y + h);
+                ctx.moveTo(x, cy); ctx.lineTo(x + w, cy);
+                // メイン対角線
+                ctx.moveTo(x, y); ctx.lineTo(x + w, y + h);
+                ctx.moveTo(x + w, y); ctx.lineTo(x, y + h);
+                // 各辺の中点から対角頂点へのV字ライン
+                ctx.moveTo(cx, y); ctx.lineTo(x, y + h);
+                ctx.moveTo(cx, y); ctx.lineTo(x + w, y + h);
+                ctx.moveTo(cx, y + h); ctx.lineTo(x, y);
+                ctx.moveTo(cx, y + h); ctx.lineTo(x + w, y);
+                ctx.moveTo(x, cy); ctx.lineTo(x + w, y);
+                ctx.moveTo(x, cy); ctx.lineTo(x + w, y + h);
+                ctx.moveTo(x + w, cy); ctx.lineTo(x, y);
+                ctx.moveTo(x + w, cy); ctx.lineTo(x, y + h);
+
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+            }
+
+            /**
+             * 8. 任意のN×M等分割グリッド
+             */
+            function drawSubdivisionGrid(ctx, x, y, w, h, cols, rows, stroke, lineWidth) {
+                ctx.beginPath();
+                for (let i = 1; i < cols; i++) {
+                    const gx = x + (w * i) / cols;
+                    ctx.moveTo(gx, y);
+                    ctx.lineTo(gx, y + h);
+                }
+                for (let j = 1; j < rows; j++) {
+                    const gy = y + (h * j) / rows;
+                    ctx.moveTo(x, gy);
+                    ctx.lineTo(x + w, gy);
+                }
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = lineWidth;
+                ctx.stroke();
+            }
+
+            /**
+             * 交点（Power Point）の二重リングマーカーを描画
+             */
+            function drawPowerPointMarker(ctx, px, py, radius, stroke) {
+                ctx.save();
+                ctx.beginPath();
+                ctx.arc(px, py, radius, 0, Math.PI * 2);
+                ctx.fillStyle = 'rgba(9, 9, 11, 0.65)';
+                ctx.fill();
+                ctx.strokeStyle = stroke;
+                ctx.lineWidth = Math.max(1.5, radius * 0.35);
+                ctx.stroke();
+
+                ctx.beginPath();
+                ctx.arc(px, py, radius * 0.35, 0, Math.PI * 2);
+                ctx.fillStyle = '#ffffff';
+                ctx.fill();
+                ctx.restore();
+            }
+
+            /**
+             * バウンディングボックス四隅のリサイズハンドルを描画
+             */
+            function drawResizeHandles(ctx, bx, by, bw, bh) {
+                const corners = [
+                    { x: bx, y: by },
+                    { x: bx + bw, y: by },
+                    { x: bx, y: by + bh },
+                    { x: bx + bw, y: by + bh }
+                ];
+                ctx.save();
+                corners.forEach(pt => {
+                    ctx.beginPath();
+                    ctx.arc(pt.x, pt.y, 6, 0, Math.PI * 2);
+                    ctx.fillStyle = '#f59e0b';
+                    ctx.fill();
+                    ctx.lineWidth = 2;
+                    ctx.strokeStyle = '#09090b';
+                    ctx.stroke();
+                });
+                ctx.restore();
+            }
+
+            /**
+             * 右サイドパネルの「画像・アスペクト比診断」と「分割ライン座標」を更新する
+             */
+            function updateInspectorMetrics() {
+                const W = Math.round(state.imageWidth * state.box.w);
+                const H = Math.round(state.imageHeight * state.box.h);
+                const offsetX = Math.round(state.imageWidth * state.box.x);
+                const offsetY = Math.round(state.imageHeight * state.box.y);
+
+                document.getElementById('imgDimensionText').textContent = `${state.imageWidth} × ${state.imageHeight}`;
+                document.getElementById('activeBoxDimensionsLabel').textContent = `枠: ${W}×${H}`;
+
+                // 長辺 ÷ 短辺 の実測比率を計算
+                const ratio = W >= H ? (W / H) : (H / W);
+                const ratioDisplay = W >= H ? `${(W / H).toFixed(3)} : 1` : `1 : ${(H / W).toFixed(3)}`;
+                document.getElementById('imgAspectRatioText').textContent = ratioDisplay;
+
+                // 黄金比 (1.61803) との適合度スコアを算出
+                const diffFromPhi = Math.abs(ratio - PHI);
+                const diffFromSilver = Math.abs(ratio - SQRT2);
+                const score = Math.max(0, Math.min(100, (1 - diffFromPhi / PHI) * 100));
+
+                document.getElementById('goldenMatchScore').textContent = `${score.toFixed(1)}%`;
+                document.getElementById('goldenMatchBar').style.width = `${score.toFixed(1)}%`;
+
+                const feedbackEl = document.getElementById('ratioFeedbackText');
+                if (score >= 97.5) {
+                    feedbackEl.textContent = '黄金比 (1 : 1.618) に極めて近い理想的なプロポーションです。フィボナッチ螺旋やファイ・グリッドが美しく機能します。';
+                } else if (diffFromSilver < 0.04) {
+                    feedbackEl.textContent = '白銀比 / 大和比 (1 : 1.414 = A判・B判ポスター比率) に非常に近い構成です。印刷物やスイスグリッドに適しています。';
+                } else if (Math.abs(ratio - 1) < 0.03) {
+                    feedbackEl.textContent = '1 : 1 の正方形（スクエア）比率です。対角線構図やセンタークロス、同心円によるシンメトリー検証が効果的です。';
+                } else if (Math.abs(ratio - 16 / 9) < 0.04) {
+                    feedbackEl.textContent = '16 : 9 (1.778:1) のワイドスクリーン比率です。三分割法や黄金三角形によるダイナミックな視線誘導に適しています。';
+                } else {
+                    feedbackEl.textContent = `長短辺比は ${ratio.toFixed(3)} です。上部バーから「1.618:1 (黄金枠)」を選ぶと、画像内の黄金比トリミング位置を探せます。`;
+                }
+
+                // 黄金分割・三分割の具体的なピクセル位置を更新
+                const phiX1 = offsetX + Math.round(W * MINOR_PHI);
+                const phiX2 = offsetX + Math.round(W * INV_PHI);
+                const phiY1 = offsetY + Math.round(H * MINOR_PHI);
+                const phiY2 = offsetY + Math.round(H * INV_PHI);
+
+                const thirdX1 = offsetX + Math.round(W / 3);
+                const thirdX2 = offsetX + Math.round((W * 2) / 3);
+                const thirdY1 = offsetY + Math.round(H / 3);
+                const thirdY2 = offsetY + Math.round((H * 2) / 3);
+
+                document.getElementById('phiCoordX').textContent = `${phiX1}px / ${phiX2}px`;
+                document.getElementById('phiCoordY').textContent = `${phiY1}px / ${phiY2}px`;
+                document.getElementById('thirdsCoordX').textContent = `${thirdX1}px / ${thirdX2}px`;
+                document.getElementById('thirdsCoordY').textContent = `${thirdY1}px / ${thirdY2}px`;
+            }
+
+            /**
+             * 黄金螺旋の収束方向ラベルを更新する
+             */
+            function updateSpiralOrientationBadge() {
+                const hText = state.flipH ? '左' : '右';
+                const vText = state.flipV ? '上' : '下';
+                const axisText = state.spiralVariant === 0 ? '横軸' : '縦軸';
+                document.getElementById('spiralOrientationBadge').textContent = `${vText}${hText}収束 (${axisText})`;
+            }
+
+            /**
+             * 右パネルの黄金比・白銀比計算機の計算結果を更新する
+             */
+            function updateRatioCalculator() {
+                const val = parseFloat(document.getElementById('calcBaseInput').value) || 0;
+                const major = val * INV_PHI;
+                const minor = val - major;
+                const expand = val * PHI;
+                const silver = val / SQRT2;
+
+                document.getElementById('calcGoldenMajor').textContent = `${major.toFixed(1)} px`;
+                document.getElementById('calcGoldenMinor').textContent = `${minor.toFixed(1)} px`;
+                document.getElementById('calcGoldenExpand').textContent = `${expand.toFixed(1)} px`;
+                document.getElementById('calcSilverRatio').textContent = `${silver.toFixed(1)} px`;
+            }
+
+            /**
+             * バウンディングボックスを画像全体にリセット
+             */
+            function resetBoundingBoxToFull() {
+                state.box = { x: 0, y: 0, w: 1, h: 1 };
+                highlightBoxPresetBtn('full');
+            }
+
+            function highlightBoxPresetBtn(presetKey) {
+                document.querySelectorAll('.box-preset-btn').forEach(btn => {
+                    if (btn.dataset.boxPreset === presetKey) {
+                        btn.className = 'box-preset-btn px-2 py-1 rounded text-[11px] font-medium bg-gold-500/20 text-gold-400 border border-gold-500/40 transition';
+                    } else {
+                        btn.className = 'box-preset-btn px-2 py-1 rounded text-[11px] font-mono text-zinc-300 hover:bg-studio-800 border border-transparent transition';
+                    }
+                });
+            }
+
+            /**
+             * トースト通知を表示
+             */
+            let toastTimer = null;
+            function showToast(msg) {
+                toastMessage.textContent = msg;
+                toastMessage.style.opacity = '1';
+                clearTimeout(toastTimer);
+                toastTimer = setTimeout(() => {
+                    toastMessage.style.opacity = '0';
+                }, 2400);
+            }
+
+            /**
+             * キャンバス上のマウス操作（検証枠の移動・四隅リサイズ＆ピクセルカラーピッカー）
+             */
+            function getCanvasRelativeCoords(e) {
+                const rect = canvas.getBoundingClientRect();
+                const clientX = e.touches ? e.touches[0].clientX : e.clientX;
+                const clientY = e.touches ? e.touches[0].clientY : e.clientY;
+                return {
+                    x: clientX - rect.left,
+                    y: clientY - rect.top
+                };
+            }
+
+            function detectHandleHit(mx, my) {
+                if (!state.interactiveFrame) return null;
+                const { x: ix, y: iy, w: iw, h: ih } = state.renderRect;
+                const bx = ix + state.box.x * iw;
+                const by = iy + state.box.y * ih;
+                const bw = state.box.w * iw;
+                const bh = state.box.h * ih;
+
+                const hitRadius = 14;
+                if (Math.hypot(mx - bx, my - by) <= hitRadius) return 'nw';
+                if (Math.hypot(mx - (bx + bw), my - by) <= hitRadius) return 'ne';
+                if (Math.hypot(mx - bx, my - (by + bh)) <= hitRadius) return 'sw';
+                if (Math.hypot(mx - (bx + bw), my - (by + bh)) <= hitRadius) return 'se';
+
+                if (mx >= bx && mx <= bx + bw && my >= by && my <= by + bh) {
+                    return 'move';
+                }
+                return null;
+            }
+
+            canvas.addEventListener('mousedown', (e) => {
+                const pos = getCanvasRelativeCoords(e);
+                const mode = detectHandleHit(pos.x, pos.y);
+                if (mode) {
+                    state.dragMode = mode;
+                    state.dragStartMouse = pos;
+                    state.dragStartBox = { ...state.box };
+                    highlightBoxPresetBtn('');
+                }
+            });
+
+            window.addEventListener('mousemove', (e) => {
+                const pos = getCanvasRelativeCoords(e);
+                const { x: ix, y: iy, w: iw, h: ih } = state.renderRect;
+
+                // 1. ドラッグ中のバウンディングボックス更新
+                if (state.dragMode && iw > 0 && ih > 0) {
+                    const dx = (pos.x - state.dragStartMouse.x) / iw;
+                    const dy = (pos.y - state.dragStartMouse.y) / ih;
+                    const minSize = 0.08;
+                    const b = { ...state.dragStartBox };
+
+                    if (state.dragMode === 'move') {
+                        state.box.x = Math.max(0, Math.min(1 - b.w, b.x + dx));
+                        state.box.y = Math.max(0, Math.min(1 - b.h, b.y + dy));
+                    } else if (state.dragMode === 'se') {
+                        state.box.w = Math.max(minSize, Math.min(1 - b.x, b.w + dx));
+                        state.box.h = Math.max(minSize, Math.min(1 - b.y, b.h + dy));
+                    } else if (state.dragMode === 'nw') {
+                        const newX = Math.max(0, Math.min(b.x + b.w - minSize, b.x + dx));
+                        const newY = Math.max(0, Math.min(b.y + b.h - minSize, b.y + dy));
+                        state.box.w = b.w + (b.x - newX);
+                        state.box.h = b.h + (b.y - newY);
+                        state.box.x = newX;
+                        state.box.y = newY;
+                    } else if (state.dragMode === 'ne') {
+                        const newY = Math.max(0, Math.min(b.y + b.h - minSize, b.y + dy));
+                        state.box.w = Math.max(minSize, Math.min(1 - b.x, b.w + dx));
+                        state.box.h = b.h + (b.y - newY);
+                        state.box.y = newY;
+                    } else if (state.dragMode === 'sw') {
+                        const newX = Math.max(0, Math.min(b.x + b.w - minSize, b.x + dx));
+                        state.box.w = b.w + (b.x - newX);
+                        state.box.x = newX;
+                        state.box.h = Math.max(minSize, Math.min(1 - b.y, b.h + dy));
+                    }
+
+                    updateInspectorMetrics();
+                    renderScene(ctx, state.renderRect, false);
+                    return;
+                }
+
+                // 2. カーソル形状の更新とステータスバーの座標・色取得
+                const hoverMode = detectHandleHit(pos.x, pos.y);
+                if (hoverMode === 'nw' || hoverMode === 'se') canvas.style.cursor = 'nwse-resize';
+                else if (hoverMode === 'ne' || hoverMode === 'sw') canvas.style.cursor = 'nesw-resize';
+                else if (hoverMode === 'move' && (state.box.w < 0.99 || state.box.h < 0.99)) canvas.style.cursor = 'move';
+                else canvas.style.cursor = 'crosshair';
+
+                // 画像領域内の場合、実ピクセル座標・パーセンテージ・カラーを表示
+                if (pos.x >= ix && pos.x <= ix + iw && pos.y >= iy && pos.y <= iy + ih) {
+                    const normX = (pos.x - ix) / iw;
+                    const normY = (pos.y - iy) / ih;
+                    const imgPxX = Math.round(normX * state.imageWidth);
+                    const imgPxY = Math.round(normY * state.imageHeight);
+
+                    document.getElementById('cursorCoordLabel').textContent = `X: ${imgPxX}px, Y: ${imgPxY}px`;
+                    document.getElementById('cursorPercentLabel').textContent = `${(normX * 100).toFixed(1)}% , ${(normY * 100).toFixed(1)}%`;
+
+                    // キャンバスのピクセルカラーを取得
+                    const dpr = window.devicePixelRatio || 1;
+                    const pixel = ctx.getImageData(Math.floor(pos.x * dpr), Math.floor(pos.y * dpr), 1, 1).data;
+                    const hex = '#' + [pixel[0], pixel[1], pixel[2]].map(v => v.toString(16).padStart(2, '0')).join('').toUpperCase();
+                    document.getElementById('sampledColorSwatch').style.backgroundColor = hex;
+                    document.getElementById('sampledColorHex').textContent = hex;
+                }
+            });
+
+            window.addEventListener('mouseup', () => {
+                state.dragMode = null;
+            });
+
+            /**
+             * ユーザーによる画像ファイルの読み込み処理（File Input & Drag-and-Drop共通）
+             */
+            function handleImageFile(file) {
+                if (!file || !file.type.startsWith('image/')) {
+                    showToast('有効な画像ファイルを選択してください');
+                    return;
+                }
+                const reader = new FileReader();
+                reader.onload = (ev) => {
+                    const img = new Image();
+                    img.onload = () => {
+                        state.image = img;
+                        state.imageWidth = img.naturalWidth || img.width;
+                        state.imageHeight = img.naturalHeight || img.height;
+                        resetBoundingBoxToFull();
+                        updateInspectorMetrics();
+                        // 基準電卓にも画像の横幅を自動セット
+                        document.getElementById('calcBaseInput').value = state.imageWidth;
+                        updateRatioCalculator();
+                        resizeAndRender();
+                        showToast(`画像を読み込みました (${state.imageWidth} × ${state.imageHeight} px)`);
+                    };
+                    img.src = ev.target.result;
+                };
+                reader.readAsDataURL(file);
+            }
+
+            fileInput.addEventListener('change', (e) => {
+                if (e.target.files && e.target.files[0]) {
+                    handleImageFile(e.target.files[0]);
+                }
+            });
+
+            // ドラッグ＆ドロップ対応
+            window.addEventListener('dragover', (e) => {
+                e.preventDefault();
+                dropZoneOverlay.classList.remove('hidden');
+                dropZoneOverlay.classList.add('flex');
+            });
+
+            window.addEventListener('dragleave', (e) => {
+                if (e.relatedTarget === null) {
+                    dropZoneOverlay.classList.add('hidden');
+                    dropZoneOverlay.classList.remove('flex');
+                }
+            });
+
+            window.addEventListener('drop', (e) => {
+                e.preventDefault();
+                dropZoneOverlay.classList.add('hidden');
+                dropZoneOverlay.classList.remove('flex');
+                if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+                    handleImageFile(e.dataTransfer.files[0]);
+                }
+            });
+
+            // サンプルプリセット選択
+            samplePresetSelect.addEventListener('change', (e) => {
+                generateSampleArtwork(e.target.value);
+                showToast('サンプルアートワークを切り替えました');
+            });
+
+            // 構図ガイドボタンのON/OFFトグル処理
+            document.querySelectorAll('#guideButtonsContainer .guide-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const key = btn.dataset.guide;
+                    state.activeGuides[key] = !state.activeGuides[key];
+                    btn.classList.toggle('active', state.activeGuides[key]);
+                    renderScene(ctx, state.renderRect, false);
+                });
+            });
+
+            // 初期状態にリセット
+            document.getElementById('resetGuidesBtn').addEventListener('click', () => {
+                Object.keys(state.activeGuides).forEach(k => {
+                    state.activeGuides[k] = (k === 'fibonacciSpiral' || k === 'ruleOfThirds');
+                });
+                document.querySelectorAll('#guideButtonsContainer .guide-btn').forEach(btn => {
+                    btn.classList.toggle('active', !!state.activeGuides[btn.dataset.guide]);
+                });
+                state.flipH = false;
+                state.flipV = false;
+                state.spiralVariant = 0;
+                resetBoundingBoxToFull();
+                updateSpiralOrientationBadge();
+                updateInspectorMetrics();
+                renderScene(ctx, state.renderRect, false);
+                showToast('構図ガイドを初期設定に戻しました');
+            });
+
+            // スパイラル反転・軸切替ボタン
+            document.getElementById('flipHBtn').addEventListener('click', () => {
+                state.flipH = !state.flipH;
+                updateSpiralOrientationBadge();
+                renderScene(ctx, state.renderRect, false);
+            });
+
+            document.getElementById('flipVBtn').addEventListener('click', () => {
+                state.flipV = !state.flipV;
+                updateSpiralOrientationBadge();
+                renderScene(ctx, state.renderRect, false);
+            });
+
+            document.getElementById('cycleSpiralBtn').addEventListener('click', () => {
+                state.spiralVariant = (state.spiralVariant + 1) % 2;
+                updateSpiralOrientationBadge();
+                renderScene(ctx, state.renderRect, false);
+            });
+
+            // チェックボックス群
+            document.getElementById('showSpiralBoxesToggle').addEventListener('change', (e) => {
+                state.showSpiralBoxes = e.target.checked;
+                renderScene(ctx, state.renderRect, false);
+            });
+            document.getElementById('showSpiralTintsToggle').addEventListener('change', (e) => {
+                state.showSpiralTints = e.target.checked;
+                renderScene(ctx, state.renderRect, false);
+            });
+            document.getElementById('showPowerPointsToggle').addEventListener('change', (e) => {
+                state.showPowerPoints = e.target.checked;
+                renderScene(ctx, state.renderRect, false);
+            });
+            document.getElementById('interactiveFrameToggle').addEventListener('change', (e) => {
+                state.interactiveFrame = e.target.checked;
+                renderScene(ctx, state.renderRect, false);
+            });
+
+            // カラープリセット＆カラーピッカー
+            function setGuideColor(hex) {
+                state.guideColor = hex;
+                document.getElementById('colorHexLabel').textContent = hex.toUpperCase();
+                document.getElementById('customColorPicker').value = hex;
+                document.querySelectorAll('.color-swatch').forEach(sw => {
+                    if (sw.dataset.color.toLowerCase() === hex.toLowerCase()) {
+                        sw.classList.add('ring-2', 'ring-white', 'ring-offset-2', 'ring-offset-studio-900');
+                        sw.classList.remove('opacity-80');
+                    } else {
+                        sw.classList.remove('ring-2', 'ring-white', 'ring-offset-2', 'ring-offset-studio-900');
+                        sw.classList.add('opacity-80');
+                    }
+                });
+                renderScene(ctx, state.renderRect, false);
+            }
+
+            document.querySelectorAll('.color-swatch').forEach(swatch => {
+                swatch.addEventListener('click', () => setGuideColor(swatch.dataset.color));
+            });
+            document.getElementById('customColorPicker').addEventListener('input', (e) => {
+                setGuideColor(e.target.value);
+            });
+
+            // スライダー（太さ・不透明度・背景減光）
+            document.getElementById('lineWidthRange').addEventListener('input', (e) => {
+                state.lineWidth = parseFloat(e.target.value);
+                document.getElementById('lineWidthLabel').textContent = `${state.lineWidth.toFixed(1)} px`;
+                renderScene(ctx, state.renderRect, false);
+            });
+
+            document.getElementById('lineOpacityRange').addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                state.lineOpacity = val / 100;
+                document.getElementById('lineOpacityLabel').textContent = `${val}%`;
+                renderScene(ctx, state.renderRect, false);
+            });
+
+            document.getElementById('imageDimRange').addEventListener('input', (e) => {
+                const val = parseInt(e.target.value, 10);
+                state.imageDim = val / 100;
+                document.getElementById('imageDimLabel').textContent = `${val}%`;
+                renderScene(ctx, state.renderRect, false);
+            });
+
+            // 等分割グリッド数の変更
+            function updateCustomGridCounts() {
+                state.gridCols = Math.max(2, Math.min(24, parseInt(document.getElementById('gridColsInput').value, 10) || 4));
+                state.gridRows = Math.max(2, Math.min(24, parseInt(document.getElementById('gridRowsInput').value, 10) || 4));
+                document.getElementById('customGridCountLabel').textContent = `${state.gridCols} × ${state.gridRows}`;
+                if (!state.activeGuides.customGrid) {
+                    state.activeGuides.customGrid = true;
+                    document.querySelector('[data-guide="customGrid"]').classList.add('active');
+                }
+                renderScene(ctx, state.renderRect, false);
+            }
+            document.getElementById('gridColsInput').addEventListener('input', updateCustomGridCounts);
+            document.getElementById('gridRowsInput').addEventListener('input', updateCustomGridCounts);
+
+            // 検証枠の比率プリセットボタン（画像全体 / 横黄金比 / 縦黄金比 / 1:1 / 白銀比）
+            document.querySelectorAll('.box-preset-btn').forEach(btn => {
+                btn.addEventListener('click', () => {
+                    const preset = btn.dataset.boxPreset;
+                    highlightBoxPresetBtn(preset);
+
+                    if (preset === 'full') {
+                        state.box = { x: 0, y: 0, w: 1, h: 1 };
+                    } else {
+                        let targetAspect = PHI;
+                        if (preset === 'phi-landscape') targetAspect = PHI;
+                        else if (preset === 'phi-portrait') targetAspect = 1 / PHI;
+                        else if (preset === 'square') targetAspect = 1.0;
+                        else if (preset === 'root2') targetAspect = SQRT2;
+
+                        const imgAspect = state.imageWidth / state.imageHeight;
+                        let bw, bh;
+                        if (imgAspect > targetAspect) {
+                            bh = 1.0;
+                            bw = targetAspect / imgAspect;
+                        } else {
+                            bw = 1.0;
+                            bh = imgAspect / targetAspect;
+                        }
+                        state.box = {
+                            x: (1 - bw) / 2,
+                            y: (1 - bh) / 2,
+                            w: bw,
+                            h: bh
+                        };
+                    }
+                    updateInspectorMetrics();
+                    renderScene(ctx, state.renderRect, false);
+                });
+            });
+
+            // 元画像と比較（長押し）ボタン
+            const holdCompareBtn = document.getElementById('holdCompareBtn');
+            const startCompare = () => {
+                state.isHoldingCompare = true;
+                renderScene(ctx, state.renderRect, false);
+            };
+            const endCompare = () => {
+                state.isHoldingCompare = false;
+                renderScene(ctx, state.renderRect, false);
+            };
+            holdCompareBtn.addEventListener('mousedown', startCompare);
+            holdCompareBtn.addEventListener('mouseup', endCompare);
+            holdCompareBtn.addEventListener('mouseleave', endCompare);
+            holdCompareBtn.addEventListener('touchstart', (e) => { e.preventDefault(); startCompare(); });
+            holdCompareBtn.addEventListener('touchend', endCompare);
+
+            // キーボードショートカット (Space: 比較, R: 反転, F: 全体枠)
+            window.addEventListener('keydown', (e) => {
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'SELECT') return;
+                if (e.code === 'Space' && !state.isHoldingCompare) {
+                    e.preventDefault();
+                    startCompare();
+                } else if (e.key === 'r' || e.key === 'R') {
+                    state.flipH = !state.flipH;
+                    updateSpiralOrientationBadge();
+                    renderScene(ctx, state.renderRect, false);
+                } else if (e.key === 'f' || e.key === 'F') {
+                    resetBoundingBoxToFull();
+                    updateInspectorMetrics();
+                    renderScene(ctx, state.renderRect, false);
+                }
+            });
+            window.addEventListener('keyup', (e) => {
+                if (e.code === 'Space') {
+                    endCompare();
+                }
+            });
+
+            // ガイド付きPNGとして高解像度エクスポート
+            document.getElementById('exportImageBtn').addEventListener('click', () => {
+                if (!state.image) return;
+                const exportCanvas = document.createElement('canvas');
+                exportCanvas.width = state.imageWidth;
+                exportCanvas.height = state.imageHeight;
+                const exportCtx = exportCanvas.getContext('2d');
+
+                renderScene(exportCtx, { x: 0, y: 0, w: state.imageWidth, h: state.imageHeight }, true);
+
+                const link = document.createElement('a');
+                link.download = `ratiolab-layout-${state.imageWidth}x${state.imageHeight}.png`;
+                link.href = exportCanvas.toDataURL('image/png');
+                link.click();
+                showToast('ガイドライン付きPNG画像を保存しました');
+            });
+
+            // 黄金比計算機のリアルタイム更新
+            document.getElementById('calcBaseInput').addEventListener('input', updateRatioCalculator);
+
+            // ウィンドウリサイズ監視
+            window.addEventListener('resize', resizeAndRender);
+
+            // 初期化起動
+            window.addEventListener('load', () => {
+                updateSpiralOrientationBadge();
+                updateRatioCalculator();
+                generateSampleArtwork('golden_arch');
+            });
+        })();
+    </script>
+</body>
+</html>
