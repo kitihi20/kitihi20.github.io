@@ -1,0 +1,989 @@
+<!DOCTYPE html>
+<html lang="ja" class="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF to Image Converter</title>
+    <!--<script src="https://cdn.tailwindcss.com"></script>-->
+    <!--<script src="/js/tailwindcss_4_2_1.js"></script>-->
+    <script src="/js/tailwindcss_3_4_17.js"></script>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Noto+Sans+JP:wght@400;500;700&display=swap" rel="stylesheet">
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <!-- PDF.js -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
+    <!-- JSZip for bulk download -->
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jszip/3.10.1/jszip.min.js"></script>
+
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    fontFamily: {
+                        sans: ['Inter', 'Noto Sans JP', 'sans-serif'],
+                    },
+                    colors: {
+                        slate: {
+                            850: '#151e2e',
+                            950: '#090d16',
+                        }
+                    }
+                }
+            }
+        }
+    </script>
+    <style>
+        body {
+            background-color: #090d16;
+            color: #f8fafc;
+        }
+        /* Custom Scrollbar for dark mode */
+        ::-webkit-scrollbar {
+            width: 8px;
+            height: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #0f172a;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #334155;
+            border-radius: 4px;
+        }
+        ::-webkit-scrollbar-thumb:hover {
+            background: #475569;
+        }
+        .page-card {
+            transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+        .page-card:hover {
+            transform: translateY(-2px);
+        }
+        .page-card.selected {
+            border-color: #6366f1;
+            background-color: rgba(99, 102, 241, 0.1);
+            box-shadow: 0 0 0 2px rgba(99, 102, 241, 0.4);
+        }
+        /* Checkerboard pattern for transparent PNG preview */
+        .checkerboard {
+            background-color: #1e293b;
+            background-image: 
+                linear-gradient(45deg, #0f172a 25%, transparent 25%), 
+                linear-gradient(-45deg, #0f172a 25%, transparent 25%), 
+                linear-gradient(45deg, transparent 75%, #0f172a 75%), 
+                linear-gradient(-45deg, transparent 75%, #0f172a 75%);
+            background-size: 16px 16px;
+            background-position: 0 0, 0 8px, 8px -8px, -8px 0;
+        }
+    </style>
+</head>
+<body class="min-h-screen flex flex-col antialiased selection:bg-indigo-500 selection:text-white">
+
+    <!-- Header -->
+    <header class="border-b border-slate-800/80 bg-slate-900/60 backdrop-blur-md sticky top-0 z-30">
+        <div class="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
+            <div class="flex items-center space-x-3">
+                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center shadow-lg shadow-indigo-500/20">
+                    <i data-lucide="layers" class="w-5 h-5 text-white"></i>
+                </div>
+                <div>
+                    <h1 class="text-lg font-bold bg-clip-text text-transparent bg-gradient-to-r from-white to-slate-400">
+                        PDF Image Studio
+                    </h1>
+                    <p class="text-xs text-slate-400 hidden sm:block">クライアントサイド完結・高画質PDF画像変換ツール</p>
+                </div>
+            </div>
+            <div class="flex items-center space-x-3">
+                <span class="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
+                    <i data-lucide="shield-check" class="w-3.5 h-3.5 mr-1"></i>
+                    ブラウザ内処理（安全）
+                </span>
+                <button id="resetBtn" class="hidden items-center px-3 py-1.5 rounded-lg text-xs font-medium bg-slate-800 hover:bg-slate-700 text-slate-200 border border-slate-700 transition-colors">
+                    <i data-lucide="refresh-cw" class="w-3.5 h-3.5 mr-1.5"></i>
+                    別のPDFを開く
+                </button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Content -->
+    <main class="flex-1 max-w-7xl w-full mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        
+        <!-- Upload Section (Shown initially) -->
+        <div id="uploadSection" class="max-w-2xl mx-auto my-8">
+            <div id="dropZone" class="relative group cursor-pointer rounded-2xl border-2 border-dashed border-slate-700 hover:border-indigo-500 bg-slate-900/40 hover:bg-slate-900/80 transition-all duration-300 p-10 sm:p-16 text-center flex flex-col items-center justify-center shadow-2xl">
+                <input type="file" id="fileInput" accept="application/pdf" class="hidden" />
+                
+                <div class="w-20 h-20 rounded-2xl bg-slate-800/80 group-hover:bg-indigo-500/20 border border-slate-700 group-hover:border-indigo-500/40 flex items-center justify-center mb-6 transition-all duration-300 group-hover:scale-110">
+                    <i data-lucide="file-up" class="w-10 h-10 text-indigo-400 group-hover:text-indigo-300 transition-colors"></i>
+                </div>
+                
+                <h2 class="text-xl sm:text-2xl font-bold text-slate-100 mb-2">
+                    PDFファイルをドラッグ＆ドロップ
+                </h2>
+                <p class="text-sm text-slate-400 mb-6 max-w-md">
+                    またはクリックしてファイルを選択してください。ファイルが外部サーバーに送信されることはありません。
+                </p>
+                
+                <button type="button" class="inline-flex items-center px-5 py-2.5 rounded-xl font-medium text-sm bg-indigo-600 hover:bg-indigo-500 text-white shadow-lg shadow-indigo-600/30 transition-all">
+                    <i data-lucide="folder-open" class="w-4 h-4 mr-2"></i>
+                    PDFファイルを選択
+                </button>
+            </div>
+        </div>
+
+        <!-- Workspace Section (Hidden until PDF loaded) -->
+        <div id="workspaceSection" class="hidden grid-cols-1 lg:grid-cols-12 gap-8 items-start">
+            
+            <!-- Left Sidebar: Controls & Settings -->
+            <div class="lg:col-span-4 space-y-6 lg:sticky lg:top-24">
+                
+                <!-- File Info Card -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl">
+                    <div class="flex items-start space-x-3">
+                        <div class="p-2.5 bg-indigo-500/10 border border-indigo-500/20 rounded-xl text-indigo-400 shrink-0">
+                            <i data-lucide="file-text" class="w-6 h-6"></i>
+                        </div>
+                        <div class="min-w-0 flex-1">
+                            <h3 id="pdfFileName" class="text-sm font-semibold text-slate-100 truncate" title="">sample.pdf</h3>
+                            <div class="flex items-center space-x-3 mt-1 text-xs text-slate-400">
+                                <span id="pdfPageCount">全 0 ページ</span>
+                                <span>•</span>
+                                <span id="pdfFileSize">0 MB</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Page Selection Settings -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-4">
+                    <div class="flex items-center justify-between">
+                        <label class="text-sm font-semibold text-slate-200 flex items-center">
+                            <i data-lucide="check-square" class="w-4 h-4 mr-2 text-indigo-400"></i>
+                            変換するページの指定
+                        </label>
+                        <span id="selectedCountBadge" class="px-2 py-0.5 text-xs font-semibold rounded-md bg-indigo-500/20 text-indigo-300 border border-indigo-500/30">
+                            0 選択中
+                        </span>
+                    </div>
+
+                    <div>
+                        <label for="pageRangeInput" class="block text-xs text-slate-400 mb-1.5">
+                            ページ範囲入力 (例: <code class="text-indigo-300 bg-slate-800 px-1 py-0.5 rounded">1-3, 5, 8-10</code>)
+                        </label>
+                        <div class="relative">
+                            <input type="text" id="pageRangeInput" placeholder="例: 1-3, 5" 
+                                class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 focus:ring-1 focus:ring-indigo-500 rounded-xl px-3.5 py-2 text-sm text-slate-100 placeholder-slate-600 outline-none transition-all" />
+                        </div>
+                        <p class="text-[11px] text-slate-500 mt-1.5">
+                            ※右側のプレビューをクリックして個別に選択・解除もできます。
+                        </p>
+                    </div>
+
+                    <div class="grid grid-cols-3 gap-2 pt-1">
+                        <button id="selectAllBtn" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center justify-center">
+                            <i data-lucide="check-check" class="w-3.5 h-3.5 mr-1"></i>すべて
+                        </button>
+                        <button id="deselectAllBtn" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center justify-center">
+                            <i data-lucide="square" class="w-3.5 h-3.5 mr-1"></i>解除
+                        </button>
+                        <button id="invertSelectBtn" class="px-2.5 py-1.5 bg-slate-800 hover:bg-slate-700 text-slate-200 rounded-lg text-xs font-medium border border-slate-700 transition-colors flex items-center justify-center">
+                            <i data-lucide="repeat" class="w-3.5 h-3.5 mr-1"></i>反転
+                        </button>
+                    </div>
+                </div>
+
+                <!-- Output Format & Quality Settings -->
+                <div class="bg-slate-900/90 border border-slate-800 rounded-2xl p-5 shadow-xl space-y-5">
+                    <h3 class="text-sm font-semibold text-slate-200 flex items-center">
+                        <i data-lucide="sliders" class="w-4 h-4 mr-2 text-indigo-400"></i>
+                        出力フォーマット設定
+                    </h3>
+
+                    <!-- Format Toggle (PNG / JPEG) -->
+                    <div>
+                        <label class="block text-xs text-slate-400 mb-2">画像形式</label>
+                        <div class="grid grid-cols-2 gap-2 p-1 bg-slate-950 rounded-xl border border-slate-800">
+                            <button type="button" data-format="png" class="format-btn active py-2 px-3 rounded-lg text-xs font-semibold transition-all bg-indigo-600 text-white shadow">
+                                PNG (高画質・可逆)
+                            </button>
+                            <button type="button" data-format="jpeg" class="format-btn py-2 px-3 rounded-lg text-xs font-semibold transition-all text-slate-400 hover:text-slate-200">
+                                JPEG (軽量・写真向)
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Scale / Resolution -->
+                    <div>
+                        <div class="flex justify-between items-center mb-1.5">
+                            <label for="scaleSelect" class="text-xs text-slate-400">解像度 (スケール)</label>
+                            <span id="dpiIndicator" class="text-xs font-mono text-indigo-400">約 144 DPI</span>
+                        </div>
+                        <select id="scaleSelect" class="w-full bg-slate-950 border border-slate-700 focus:border-indigo-500 rounded-xl px-3 py-2 text-sm text-slate-100 outline-none">
+                            <option value="1">1x (標準 - 約 72 DPI)</option>
+                            <option value="1.5">1.5x (中画質 - 約 108 DPI)</option>
+                            <option value="2" selected>2x (高画質 - 約 144 DPI)</option>
+                            <option value="3">3x (超高画質 - 約 216 DPI)</option>
+                            <option value="4">4x (印刷品質 - 約 288 DPI)</option>
+                        </select>
+                    </div>
+
+                    <!-- JPEG Quality Slider (Shown only for JPEG) -->
+                    <div id="jpegQualityContainer" class="hidden space-y-1.5 pt-1 border-t border-slate-800/80">
+                        <div class="flex justify-between items-center">
+                            <label for="jpegQuality" class="text-xs text-slate-400">JPEG 品質</label>
+                            <span id="jpegQualityValue" class="text-xs font-mono text-indigo-400">90%</span>
+                        </div>
+                        <input type="range" id="jpegQuality" min="10" max="100" step="5" value="90" 
+                            class="w-full accent-indigo-500 bg-slate-800 h-1.5 rounded-lg cursor-pointer" />
+                    </div>
+
+                    <!-- PNG Background Transparency (Shown only for PNG) -->
+                    <div id="pngBgContainer" class="pt-1 border-t border-slate-800/80">
+                        <label class="flex items-center space-x-2.5 cursor-pointer select-none">
+                            <input type="checkbox" id="transparentBgCheck" class="rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-indigo-500 w-4 h-4" />
+                            <span class="text-xs text-slate-300">背景を透過する (元PDFが透過の場合)</span>
+                        </label>
+                    </div>
+
+                    <!-- Action Button -->
+                    <button id="convertSelectedBtn" class="w-full py-3 px-4 rounded-xl font-semibold text-sm bg-gradient-to-r from-indigo-600 to-purple-600 hover:from-indigo-500 hover:to-purple-500 text-white shadow-lg shadow-indigo-600/25 transition-all flex items-center justify-center disabled:opacity-50 disabled:cursor-not-allowed">
+                        <i data-lucide="sparkles" class="w-4 h-4 mr-2"></i>
+                        <span>選択したページを画像に変換</span>
+                    </button>
+                </div>
+            </div>
+
+            <!-- Right Column: Page Grid & Converted Results -->
+            <div class="lg:col-span-8 space-y-8">
+                
+                <!-- Converted Images Result Panel (Hidden until conversion runs) -->
+                <div id="resultsPanel" class="hidden bg-slate-900/95 border border-indigo-500/40 rounded-2xl p-6 shadow-2xl space-y-5">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+                        <div>
+                            <h3 class="text-base font-bold text-white flex items-center">
+                                <i data-lucide="check-circle-2" class="w-5 h-5 mr-2 text-emerald-400"></i>
+                                変換完了ギャラリー
+                            </h3>
+                            <p id="resultsSummary" class="text-xs text-slate-400 mt-0.5">0枚の画像が生成されました</p>
+                        </div>
+                        <div class="flex items-center space-x-2.5">
+                            <button id="downloadZipBtn" class="inline-flex items-center px-4 py-2 rounded-xl text-xs font-semibold bg-emerald-600 hover:bg-emerald-500 text-white shadow-lg shadow-emerald-600/20 transition-all">
+                                <i data-lucide="archive" class="w-4 h-4 mr-1.5"></i>
+                                一括ダウンロード (ZIP)
+                            </button>
+                            <button id="clearResultsBtn" class="p-2 rounded-xl text-slate-400 hover:text-slate-200 hover:bg-slate-800 transition-colors" title="結果を閉じる">
+                                <i data-lucide="x" class="w-4 h-4"></i>
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Progress bar during conversion -->
+                    <div id="conversionProgressBox" class="hidden space-y-2">
+                        <div class="flex justify-between text-xs text-slate-300">
+                            <span id="conversionStatusText">変換中...</span>
+                            <span id="conversionPercentText">0%</span>
+                        </div>
+                        <div class="w-full h-2 bg-slate-800 rounded-full overflow-hidden">
+                            <div id="conversionProgressBar" class="h-full bg-indigo-500 transition-all duration-200" style="width: 0%"></div>
+                        </div>
+                    </div>
+
+                    <!-- Converted Output Cards Grid -->
+                    <div id="resultsGrid" class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 max-h-[500px] overflow-y-auto pr-1">
+                        <!-- Dynamically populated -->
+                    </div>
+                </div>
+
+                <!-- Page Thumbnails Grid -->
+                <div class="bg-slate-900/60 border border-slate-800/80 rounded-2xl p-6">
+                    <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-2 mb-6">
+                        <div>
+                            <h2 class="text-base font-bold text-slate-100 flex items-center">
+                                <i data-lucide="layout-grid" class="w-5 h-5 mr-2 text-indigo-400"></i>
+                                ページ一覧・プレビュー
+                            </h2>
+                            <p class="text-xs text-slate-400 mt-0.5">カードをクリックして変換対象を選択、または直接単体変換できます</p>
+                        </div>
+                        <div id="thumbnailLoadingIndicator" class="hidden items-center text-xs text-indigo-400">
+                            <i data-lucide="loader-2" class="w-4 h-4 mr-1.5 animate-spin"></i>
+                            <span>サムネイル描画中...</span>
+                        </div>
+                    </div>
+
+                    <div id="pagesGrid" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4">
+                        <!-- Dynamically populated page cards -->
+                    </div>
+                </div>
+
+            </div>
+        </div>
+    </main>
+
+    <!-- Full Image Preview Modal -->
+    <div id="previewModal" class="fixed inset-0 z-50 hidden bg-slate-950/90 backdrop-blur-md flex items-center justify-center p-4">
+        <div class="relative max-w-5xl w-full max-h-[90vh] flex flex-col bg-slate-900 border border-slate-800 rounded-2xl overflow-hidden shadow-2xl">
+            <div class="flex items-center justify-between px-5 py-3.5 border-b border-slate-800">
+                <div class="flex items-center space-x-3">
+                    <span id="modalTitle" class="text-sm font-semibold text-slate-200">Page 1</span>
+                    <span id="modalDimensions" class="text-xs font-mono px-2 py-0.5 rounded bg-slate-800 text-slate-400">0 x 0 px</span>
+                </div>
+                <div class="flex items-center space-x-2">
+                    <a id="modalDownloadBtn" href="#" download="" class="inline-flex items-center px-3 py-1.5 rounded-lg text-xs font-semibold bg-indigo-600 hover:bg-indigo-500 text-white transition-colors">
+                        <i data-lucide="download" class="w-3.5 h-3.5 mr-1.5"></i>
+                        保存
+                    </a>
+                    <button id="closeModalBtn" class="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors">
+                        <i data-lucide="x" class="w-5 h-5"></i>
+                    </button>
+                </div>
+            </div>
+            <div class="flex-1 overflow-auto p-6 flex items-center justify-center checkerboard">
+                <img id="modalImage" src="" alt="Preview" class="max-w-full max-h-[75vh] object-contain shadow-2xl rounded" />
+            </div>
+        </div>
+    </div>
+
+    <!-- Toast Notification Container -->
+    <div id="toastContainer" class="fixed bottom-5 right-5 z-50 flex flex-col space-y-2 pointer-events-none"></div>
+
+    <script>
+        // Configure PDF.js worker
+        pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
+
+        // Application State
+        let pdfDoc = null;
+        let pdfFile = null;
+        let totalPages = 0;
+        let selectedPages = new Set();
+        let currentFormat = 'png'; // 'png' | 'jpeg'
+        let convertedItems = []; // Array of { pageNum, dataUrl, blob, filename, width, height, format }
+        let renderAbortController = null;
+
+        // DOM Elements
+        const uploadSection = document.getElementById('uploadSection');
+        const workspaceSection = document.getElementById('workspaceSection');
+        const dropZone = document.getElementById('dropZone');
+        const fileInput = document.getElementById('fileInput');
+        const resetBtn = document.getElementById('resetBtn');
+
+        const pdfFileName = document.getElementById('pdfFileName');
+        const pdfPageCount = document.getElementById('pdfPageCount');
+        const pdfFileSize = document.getElementById('pdfFileSize');
+        const selectedCountBadge = document.getElementById('selectedCountBadge');
+        const pageRangeInput = document.getElementById('pageRangeInput');
+
+        const selectAllBtn = document.getElementById('selectAllBtn');
+        const deselectAllBtn = document.getElementById('deselectAllBtn');
+        const invertSelectBtn = document.getElementById('invertSelectBtn');
+
+        const formatBtns = document.querySelectorAll('.format-btn');
+        const scaleSelect = document.getElementById('scaleSelect');
+        const dpiIndicator = document.getElementById('dpiIndicator');
+        const jpegQualityContainer = document.getElementById('jpegQualityContainer');
+        const jpegQuality = document.getElementById('jpegQuality');
+        const jpegQualityValue = document.getElementById('jpegQualityValue');
+        const pngBgContainer = document.getElementById('pngBgContainer');
+        const transparentBgCheck = document.getElementById('transparentBgCheck');
+
+        const convertSelectedBtn = document.getElementById('convertSelectedBtn');
+        const pagesGrid = document.getElementById('pagesGrid');
+        const thumbnailLoadingIndicator = document.getElementById('thumbnailLoadingIndicator');
+
+        const resultsPanel = document.getElementById('resultsPanel');
+        const resultsSummary = document.getElementById('resultsSummary');
+        const resultsGrid = document.getElementById('resultsGrid');
+        const downloadZipBtn = document.getElementById('downloadZipBtn');
+        const clearResultsBtn = document.getElementById('clearResultsBtn');
+        const conversionProgressBox = document.getElementById('conversionProgressBox');
+        const conversionStatusText = document.getElementById('conversionStatusText');
+        const conversionPercentText = document.getElementById('conversionPercentText');
+        const conversionProgressBar = document.getElementById('conversionProgressBar');
+
+        const previewModal = document.getElementById('previewModal');
+        const modalTitle = document.getElementById('modalTitle');
+        const modalDimensions = document.getElementById('modalDimensions');
+        const modalImage = document.getElementById('modalImage');
+        const modalDownloadBtn = document.getElementById('modalDownloadBtn');
+        const closeModalBtn = document.getElementById('closeModalBtn');
+
+        // Initialize Lucide Icons
+        lucide.createIcons();
+
+        function showToast(message, type = 'info') {
+            const container = document.getElementById('toastContainer');
+            const toast = document.createElement('div');
+            const bgClass = type === 'error' ? 'bg-rose-950/90 border-rose-500/40 text-rose-200' 
+                          : type === 'success' ? 'bg-emerald-950/90 border-emerald-500/40 text-emerald-200'
+                          : 'bg-slate-900/90 border-slate-700 text-slate-200';
+            
+            const iconName = type === 'error' ? 'alert-circle' : type === 'success' ? 'check-circle' : 'info';
+
+            toast.className = `pointer-events-auto flex items-center space-x-2.5 px-4 py-3 rounded-xl border shadow-xl backdrop-blur-md text-xs font-medium transition-all duration-300 transform translate-y-2 opacity-0 ${bgClass}`;
+            toast.innerHTML = `
+                <i data-lucide="${iconName}" class="w-4 h-4 shrink-0"></i>
+                <span>${message}</span>
+            `;
+            container.appendChild(toast);
+            lucide.createIcons({ root: toast });
+
+            requestAnimationFrame(() => {
+                toast.classList.remove('translate-y-2', 'opacity-0');
+            });
+
+            setTimeout(() => {
+                toast.classList.add('opacity-0', 'translate-y-2');
+                setTimeout(() => toast.remove(), 300);
+            }, 3500);
+        }
+
+        function formatBytes(bytes) {
+            if (bytes === 0) return '0 B';
+            const k = 1024;
+            const sizes = ['B', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        function getBaseFileName(name) {
+            return name.replace(/\.pdf$/i, '');
+        }
+
+        // Convert Set of page numbers into compact range string (e.g., "1-3, 5, 8-10")
+        function setToRangeString(set) {
+            const sorted = Array.from(set).sort((a, b) => a - b);
+            if (sorted.length === 0) return '';
+            
+            const ranges = [];
+            let start = sorted[0];
+            let prev = sorted[0];
+
+            for (let i = 1; i < sorted.length; i++) {
+                if (sorted[i] === prev + 1) {
+                    prev = sorted[i];
+                } else {
+                    ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+                    start = sorted[i];
+                    prev = sorted[i];
+                }
+            }
+            ranges.push(start === prev ? `${start}` : `${start}-${prev}`);
+            return ranges.join(', ');
+        }
+
+        // Parse user input string into Set of valid page numbers
+        function parseRangeString(str, maxPage) {
+            const result = new Set();
+            if (!str || !str.trim()) return result;
+
+            // Normalize full-width characters to half-width
+            const normalized = str
+                .replace(/[０-９]/g, s => String.fromCharCode(s.charCodeAt(0) - 0xFEE0))
+                .replace(/[ー−―～~]/g, '-')
+                .replace(/[、，]/g, ',');
+
+            const parts = normalized.split(',');
+            for (const part of parts) {
+                const trimmed = part.trim();
+                if (!trimmed) continue;
+
+                if (trimmed.includes('-')) {
+                    const [startStr, endStr] = trimmed.split('-').map(s => s.trim());
+                    let start = parseInt(startStr, 10);
+                    let end = parseInt(endStr, 10);
+
+                    if (!isNaN(start) && !isNaN(end)) {
+                        if (start > end) [start, end] = [end, start];
+                        start = Math.max(1, start);
+                        end = Math.min(maxPage, end);
+                        for (let p = start; p <= end; p++) {
+                            result.add(p);
+                        }
+                    }
+                } else {
+                    const num = parseInt(trimmed, 10);
+                    if (!isNaN(num) && num >= 1 && num <= maxPage) {
+                        result.add(num);
+                    }
+                }
+            }
+            return result;
+        }
+
+        // Update UI elements based on selectedPages Set
+        function updateSelectionUI(syncInput = true) {
+            selectedCountBadge.textContent = `${selectedPages.size} 選択中`;
+            convertSelectedBtn.disabled = selectedPages.size === 0;
+
+            if (syncInput) {
+                pageRangeInput.value = setToRangeString(selectedPages);
+            }
+
+            // Update card visual states
+            const cards = pagesGrid.querySelectorAll('.page-card');
+            cards.forEach(card => {
+                const pageNum = parseInt(card.dataset.page, 10);
+                const checkbox = card.querySelector('.page-checkbox');
+                if (selectedPages.has(pageNum)) {
+                    card.classList.add('selected');
+                    if (checkbox) checkbox.checked = true;
+                } else {
+                    card.classList.remove('selected');
+                    if (checkbox) checkbox.checked = false;
+                }
+            });
+        }
+
+        async function handleFileSelect(file) {
+            if (!file) return;
+            if (file.type !== 'application/pdf' && !file.name.toLowerCase().endsWith('.pdf')) {
+                showToast('PDFファイルを選択してください。', 'error');
+                return;
+            }
+
+            // Cancel ongoing thumbnail rendering if any
+            if (renderAbortController) {
+                renderAbortController.abort();
+            }
+            renderAbortController = new AbortController();
+
+            try {
+                pdfFile = file;
+                const arrayBuffer = await file.arrayBuffer();
+                const loadingTask = pdfjsLib.getDocument({ data: arrayBuffer });
+                pdfDoc = await loadingTask.promise;
+                totalPages = pdfDoc.numPages;
+
+                // Update File Info UI
+                pdfFileName.textContent = file.name;
+                pdfFileName.title = file.name;
+                pdfPageCount.textContent = `全 ${totalPages} ページ`;
+                pdfFileSize.textContent = formatBytes(file.size);
+
+                // Select all pages by default
+                selectedPages.clear();
+                for (let i = 1; i <= totalPages; i++) {
+                    selectedPages.add(i);
+                }
+
+                // Switch views
+                uploadSection.classList.add('hidden');
+                workspaceSection.classList.remove('hidden');
+                workspaceSection.classList.add('grid');
+                resetBtn.classList.remove('hidden');
+                resetBtn.classList.add('inline-flex');
+                resultsPanel.classList.add('hidden');
+                convertedItems = [];
+
+                updateSelectionUI(true);
+                await renderThumbnails(renderAbortController.signal);
+                showToast(`${file.name} を読み込みました（全${totalPages}ページ）`, 'success');
+            } catch (error) {
+                console.error(error);
+                showToast('PDFの読み込みに失敗しました。パスワード保護または破損している可能性があります。', 'error');
+            }
+        }
+
+        async function renderThumbnails(abortSignal) {
+            pagesGrid.innerHTML = '';
+            thumbnailLoadingIndicator.classList.remove('hidden');
+            thumbnailLoadingIndicator.classList.add('flex');
+
+            // Create placeholder cards first for instant layout
+            for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                const isSelected = selectedPages.has(pageNum);
+                const card = document.createElement('div');
+                card.className = `page-card group relative rounded-xl border border-slate-800 bg-slate-900/90 p-2.5 flex flex-col cursor-pointer select-none ${isSelected ? 'selected' : ''}`;
+                card.dataset.page = pageNum;
+
+                card.innerHTML = `
+                    <div class="flex items-center justify-between mb-2 px-1">
+                        <label class="flex items-center space-x-2 cursor-pointer pointer-events-none">
+                            <input type="checkbox" class="page-checkbox rounded bg-slate-950 border-slate-700 text-indigo-600 focus:ring-0 w-4 h-4" ${isSelected ? 'checked' : ''} />
+                            <span class="text-xs font-semibold text-slate-300">P.${pageNum}</span>
+                        </label>
+                        <button type="button" class="quick-convert-btn opacity-0 group-hover:opacity-100 focus:opacity-100 p-1 rounded-lg bg-slate-800 hover:bg-indigo-600 text-slate-300 hover:text-white transition-all text-[11px] flex items-center" title="このページのみ即座に保存">
+                            <i data-lucide="download" class="w-3.5 h-3.5"></i>
+                        </button>
+                    </div>
+                    <div class="relative aspect-[1/1.414] w-full rounded-lg bg-slate-950 overflow-hidden flex items-center justify-center border border-slate-800/60">
+                        <canvas id="thumb-canvas-${pageNum}" class="max-w-full max-h-full object-contain"></canvas>
+                        <div id="thumb-loader-${pageNum}" class="absolute inset-0 flex items-center justify-center bg-slate-950/60">
+                            <div class="w-5 h-5 border-2 border-indigo-500 border-t-transparent rounded-full animate-spin"></div>
+                        </div>
+                    </div>
+                `;
+
+                // Card click toggles selection
+                card.addEventListener('click', (e) => {
+                    if (e.target.closest('.quick-convert-btn')) return;
+                    if (selectedPages.has(pageNum)) {
+                        selectedPages.delete(pageNum);
+                    } else {
+                        selectedPages.add(pageNum);
+                    }
+                    updateSelectionUI(true);
+                });
+
+                // Quick single page download button
+                const quickBtn = card.querySelector('.quick-convert-btn');
+                quickBtn.addEventListener('click', async (e) => {
+                    e.stopPropagation();
+                    await convertSinglePageAndDownload(pageNum);
+                });
+
+                pagesGrid.appendChild(card);
+            }
+
+            lucide.createIcons({ root: pagesGrid });
+
+            // Render each thumbnail sequentially
+            for (let pageNum = 1; pageNum <= totalPages; pageNum++) {
+                if (abortSignal.aborted) return;
+                try {
+                    const page = await pdfDoc.getPage(pageNum);
+                    const viewport = page.getViewport({ scale: 0.5 });
+                    const canvas = document.getElementById(`thumb-canvas-${pageNum}`);
+                    const loader = document.getElementById(`thumb-loader-${pageNum}`);
+                    if (!canvas) continue;
+
+                    const ctx = canvas.getContext('2d');
+                    canvas.width = viewport.width;
+                    canvas.height = viewport.height;
+
+                    // White background for thumbnail preview
+                    ctx.fillStyle = '#ffffff';
+                    ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+                    await page.render({
+                        canvasContext: ctx,
+                        viewport: viewport
+                    }).promise;
+
+                    if (loader) loader.remove();
+                } catch (err) {
+                    console.error(`Thumbnail error on page ${pageNum}:`, err);
+                }
+            }
+
+            thumbnailLoadingIndicator.classList.add('hidden');
+            thumbnailLoadingIndicator.classList.remove('flex');
+        }
+
+        async function renderPageToImage(pageNum) {
+            const page = await pdfDoc.getPage(pageNum);
+            const scale = parseFloat(scaleSelect.value) || 2.0;
+            const viewport = page.getViewport({ scale });
+
+            const canvas = document.createElement('canvas');
+            const ctx = canvas.getContext('2d');
+            canvas.width = Math.floor(viewport.width);
+            canvas.height = Math.floor(viewport.height);
+
+            const isTransparent = currentFormat === 'png' && transparentBgCheck.checked;
+            if (!isTransparent) {
+                ctx.fillStyle = '#ffffff';
+                ctx.fillRect(0, 0, canvas.width, canvas.height);
+            }
+
+            await page.render({
+                canvasContext: ctx,
+                viewport: viewport,
+                background: isTransparent ? 'rgba(0,0,0,0)' : 'rgb(255,255,255)'
+            }).promise;
+
+            const mimeType = currentFormat === 'jpeg' ? 'image/jpeg' : 'image/png';
+            const quality = currentFormat === 'jpeg' ? parseInt(jpegQuality.value, 10) / 100 : undefined;
+
+            const dataUrl = canvas.toDataURL(mimeType, quality);
+            const blob = await new Promise(resolve => canvas.toBlob(resolve, mimeType, quality));
+
+            const baseName = getBaseFileName(pdfFile.name);
+            const paddedPage = String(pageNum).padStart(String(totalPages).length, '0');
+            const ext = currentFormat === 'jpeg' ? 'jpg' : 'png';
+            const filename = `${baseName}_page_${paddedPage}.${ext}`;
+
+            return {
+                pageNum,
+                dataUrl,
+                blob,
+                filename,
+                width: canvas.width,
+                height: canvas.height,
+                format: currentFormat.toUpperCase()
+            };
+        }
+
+        async function convertSinglePageAndDownload(pageNum) {
+            try {
+                showToast(`ページ ${pageNum} を変換しています...`, 'info');
+                const item = await renderPageToImage(pageNum);
+                triggerDownload(item.dataUrl, item.filename);
+                showToast(`${item.filename} を保存しました`, 'success');
+            } catch (err) {
+                console.error(err);
+                showToast(`ページ ${pageNum} の変換に失敗しました`, 'error');
+            }
+        }
+
+        async function convertSelectedPages() {
+            const pagesToConvert = Array.from(selectedPages).sort((a, b) => a - b);
+            if (pagesToConvert.length === 0) {
+                showToast('変換するページを選択してください', 'error');
+                return;
+            }
+
+            convertSelectedBtn.disabled = true;
+            resultsPanel.classList.remove('hidden');
+            conversionProgressBox.classList.remove('hidden');
+            resultsGrid.innerHTML = '';
+            convertedItems = [];
+
+            // Scroll smoothly to results panel
+            resultsPanel.scrollIntoView({ behavior: 'smooth', block: 'nearest' });
+
+            for (let i = 0; i < pagesToConvert.length; i++) {
+                const pageNum = pagesToConvert[i];
+                const percent = Math.round(((i) / pagesToConvert.length) * 100);
+                conversionStatusText.textContent = `ページ ${pageNum} を変換中... (${i + 1} / ${pagesToConvert.length})`;
+                conversionPercentText.textContent = `${percent}%`;
+                conversionProgressBar.style.width = `${percent}%`;
+
+                try {
+                    const item = await renderPageToImage(pageNum);
+                    convertedItems.push(item);
+                    appendResultCard(item);
+                } catch (err) {
+                    console.error(`Failed converting page ${pageNum}:`, err);
+                }
+            }
+
+            conversionProgressBar.style.width = '100%';
+            conversionPercentText.textContent = '100%';
+            setTimeout(() => {
+                conversionProgressBox.classList.add('hidden');
+            }, 500);
+
+            resultsSummary.textContent = `${convertedItems.length}枚の画像 (${currentFormat.toUpperCase()}) が生成されました`;
+            convertSelectedBtn.disabled = false;
+            showToast(`${convertedItems.length}ページの画像変換が完了しました！`, 'success');
+        }
+
+        function appendResultCard(item) {
+            const card = document.createElement('div');
+            card.className = 'bg-slate-950 border border-slate-800 rounded-xl p-3 flex flex-col justify-between group hover:border-slate-700 transition-all';
+            
+            const sizeKB = Math.round(item.blob.size / 1024);
+
+            card.innerHTML = `
+                <div>
+                    <div class="flex items-center justify-between text-xs mb-2">
+                        <span class="font-semibold text-slate-200">Page ${item.pageNum}</span>
+                        <span class="font-mono text-[11px] px-1.5 py-0.5 rounded bg-slate-800 text-indigo-300">${item.format} • ${sizeKB} KB</span>
+                    </div>
+                    <div class="relative aspect-video rounded-lg overflow-hidden checkerboard border border-slate-800/80 flex items-center justify-center mb-3 cursor-zoom-in preview-trigger">
+                        <img src="${item.dataUrl}" alt="Page ${item.pageNum}" class="max-w-full max-h-full object-contain" />
+                        <div class="absolute inset-0 bg-slate-950/60 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center">
+                            <span class="px-2.5 py-1 rounded-lg bg-slate-900/90 text-white text-xs font-medium flex items-center border border-slate-700">
+                                <i data-lucide="zoom-in" class="w-3.5 h-3.5 mr-1"></i>拡大表示
+                            </span>
+                        </div>
+                    </div>
+                </div>
+                <div class="flex items-center justify-between pt-1 border-t border-slate-900">
+                    <span class="text-[11px] font-mono text-slate-500">${item.width} × ${item.height}px</span>
+                    <button type="button" class="dl-single-btn inline-flex items-center px-2.5 py-1 rounded-lg text-xs font-medium bg-indigo-600/20 hover:bg-indigo-600 text-indigo-300 hover:text-white border border-indigo-500/30 transition-all">
+                        <i data-lucide="download" class="w-3.5 h-3.5 mr-1"></i>保存
+                    </button>
+                </div>
+            `;
+
+            card.querySelector('.preview-trigger').addEventListener('click', () => openPreviewModal(item));
+            card.querySelector('.dl-single-btn').addEventListener('click', () => {
+                triggerDownload(item.dataUrl, item.filename);
+            });
+
+            resultsGrid.appendChild(card);
+            lucide.createIcons({ root: card });
+        }
+
+        function triggerDownload(url, filename) {
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = filename;
+            document.body.appendChild(a);
+            a.click();
+            document.body.removeChild(a);
+        }
+
+        async function downloadAllAsZip() {
+            if (convertedItems.length === 0) return;
+
+            downloadZipBtn.disabled = true;
+            const originalHtml = downloadZipBtn.innerHTML;
+            downloadZipBtn.innerHTML = `<i data-lucide="loader-2" class="w-4 h-4 mr-1.5 animate-spin"></i>ZIP作成中...`;
+            lucide.createIcons({ root: downloadZipBtn });
+
+            try {
+                const zip = new JSZip();
+                convertedItems.forEach(item => {
+                    zip.file(item.filename, item.blob);
+                });
+
+                const zipBlob = await zip.generateAsync({ type: 'blob' });
+                const zipUrl = URL.createObjectURL(zipBlob);
+                const baseName = getBaseFileName(pdfFile.name);
+                triggerDownload(zipUrl, `${baseName}_images.zip`);
+                setTimeout(() => URL.revokeObjectURL(zipUrl), 10000);
+                showToast('ZIPファイルをダウンロードしました', 'success');
+            } catch (err) {
+                console.error(err);
+                showToast('ZIPファイルの作成に失敗しました', 'error');
+            } finally {
+                downloadZipBtn.disabled = false;
+                downloadZipBtn.innerHTML = originalHtml;
+                lucide.createIcons({ root: downloadZipBtn });
+            }
+        }
+
+        function openPreviewModal(item) {
+            modalTitle.textContent = `${item.filename} (Page ${item.pageNum})`;
+            modalDimensions.textContent = `${item.width} × ${item.height} px`;
+            modalImage.src = item.dataUrl;
+            modalDownloadBtn.href = item.dataUrl;
+            modalDownloadBtn.download = item.filename;
+            previewModal.classList.remove('hidden');
+        }
+
+        function closePreviewModal() {
+            previewModal.classList.add('hidden');
+            modalImage.src = '';
+        }
+
+        // Dropzone Events
+        dropZone.addEventListener('click', () => fileInput.click());
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFileSelect(e.target.files[0]);
+            }
+        });
+
+        dropZone.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            dropZone.classList.add('border-indigo-500', 'bg-slate-900/90');
+        });
+
+        dropZone.addEventListener('dragleave', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-slate-900/90');
+        });
+
+        dropZone.addEventListener('drop', (e) => {
+            e.preventDefault();
+            dropZone.classList.remove('border-indigo-500', 'bg-slate-900/90');
+            if (e.dataTransfer.files.length > 0) {
+                handleFileSelect(e.dataTransfer.files[0]);
+            }
+        });
+
+        // Reset Button
+        resetBtn.addEventListener('click', () => {
+            if (renderAbortController) renderAbortController.abort();
+            pdfDoc = null;
+            pdfFile = null;
+            totalPages = 0;
+            selectedPages.clear();
+            convertedItems = [];
+            fileInput.value = '';
+
+            workspaceSection.classList.add('hidden');
+            workspaceSection.classList.remove('grid');
+            uploadSection.classList.remove('hidden');
+            resetBtn.classList.add('hidden');
+            resetBtn.classList.remove('inline-flex');
+        });
+
+        // Page Range Input Events
+        pageRangeInput.addEventListener('input', () => {
+            if (!totalPages) return;
+            selectedPages = parseRangeString(pageRangeInput.value, totalPages);
+            updateSelectionUI(false);
+        });
+
+        pageRangeInput.addEventListener('blur', () => {
+            if (!totalPages) return;
+            updateSelectionUI(true);
+        });
+
+        // Quick Select Buttons
+        selectAllBtn.addEventListener('click', () => {
+            for (let i = 1; i <= totalPages; i++) selectedPages.add(i);
+            updateSelectionUI(true);
+        });
+
+        deselectAllBtn.addEventListener('click', () => {
+            selectedPages.clear();
+            updateSelectionUI(true);
+        });
+
+        invertSelectBtn.addEventListener('click', () => {
+            const next = new Set();
+            for (let i = 1; i <= totalPages; i++) {
+                if (!selectedPages.has(i)) next.add(i);
+            }
+            selectedPages = next;
+            updateSelectionUI(true);
+        });
+
+        // Format Selection (PNG / JPEG)
+        formatBtns.forEach(btn => {
+            btn.addEventListener('click', () => {
+                currentFormat = btn.dataset.format;
+                formatBtns.forEach(b => {
+                    b.classList.remove('bg-indigo-600', 'text-white', 'shadow');
+                    b.classList.add('text-slate-400');
+                });
+                btn.classList.add('bg-indigo-600', 'text-white', 'shadow');
+                btn.classList.remove('text-slate-400');
+
+                if (currentFormat === 'jpeg') {
+                    jpegQualityContainer.classList.remove('hidden');
+                    pngBgContainer.classList.add('hidden');
+                } else {
+                    jpegQualityContainer.classList.add('hidden');
+                    pngBgContainer.classList.remove('hidden');
+                }
+            });
+        });
+
+        // Scale & Quality Controls
+        scaleSelect.addEventListener('change', () => {
+            const scale = parseFloat(scaleSelect.value) || 2;
+            const dpi = Math.round(scale * 72);
+            dpiIndicator.textContent = `約 ${dpi} DPI`;
+        });
+
+        jpegQuality.addEventListener('input', () => {
+            jpegQualityValue.textContent = `${jpegQuality.value}%`;
+        });
+
+        // Convert & Download Actions
+        convertSelectedBtn.addEventListener('click', convertSelectedPages);
+        downloadZipBtn.addEventListener('click', downloadAllAsZip);
+        clearResultsBtn.addEventListener('click', () => {
+            resultsPanel.classList.add('hidden');
+        });
+
+        // Modal Events
+        closeModalBtn.addEventListener('click', closePreviewModal);
+        previewModal.addEventListener('click', (e) => {
+            if (e.target === previewModal) closePreviewModal();
+        });
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'Escape' && !previewModal.classList.contains('hidden')) {
+                closePreviewModal();
+            }
+        });
+    </script>
+</body>
+</html>

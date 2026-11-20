@@ -545,11 +545,7 @@
                         <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)" class=""
                             src="/images/Tools/CharCounter_icon.webp">
                     </a>
-                    <a href="/html/GeminiTools/ColorToAlpha.html" class="tool-item-single">
-                        <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)" class=""
-                            src="/images/Tools/ColorToAlpha_icon.webp">
-                    </a>
-                    <a href="/html/GeminiTools/CutColor.html" class="tool-item-single">
+                    <a href="/html/GeminiTools/cutcolor_colortoalpha.html" class="tool-item-single">
                         <img style="object-fit: cover; width: 90%; margin: auto; filter: invert(1)" class=""
                             src="/images/Tools/CutTheColor_icon.webp">
                     </a>
@@ -573,7 +569,7 @@
                 <div class="col-1-12">
                     <h2 class="optical-align">Useful Tools</h2>
                     <p class="desc" style="font-size: 16px; line-height: 24px; margin-bottom: 24px;">
-                        サイト上で動作する便利なツール群</p>
+                        サイト上で動作する便利な外部サイトのツール群</p>
                 </div>
 
                 <div class="subgrid tool-list-container">
@@ -668,21 +664,6 @@
                         <div class="list-desc">デカモニタのステージ作成周りのメモ。</div>
                         <div class="list-arrow">▶&nbsp;</div>
                     </a>
-                    <a href="/html/Games/SentisPose/index.html" class="tool-list-row">
-                        <div class="list-title">Unity Sentis PoseTracking</div>
-                        <div class="list-desc">Unity Sentisを用いた姿勢推定のテスト</div>
-                        <div class="list-arrow">▶&nbsp;</div>
-                    </a>
-                    <a href="/html/Games/SentisHands2/index.html" class="tool-list-row">
-                        <div class="list-title">Unity Sentis Hand Tracking</div>
-                        <div class="list-desc">Unity Sentisを用いたハンドトラッキングのテスト</div>
-                        <div class="list-arrow">▶&nbsp;</div>
-                    </a>
-                    <a href="/html/GeminiTools/6WeySmoke/index.html" class="tool-list-row">
-                        <div class="list-title">WebGPU 6-Way Smoke & Explosion</div>
-                        <div class="list-desc">Unityの6方向ライティング用パーティクル画像生成</div>
-                        <div class="list-arrow">▶&nbsp;</div>
-                    </a>
                     <a href="https://docs.google.com/document/d/1gSwjm4OQF7Ee4JvWHc_PWCAa9t_Rt_qgMGV8ZgqGaL0/edit?usp=sharing"
                         class="tool-list-row">
                         <div class="list-title">移動用ドキュメント</div>
@@ -718,15 +699,17 @@
         Game（明確なゲーム要素を持つもの）
         */
         const toolsData = [
-            { title: 'Video to GIF Converter', url: '/html/GeminiTools/Video2GifConverter.html', desc: 'MP4からGIFに変換する。時間、FPS、画質等も設定できる。', tags: ['Video', 'Image'] },
+            { title: 'Video to GIF', url: '/html/GeminiTools/Video2GifConverter.html', desc: 'MP4からGIFに変換する。時間、FPS、画質等も設定できる。', tags: ['Video', 'Image'] },
             { title: 'Video Frame Extractor', url: '/html/GeminiTools/VideoFrameExtractor.html', desc: 'MP4の1フレームをPNGで出力する。Windowsで切り取れない時に。', tags: ['Video', 'Image'] },
             { title: 'Audio Trimmer', url: '/html/GeminiTools/AudioTrimmer.html', desc: '音声を任意の範囲で切り取る。音声の切り抜きに。', tags: ['Audio', 'Utility'] },
             { title: 'Media Comberter', url: '/html/GeminiTools/MediaComberter2.html', desc: '音声/動画を別の形式に変換する。サーバーの都合でシングルコア駆動。', tags: ['Video', 'Audio'] },
-            { title: 'Color to Alpha', url: '/html/GeminiTools/ColorToAlpha.html', desc: '背景透過ツール1。指定色から閾値までを良い感じに透過する。', tags: ['Image', 'Utility'] },
-            { title: 'Cut the Color', url: '/html/GeminiTools/CutColor.html', desc: '背景透過ツール2。指定色周辺を透過する、所謂バケツツール。', tags: ['Image', 'Utility'] },
+            { title: 'BG Transparency Tool', url: '/html/GeminiTools/cutcolor_colortoalpha.html', desc: '背景透過ツール。背景が単色なら大体いい感じに透過できる。', tags: ['Image', 'Utility'] },
             { title: 'SVG to PNG', url: '/html/GeminiTools/svg_to_png_converter.html', desc: 'SVGを任意のサイズのPNG画像に変換するツール。背景色も変えられる。', tags: ['Image', 'Utility'] },
+            { title: 'PDF to Image', url: '/html/GeminiTools/pdf.html', desc: 'PDFを画像にする。解像度や出力ページとかも設定できる。', tags: ['Image', 'Utility'] },
+            { title: 'Ratio Lab', url: '/html/GeminiTools/RatioLab.html', desc: '画像の黄金比や配置などを確認する。使えるのか、これ?', tags: ['Image', 'Utility'] },
             { title: 'Blur Filter', url: '/html/GeminiTools/blur_image_studio.html', desc: '画像にブラーをかけるツール。何種類か選べる。', tags: ['Image', 'Utility'] },
             { title: 'k-means Filter', url: '/html/GeminiTools/k_means_image_quantizer.html', desc: 'k平均法で画像の色を減らすツール。処理が重い。', tags: ['Image', 'Utility'] },
+            { title: '6-Way Smoke Editor', url: '/html/GeminiTools/6WeySmoke/index.html', desc: 'Unityの6-Way Smoke向け画像を作成する流体シミュレーションツール。', tags: ['Image', 'Utility'] },
             { title: 'Device Input Visualizer', url: '/html/GeminiTools/DeviceInputVisualizer_JIS.html', desc: 'PCの入力デバイスの動作を確認。JISキーボードとマウスに対応。', tags: ['System', 'Utility'] },
             { title: 'Gamepad Tester', url: '/html/GeminiTools/GamepadTester.html', desc: 'コントローラーの動作を確認。単体向け。', tags: ['System', 'Utility'] },
             { title: 'Device Information Dashboard', url: '/html/GeminiToys/DeviceInformationDashboard.html', desc: '端末情報を確認。端末によってセキュリティが随分違う。', tags: ['System', 'Data'] },
@@ -744,6 +727,8 @@
             { title: 'Web Window System', url: '/html/GeminiToys/WebWindowSystem.html', desc: 'マルチウインドウでWebを見れる。セキュリティの都合上、Youtube等は見れない。', tags: ['Web', 'Utility'] },
             { title: 'Markov Audio', url: '/html/GeminiToys/MarkovAudio.html', desc: 'マルコフ連鎖に従い音を再生する。色々と応用が利くかもしれない。', tags: ['Audio', 'Toy'] },
             { title: 'Chaos Tetris', url: '/html/GeminiToys/NotTetris.html', desc: 'あそばせないテトリス。Gemini 3.1 Proのユーモア。', tags: ['Game', 'Toy'] },
+            { title: 'Unity Pose Tracing', url: '/html/Games/SentisPose/index.html', desc: 'Unityのみで姿勢推定をしたもの。', tags: ['Dev','Toy'] },
+            { title: 'Unity Hand Tracing', url: '/html/Games/SentisHands2/index.html', desc: 'Unityのみでハンドトラッキングをしたもの。', tags: ['Dev','Toy','Game'] },
             { title: 'Browser & Web API Tester', url: '/html/GeminiToys/Browser&WebAPI_Test.html', desc: 'ブラウザを使ったギミックまとめ。何かのネタになるかも。', tags: ['Web', 'Dev'] },
             { title: 'History API Maze', url: '/html/GeminiToys/HistoryAPI_Maze.html', desc: 'ブラウザの戻るで戻れる迷路。何かのネタになるかも。', tags: ['Web', 'Game'] },
             { title: 'NFC Reader', url: '/html/GeminiTools/NFCReader.html', desc: 'NFCカードの固有IDを読み取る。一部Androidのみ利用可。', tags: ['System', 'Utility'] },
